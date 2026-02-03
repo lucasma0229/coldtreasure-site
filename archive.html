@@ -4,6 +4,10 @@
   <meta charset="utf-8" />
   <meta http-equiv="refresh" content="0; url=/archive/" />
   <title>Redirecting…</title>
+  <script>
+    // 强制跳转（比 meta refresh 更不容易被缓存/策略影响）
+    window.location.replace("/archive/");
+  </script>
 </head>
 <body>
   <a href="/archive/">Go to /archive/</a>
