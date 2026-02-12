@@ -1,20 +1,22 @@
 [
   {
-    "id": "kd18-test",
-    "title": "Kith x Nike KD 18 首次曝光",
+    "id": "kd18-kith-am95-001",
+    "title": "Kith × Nike KD 18「Air Max 95」首次曝光",
     "section": "news",
-    "tags": ["Kith","Nike","KD"],
+    "tags": ["Kith", "Nike", "KD", "Collaboration", "First Look"],
     "brand": "Nike",
     "model": "KD 18",
     "colorway": "Black/Volt",
     "release_date": "2026",
     "price": "TBA",
-    "summary": "Kith 与 Nike 再度合作，KD 18 新联名版本曝光。",
+    "summary": "Kith 与 Nike 再次合作，KD 18 以 Air Max 95 的结构语言为灵感，2026 年度关注度极高。",
     "cover": "/assets/img/kd18.jpg",
     "hero": "/assets/img/kd18.jpg",
     "pics": [
-      { "src": "/assets/img/kd18.jpg", "credit": "Nike" }
+      { "src": "/assets/img/kd18-01.webp", "credit": "Pic via: Nike / Kith" },
+      { "src": "/assets/img/kd18-02.webp", "credit": "Pic via: Nike / Kith" },
+      { "src": "/assets/img/kd18-03.webp", "credit": "Pic via: Nike / Kith" }
     ],
-    "content": "Kith 与 Nike 及 Kevin Durant 全新合作鞋款正式曝光。该鞋将 Air Max 95 元素融入 KD 系列，是 2026 年最受关注的联名之一。"
+    "content": "Kith × Nike KD 18 以 Air Max 95 为线索完成一次“鞋型语言嫁接”。首图用于档案封面，其余图片作为图集呈现；信息区保持克制：品牌、鞋名、配色、日期、价格一屏读完，下滑进入正文与 Update Log。"
   }
 ]
