@@ -1,1 +1,58 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>ColdTreasure</title>
 
+  <style>
+    :root { color-scheme: light dark; }
+    body { margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "PingFang SC", "Microsoft YaHei", Arial; }
+    .topbar{
+      position:sticky; top:0; z-index:10;
+      backdrop-filter: blur(10px);
+      background: rgba(255,255,255,.72);
+      border-bottom:1px solid rgba(0,0,0,.08);
+    }
+    @media (prefers-color-scheme: dark){
+      .topbar{ background: rgba(15,15,15,.72); border-bottom:1px solid rgba(255,255,255,.10); }
+    }
+    .topbar-inner{
+      max-width:1180px; margin:0 auto; padding:10px 16px;
+      display:flex; align-items:center; gap:12px;
+    }
+    .logo{ height:30px; width:auto; display:block; }
+    .brand{ font-weight:800; letter-spacing:.2px; }
+    .container{ max-width:1180px; margin:24px auto; padding:0 16px; }
+    .grid{ display:flex; gap:18px; align-items:flex-start; }
+    .left{ flex:6; min-width:0; }
+    .right{ flex:4; min-width:0; }
+    @media (max-width: 920px){
+      .grid{ flex-direction:column; }
+    }
+    .hint{ opacity:.75; font-size:13px; }
+  </style>
+</head>
+
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <img class="logo" src="/assets/img/logo.png" alt="ColdTreasure" onerror="this.style.display='none'">
+      <div class="brand">ColdTreasure</div>
+      <div class="hint">News / Record / Archive</div>
+    </div>
+  </header>
+
+  <main class="container">
+    <div id="ct-root">
+      <div class="grid">
+        <section class="left" id="ct-hero"></section>
+        <aside class="right" id="ct-list"></aside>
+      </div>
+    </div>
+  </main>
+
+  <!-- 必须是这个路径 -->
+  <script src="/assets/js/app.js" defer></script>
+</body>
+</html>
