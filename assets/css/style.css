@@ -1,9 +1,5 @@
 /* ===== ColdTreasure Global Reset ===== */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
@@ -11,8 +7,14 @@ body {
   color: #111;
 }
 
-/* ===== Header ===== */
-.header {
+a { color: inherit; text-decoration: none; }
+a:hover { opacity: 0.75; }
+
+/* ===== Header (兼容两套结构) ===== */
+/* 旧结构：.header .logo .nav */
+/* 新结构：.topbar .brand .brand-link .brand-logo */
+.header,
+.topbar {
   width: 100%;
   padding: 22px 40px;
   border-bottom: 1px solid #eee;
@@ -21,45 +23,50 @@ body {
   justify-content: space-between;
 }
 
-.logo {
-  font-size: 22px;
-  letter-spacing: 2px;
-  font-weight: 600;
-}
+/* 旧 logo 文本 */
+.logo { font-size: 22px; letter-spacing: 2px; font-weight: 600; }
 
-.nav {
-  display: flex;
-  gap: 28px;
-}
+/* 新 logo 图片 */
+.brand { display: flex; align-items: center; }
+.brand-link { display: inline-flex; align-items: center; }
+.brand-logo { height: 28px; display: block; }
 
-.nav a {
-  text-decoration: none;
-  color: #111;
+/* 导航：兼容 old .nav a 以及你现在页面顶部直接 a 链接的情况 */
+.nav { display: flex; gap: 28px; }
+.nav a { font-size: 14px; }
+
+/* 如果你的 topbar 里直接放了链接（没有 .nav 容器），也能排成一排 */
+.topbar > a,
+.topbar .nav a {
   font-size: 14px;
+  color: #111;
 }
 
-.nav a:hover {
-  opacity: 0.6;
-}
+/* 如果你有一个导航容器（推荐叫 .nav），也兼容在 .topbar 内 */
+.topbar .nav { margin-left: 24px; }
 
 /* ===== Main Layout ===== */
-.container {
+.container,
+.main {
   max-width: 1400px;
   margin: 40px auto;
   padding: 0 40px;
 }
 
 /* ===== Hero Image ===== */
-.hero {
-  width: 100%;
-  margin-bottom: 40px;
-}
-
+.hero { width: 100%; margin-bottom: 40px; }
 .hero img {
   width: 100%;
   height: auto;
   display: block;
   border-radius: 2px;
+}
+
+/* 如果你的首页是直接放一张大图（没有 .hero 包裹），尽量别爆版 */
+.main img,
+.container img {
+  max-width: 100%;
+  height: auto;
 }
 
 /* ===== News Grid ===== */
@@ -69,14 +76,8 @@ body {
   gap: 28px;
 }
 
-.card {
-  cursor: pointer;
-}
-
-.card img {
-  width: 100%;
-  display: block;
-}
+.card { cursor: pointer; }
+.card img { width: 100%; display: block; }
 
 .card-title {
   font-size: 14px;
@@ -91,15 +92,9 @@ body {
   padding: 0 20px;
 }
 
-.article img {
-  width: 100%;
-  margin: 25px 0;
-}
+.article img { width: 100%; margin: 25px 0; }
 
-.article-title {
-  font-size: 26px;
-  margin-bottom: 20px;
-}
+.article-title { font-size: 26px; margin-bottom: 20px; }
 
 .article p {
   line-height: 1.8;
@@ -119,21 +114,13 @@ body {
 
 /* ===== Mobile ===== */
 @media (max-width: 900px) {
-  .grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .header {
-    padding: 20px;
-  }
-
-  .container {
-    padding: 0 20px;
-  }
+  .grid { grid-template-columns: repeat(2, 1fr); }
+  .header, .topbar { padding: 20px; }
+  .container, .main { padding: 0 20px; }
 }
 
 @media (max-width: 520px) {
-  .grid {
-    grid-template-columns: 1fr;
-  }
+  .grid { grid-template-columns: 1fr; }
+  .nav { gap: 16px; }
+  .brand-logo { height: 24px; }
 }
