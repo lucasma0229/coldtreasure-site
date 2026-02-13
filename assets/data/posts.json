@@ -5,6 +5,9 @@
     "date": "2026-02-10",
     "brand": ["Nike"],
     "hero": "/assets/img/posts/foamposite-one-floral-2026/foamposite-floral.jpg",
+    "image": "/assets/img/posts/foamposite-one-floral-2026/foamposite-floral.jpg",
+    "cover": "/assets/img/posts/foamposite-one-floral-2026/foamposite-floral.jpg",
+    "thumb": "/assets/img/posts/foamposite-one-floral-2026/foamposite-floral.jpg",
     "gallery": [
       "/assets/img/posts/foamposite-one-floral-2026/nike-air-foamposite-one-floral-2026-aa3963-002_结果.jpg",
       "/assets/img/posts/foamposite-one-floral-2026/nike-air-foamposite-one-floral-2026-aa3963-002-1-1068x662_结果.jpg",
@@ -23,13 +26,15 @@
     "source_url": "https://sneakerbardetroit.com/nike-air-foamposite-one-floral-2026/",
     "tags": ["Nike", "Foamposite", "2026"]
   },
-
   {
     "id": "air-jordan-6-psg-2026",
     "title": "PSG x Air Jordan 6 “Metallic Silver” 官图释出",
     "date": "2026-02-11",
     "brand": ["Jordan Brand"],
     "hero": "/assets/img/posts/air-jordan-6-psg-2026/aj6-psg.jpg",
+    "image": "/assets/img/posts/air-jordan-6-psg-2026/aj6-psg.jpg",
+    "cover": "/assets/img/posts/air-jordan-6-psg-2026/aj6-psg.jpg",
+    "thumb": "/assets/img/posts/air-jordan-6-psg-2026/aj6-psg.jpg",
     "gallery": [
       "/assets/img/posts/air-jordan-6-psg-2026/psg-air-jordan-6-metallic-silver-iq5135-001_结果.jpg",
       "/assets/img/posts/air-jordan-6-psg-2026/psg-air-jordan-6-metallic-silver-iq5135-001-1-1068x662_结果.jpg",
@@ -49,13 +54,15 @@
     "source_url": "https://sneakerbardetroit.com/psg-air-jordan-6-metallic-silver-2026/",
     "tags": ["Air Jordan 6", "PSG", "2026"]
   },
-
   {
     "id": "juju-watkins-lebron-nxxt-silver-lining-2026",
     "title": "JuJu Watkins x Nike LeBron NXXT Gen “Silver Lining”",
     "date": "2026-02-11",
     "brand": ["Nike"],
     "hero": "/assets/img/posts/juju-watkins-lebron-nxxt-silver-lining-2026/lebron-nxxt.jpg",
+    "image": "/assets/img/posts/juju-watkins-lebron-nxxt-silver-lining-2026/lebron-nxxt.jpg",
+    "cover": "/assets/img/posts/juju-watkins-lebron-nxxt-silver-lining-2026/lebron-nxxt.jpg",
+    "thumb": "/assets/img/posts/juju-watkins-lebron-nxxt-silver-lining-2026/lebron-nxxt.jpg",
     "gallery": [
       "/assets/img/posts/juju-watkins-lebron-nxxt-silver-lining-2026/nike-lebron-nxxt-gen-juju-watkins-silver-lining-1_结果.jpg"
     ],
@@ -69,13 +76,15 @@
     "source_url": "https://sneakerbardetroit.com/nike-lebron-nxxt-gen-juju-watkins-silver-lining/",
     "tags": ["LeBron", "Nike Basketball", "JuJu"]
   },
-
   {
     "id": "kd18-kith-am95-001",
     "title": "Kith x Nike KD18 “Air Max 95” F&F 版本曝光",
     "date": "2026-02-11",
     "brand": ["Nike", "Kith"],
     "hero": "/assets/img/posts/kd18-kith-am95-001/kd18.jpg",
+    "image": "/assets/img/posts/kd18-kith-am95-001/kd18.jpg",
+    "cover": "/assets/img/posts/kd18-kith-am95-001/kd18.jpg",
+    "thumb": "/assets/img/posts/kd18-kith-am95-001/kd18.jpg",
     "gallery": [
       "/assets/img/posts/kd18-kith-am95-001/kd18-1.jpg",
       "/assets/img/posts/kd18-kith-am95-001/kd18-2.jpg",
