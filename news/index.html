@@ -1,1 +1,43 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>News · ColdTreasure</title>
+  <link rel="stylesheet" href="/assets/css/style.css?v=1" />
+</head>
 
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <a class="brand-link" href="/">
+        <div class="brand-text">
+          <div class="brand-name">COLD TREASURE</div>
+          <div class="brand-slogan">ARCHIVE IS NOT FOR RESALE</div>
+        </div>
+      </a>
+    </div>
+
+    <nav class="nav">
+      <a class="is-active" href="/news/">News</a>
+      <a href="/record/">Record</a>
+      <a href="/archive/">Archive</a>
+    </nav>
+  </header>
+
+  <main class="page">
+    <div class="page-head">
+      <h1 class="page-title">News</h1>
+      <p class="page-sub">All updates, early looks, release info.</p>
+    </div>
+
+    <!-- 列表容器：由 app.js 填充 -->
+    <section class="rail" id="rail"></section>
+  </main>
+
+  <script>
+    window.CT_PAGE = "news";
+  </script>
+  <script src="/assets/js/app.js?v=10"></script>
+</body>
+</html>
