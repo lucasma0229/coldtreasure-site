@@ -4,8 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>ColdTreasure</title>
-  <!-- 强制刷新用：你每次改样式就把 v= 后面的数字加大 -->
-  <link rel="stylesheet" href="/assets/css/style.css?v=1000" />
+  <link rel="stylesheet" href="/assets/css/style.css?v=2001" />
 </head>
 
 <body class="is-home">
@@ -16,14 +15,12 @@
     <div class="brand-hover-sub">Archive Is Not For Resale</div>
   </div>
 
-  <!-- 顶部导航（全站统一） -->
+  <!-- 顶部导航：仅文字（抛弃左上角图标） -->
   <header class="topbar">
     <a class="brand-lockup" href="/" aria-label="ColdTreasure Home">
-      <!-- 左上角品牌 Logo（你已放到 assets/img/brand/logo.png） -->
-      <img class="brand-mark" src="/assets/img/brand/logo.png" alt="COLD TREASURE" />
       <div class="brand-text">
         <div class="brand-name">COLD TREASURE</div>
-        <div class="brand-slogan">ARCHIVE IS NOT FOR RESALE</div>
+        <div class="brand-slogan">Archive Is Not For Resale</div>
       </div>
     </a>
 
@@ -36,27 +33,12 @@
 
   <main class="page">
 
-    <!-- ① 首页上半页：Logo 区 -->
-    <section class="home-logo" aria-label="Brand">
-      <div class="home-logo-inner">
-        <!-- 用你这张横幅 Logo 作为首页 1 区最合适 -->
-        <img
-          class="home-wordmark-img"
-          src="/assets/img/brand/logo.png"
-          alt="ColdTreasure"
-        />
-      </div>
-    </section>
-
-    <!-- ②③ 首页下半页：6/4 主区 -->
+    <!-- 主视觉：更 SneakerNews：左轮播（大图）右入口（独立列表，无外框） -->
     <section class="home-hero" aria-label="Featured and Portals">
       <div class="hero-grid">
 
-        <!-- 左：轮播（图上文下，不压图；图片统一高度在 CSS 控制） -->
         <section class="carousel" aria-label="Featured Carousel">
-          <div class="carousel-viewport" id="carouselViewport">
-            <!-- JS 注入 -->
-          </div>
+          <div class="carousel-viewport" id="carouselViewport"></div>
 
           <div class="carousel-controls">
             <button class="btn btn-ghost" id="carouselPrev" type="button" aria-label="Previous">←</button>
@@ -65,49 +47,27 @@
           </div>
         </section>
 
-        <!-- 右：五大入口（中文 + 英文同行，英文更小，跟在中文后面） -->
+        <!-- 右侧入口：独立条目，不包在大卡片里 -->
         <aside class="portal" aria-label="Portals">
-          <a class="portal-item" href="/news/">
-            <span class="portal-cn">快讯</span>
-            <span class="portal-en">NEWS</span>
-          </a>
-
-          <a class="portal-item" href="/record/">
-            <span class="portal-cn">记录层</span>
-            <span class="portal-en">RECORD</span>
-          </a>
-
-          <a class="portal-item" href="/archive/">
-            <span class="portal-cn">档案馆</span>
-            <span class="portal-en">ARCHIVE</span>
-          </a>
-
-          <a class="portal-item" href="/guide/">
-            <span class="portal-cn">实用指南</span>
-            <span class="portal-en">GUIDE</span>
-          </a>
-
-          <a class="portal-item" href="/feature/">
-            <span class="portal-cn">专题</span>
-            <span class="portal-en">FEATURE</span>
-          </a>
+          <a class="portal-item" href="/news/"><span class="portal-cn">快讯</span><span class="portal-en">NEWS</span></a>
+          <a class="portal-item" href="/record/"><span class="portal-cn">记录层</span><span class="portal-en">RECORD</span></a>
+          <a class="portal-item" href="/archive/"><span class="portal-cn">档案馆</span><span class="portal-en">ARCHIVE</span></a>
+          <a class="portal-item" href="/guide/"><span class="portal-cn">实用指南</span><span class="portal-en">GUIDE</span></a>
+          <a class="portal-item" href="/feature/"><span class="portal-cn">专题</span><span class="portal-en">FEATURE</span></a>
         </aside>
 
       </div>
     </section>
 
-    <!-- ⑥ 随滚动出现的 News 层：三列，图上文下 -->
+    <!-- News 区：三列，图上文下，图片缩小（媒体密度） -->
     <section class="home-news" aria-label="Latest News">
       <div class="section-head">
         <h2 class="section-title">NEWS</h2>
         <a class="section-link" href="/news/">查看全部资讯 →</a>
       </div>
 
-      <div class="news-grid" id="homeNewsGrid">
-        <!-- JS 注入 -->
-      </div>
+      <div class="news-grid" id="homeNewsGrid"></div>
 
-      <!-- ⑦ View All（保留） -->
       <div class="view-all">
         <a class="btn btn-outline" href="/news/">查看全部资讯</a>
       </div>
@@ -115,7 +75,6 @@
 
   </main>
 
-  <!-- ⑫ 全站统一 footer -->
   <footer class="footer">
     © COLD TREASURE — Archive is not for resale.
   </footer>
@@ -181,18 +140,15 @@
         .then(posts => {
           if (!Array.isArray(posts) || posts.length === 0) return;
 
-          // 轮播：取前 3 条
           const slides = posts.slice(0, 3);
           viewport.innerHTML = slides.map(slideHTML).join("");
           dots.innerHTML = slides.map((_, i) =>
             `<button class="dot" type="button" aria-label="Go to slide ${i + 1}" data-i="${i}"></button>`
           ).join("");
 
-          // 首页 News：取最近 6 条（保持三列密度）
           const latest = posts.slice(0, 6);
           newsGrid.innerHTML = latest.map(cardHTML).join("");
 
-          // Carousel behavior
           let index = 0;
           const slideEls = Array.from(viewport.querySelectorAll(".slide"));
           const dotEls = Array.from(dots.querySelectorAll(".dot"));
