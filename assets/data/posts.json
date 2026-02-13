@@ -1,76 +1,174 @@
 [
   {
-    "id": "kd18-kith-am95-001",
-    "title": "Kith × Nike KD 18「Air Max 95」首次曝光",
-    "section": "news",
-    "tags": ["Kith", "Nike", "KD", "Collaboration", "First Look"],
-    "brand": "Nike",
-    "model": "KD 18",
-    "colorway": "Black/Volt",
-    "release_date": "2026",
-    "price": "TBA",
-    "summary": "Kith 与 Nike 再次合作，KD 18 以 Air Max 95 的结构语言为灵感，2026 年度关注度极高。",
-    "cover": "/assets/img/kd18.jpg",
-    "hero": "/assets/img/kd18.jpg",
-    "pics": [
-      { "src": "/assets/img/kd18-1.jpg", "credit": "Pic via: Nike / Kith" },
-      { "src": "/assets/img/kd18-2.jpg", "credit": "Pic via: Nike / Kith" },
-      { "src": "/assets/img/kd18-3.jpg", "credit": "Pic via: Nike / Kith" }
-    ],
-    "content": "Kith × Nike KD 18 以 Air Max 95 为线索完成一次“鞋型语言嫁接”。首图用于档案封面，其余图片作为图集呈现；信息区保持克制：品牌、鞋名、配色、日期、价格一屏读完。"
-  },
-  {
     "id": "foamposite-one-floral-2026",
-    "title": "「花卉」喷 Nike Air Foamposite One “Floral” 定档 2026 再度返场",
-    "section": "news",
-    "tags": ["Nike", "Foamposite One", "Air Foamposite", "Floral"],
-    "brand": "Nike",
-    "model": "Air Foamposite One",
-    "colorway": "Black/Metallic Gold-Black",
-    "release_date": "2026",
-    "price": "$240",
-    "summary": "经典“花卉喷”确认 2026 年回归。黑金基调叠加花卉细节，依旧是 Foamposite 系列里最具辨识度的存在之一。",
-    "cover": "/assets/img/foamposite-floral.jpg",
-    "hero": "/assets/img/foamposite-floral.jpg",
-    "pics": [
-      { "src": "/assets/img/foamposite-floral.jpg", "credit": "Pic via: Sneaker Market RO" }
+    "title": "Nike Air Foamposite One “Floral” 确认回归：Holiday 2026 以女码规格登场",
+    "date": "2026-02-10",
+    "brand": ["Nike"],
+    "hero": "/assets/img/posts/foamposite-one-floral-2026/foamposite-floral.jpg",
+    "gallery": [
+      "/assets/img/posts/foamposite-one-floral-2026/nike-air-foamposite-one-floral-2026-aa3963-002_结果.jpg",
+      "/assets/img/posts/foamposite-one-floral-2026/nike-air-foamposite-one-floral-2026-aa3963-002-1-1068x662_结果.jpg",
+      "/assets/img/posts/foamposite-one-floral-2026/nike-air-foamposite-one-floral-2026-aa3963-002-2_结果.jpg",
+      "/assets/img/posts/foamposite-one-floral-2026/nike-air-foamposite-one-floral-2026-aa3963-002-3-1068x1169_结果.jpg",
+      "/assets/img/posts/foamposite-one-floral-2026/nike-air-foamposite-one-floral-2026-aa3963-002-5-1068x782_结果.jpg",
+      "/assets/img/posts/foamposite-one-floral-2026/nike-air-foamposite-one-floral-2026-aa3963-002-6-1068x1068_结果.jpg"
     ],
-    "content": "Nike Air Foamposite One “Floral” 回归信息释出：配色 Black/Metallic Gold-Black，定价 $240，年份标注为 2026。现阶段以图像与基础发售信息为主，后续若出现更精确日期与渠道，将进入 Record 更新。"
+    "summary": "2019 年的花卉主题 Foamposite 以同一 SKU 传出回归计划，预计 Holiday 2026 复刻，并以女码规格、$240 定价登场。",
+    "content": [
+      {
+        "type": "p",
+        "text": "2019 年，Nike 让 Foamposite One 罕见地“离开球场语境”：不靠联名堆叙事，也不靠夸张配色制造噪音，而是用一整块花卉图案把硬壳轮廓的视觉张力推到极致。来到 2026 年，这双 “Floral” 被再次列入回归清单，且沿用原本的 SKU——更像是一次对档案的直接“再上架”，而非重新解释。"
+      },
+      {
+        "type": "p",
+        "text": "这次 “Floral” 延续亮面黑色 Foamposite 一体鞋壳作为画布，玫瑰与叶片图案覆盖整块鞋面，和 Foamposite 一贯的极简外观形成强烈反差。黑色鞋领与鞋带区域保持克制，用材质与结构去稳住整体的运动基因，让图案成为唯一的主角。"
+      },
+      {
+        "type": "p",
+        "text": "发售层面，信息指向 Holiday 2026，并以女码规格推出。相较 OG 配色回归，这类主题配色的意义更像是：Nike 在重启 Foamposite 的同时，也在补齐“收藏与表达”的那条支线。"
+      },
+      { "type": "h2", "text": "发售信息" },
+      {
+        "type": "ul",
+        "items": [
+          "鞋款：Nike Air Foamposite One “Floral” (W)",
+          "配色：Black/Metallic Gold-Black",
+          "货号：AA3963-002",
+          "发售：Holiday 2026",
+          "定价：$240（USD）",
+          "渠道：Nike.com / 指定 Nike Sportswear 店铺"
+        ]
+      },
+      { "type": "h2", "text": "ColdTreasure 视角" },
+      {
+        "type": "p",
+        "text": "沿用同一货号这件事很关键：它暗示 Nike 把这双鞋当成“原样归档再开封”。对于 Foamposite 这种高度符号化的鞋型，最有效的回归方式往往不是改，而是让它以原本的样子再次出现。"
+      }
+    ],
+    "source_url": "https://sneakerbardetroit.com/nike-air-foamposite-one-floral-2026/",
+    "tags": ["Nike", "Foamposite", "Retro", "Holiday 2026", "Womens"]
   },
   {
     "id": "air-jordan-6-psg-2026",
-    "title": "Air Jordan 6 “PSG”「大巴黎」官图曝光",
-    "section": "news",
-    "tags": ["Jordan", "Air Jordan 6", "AJ6", "PSG"],
-    "brand": "Jordan",
-    "model": "Air Jordan 6",
-    "colorway": "Metallic Silver/Pure Platinum/Oil Grey",
-    "release_date": "2026-02-24",
-    "price": "$215",
-    "summary": "AJ6 PSG 官图正式释出，金属银与冷灰调压住气质；细节取向更偏“城市制服”，适合进入你的长期 Archive 名单。",
-    "cover": "/assets/img/aj6-psg.jpg",
-    "hero": "/assets/img/aj6-psg.jpg",
-    "pics": [
-      { "src": "/assets/img/aj6-psg.jpg", "credit": "Pic via: Jordan" }
+    "title": "PSG x Air Jordan 6 “Metallic Silver” 确认定档：2 月 24 日登场",
+    "date": "2026-02-11",
+    "brand": ["Jordan Brand", "Paris Saint-Germain"],
+    "hero": "",
+    "gallery": [],
+    "summary": "PSG 与 Jordan Brand 的第 3 双 AJ6 合作来到更“正装化”的银色路线，已确认 2026/02/24 发售，定价 $215。",
+    "content": [
+      {
+        "type": "p",
+        "text": "2019 年那双 PSG x Air Jordan 6 把足球俱乐部的身份带进了 Jordan 的经典鞋型叙事里：不是简单贴标，而是用配色与细节建立“球队气质”。2026 年，双方继续把这条线往前推——AJ6 再次成为载体，而表达方式明显更收敛、更偏向“穿搭语境”。"
+      },
+      {
+        "type": "p",
+        "text": "“Metallic Silver” 以大面积金属银皮革覆盖鞋面，整体氛围更接近正装鞋的光泽感；白色与 Pure Platinum 等浅色细节贯穿中底与后跟，强化“干净、冷调”的统一性。对 PSG 这种本就带时装属性的俱乐部来说，这条路线比高对比撞色更贴近他们的身份画像。"
+      },
+      {
+        "type": "p",
+        "text": "细节上，信息提到 PSG 专属的埃菲尔铁塔徽章会替代 AJ6 后跟的 Jumpman 标识，继续用最直观的方式强调联名关系。发售已确认在 2026 年 2 月 24 日，属于明确定档的合作款。"
+      },
+      { "type": "h2", "text": "发售信息" },
+      {
+        "type": "ul",
+        "items": [
+          "鞋款：PSG x Air Jordan 6 “Metallic Silver”",
+          "配色：Metallic Silver/Metallic Silver-Pure Platinum-Oil Grey",
+          "货号：IQ5135-001",
+          "发售时间：2026-02-24",
+          "发售价格：$215（USD）",
+          "渠道：Jordan Brand 指定店铺 / Nike.com / SNKRS"
+        ]
+      },
+      { "type": "h2", "text": "ColdTreasure 视角" },
+      {
+        "type": "p",
+        "text": "PSG 做联名最聪明的一点，是他们从不把“球队元素”做成廉价的装饰；而 Jordan Brand 这边也很清楚：当鞋型足够经典时，最高级的联名往往是“材质与克制”。这双银色 AJ6 就是典型案例。"
+      }
     ],
-    "content": "Air Jordan 6 “PSG” 释出官图：货号 IQ5135-001，配色 Metallic Silver/Metallic Silver-Pure Platinum-Oil Grey，发售日期 2026-02-24，定价 $215。后续若上架渠道与尺码信息明确，将同步写入 Record。"
+    "source_url": "https://sneakerbardetroit.com/psg-air-jordan-6-metallic-silver-2026/",
+    "tags": ["Air Jordan 6", "PSG", "Collab", "2026"]
   },
   {
     "id": "juju-watkins-lebron-nxxt-silver-lining-2026",
-    "title": "首发即 PE 配色：Juju Watkins x Nike LeBron NXXT Gen “Silver Lining” 情报图曝光",
-    "section": "news",
-    "tags": ["Nike", "LeBron", "NXXT Gen", "PE"],
-    "brand": "Nike",
-    "model": "LeBron NXXT Gen",
-    "colorway": "Metallic Silver/Light Crimson-Chalk",
-    "release_date": "Summer 2026",
-    "price": "$170",
-    "summary": "第二代 NXXT 以“首发即 PE”的方式开场：银色基底加轻红点缀，信息指向 2026 夏季。",
-    "cover": "/assets/img/lebron-nxxt.jpg",
-    "hero": "/assets/img/lebron-nxxt.jpg",
-    "pics": [
-      { "src": "/assets/img/lebron-nxxt.jpg", "credit": "Pic via: Nike" }
+    "title": "JuJu Watkins 参与打造 LeBron NXXT Gen “Silver Lining”：预计 Summer 2026 发售",
+    "date": "2026-02-11",
+    "brand": ["Nike", "LeBron"],
+    "hero": "",
+    "gallery": [],
+    "summary": "JuJu Watkins 正式被 Nike 拉入更深的篮球产品体系，“Silver Lining” 预计 Summer 2026 发售，定价 $170，并加入 By JuJu 专属细节。",
+    "content": [
+      {
+        "type": "p",
+        "text": "从 NIL 时代开始，Nike 对“未进联盟的顶级天赋”投入方式发生了结构性变化：不再只停留在上脚与 PE，而是开始让年轻球员在产品体系里拥有更明确的位置。2026 年这双 LeBron NXXT Gen by JuJu “Silver Lining”，就是这种变化的具象结果。"
+      },
+      {
+        "type": "p",
+        "text": "信息显示，JuJu 成为首位在 LeBron NXXT Gen 平台内参与设计的运动员。鞋面结合皮革与 TPU 结构，中底使用 React，并在前掌配置 Zoom Air；同时加入个人化细节：例如 jewel Swoosh、带花卉质感的点缀，以及“By JuJu”鞋舌图案，让它从一双常规团队鞋，转向更清晰的“署名作品”。"
+      },
+      {
+        "type": "p",
+        "text": "“Silver Lining” 这一主题也被解读为对她 Watts 出身的隐性致意，带有城市文化坐标的象征意味。发售方面预计落在 Summer 2026，属于 Nike 今年对新世代球员叙事的重点推进之一。"
+      },
+      { "type": "h2", "text": "发售信息" },
+      {
+        "type": "ul",
+        "items": [
+          "鞋款：JuJu Watkins x Nike LeBron NXXT Gen “Silver Lining”",
+          "配色：Metallic Silver/Light Crimson-Chalk",
+          "货号：IQ8495-002",
+          "发售时间：Summer 2026",
+          "发售价格：$170（USD）",
+          "渠道：Nike.com / 指定零售商"
+        ]
+      },
+      { "type": "h2", "text": "ColdTreasure 视角" },
+      {
+        "type": "p",
+        "text": "JuJu 的意义不止在“又一位签约球员”，而在于她被放进了 Nike 篮球的产品叙事里：用 LeBron NXXT Gen 作为入口，把下一代核心用户的注意力提前锁定。这类共创项目，很可能会成为未来几年 Nike 的常态操作。"
+      }
     ],
-    "content": "Juju Watkins x Nike LeBron NXXT Gen “Silver Lining”：货号 IQ8495-002，配色 Metallic Silver/Light Crimson-Chalk，定价 $170，时间指向 2026 夏季。若后续确认具体月份/渠道，将进入 Record 做时间轴跟踪。"
+    "source_url": "https://sneakerbardetroit.com/nike-lebron-nxxt-gen-juju-watkins-silver-lining/",
+    "tags": ["LeBron NXXT Gen", "JuJu Watkins", "Nike Basketball", "2026"]
+  },
+  {
+    "id": "kd18-kith-am95-001",
+    "title": "Kith x Nike KD 18 “Air Max 95” 释出细节：Friends & Family 级别的档案式混血",
+    "date": "2026-02-11",
+    "brand": ["Nike", "Kith", "Kevin Durant"],
+    "hero": "",
+    "gallery": [],
+    "summary": "Ronnie Fieg 公布 KD 18 与 Air Max 95 “Neon” 语言融合的特别版本，目前仍为 Friends & Family 设定，暂无公开发售计划。",
+    "content": [
+      {
+        "type": "p",
+        "text": "当一双鞋被定义为 Friends & Family，它往往不是“卖不卖”的问题，而是产品逻辑从商业策略回到个人表达。2026 年 Ronnie Fieg 公布的 Kith x Nike KD 18 “Air Max 95”，更像是一件档案作品：把 90 年代跑鞋的语言，移植到 KD 的最新签名鞋上。"
+      },
+      {
+        "type": "p",
+        "text": "鞋面以层叠灰阶做出类似 Air Max 95 的渐变结构，并用少量霓虹细节完成对 “Neon” 的指向；Kith 字样以更隐性的方式压印在灰色层次里，让它更像“懂的人才看得见”的设计，而非显眼的 Logo 堆叠。"
+      },
+      {
+        "type": "p",
+        "text": "细节上，鞋舌与鞋垫继续深化 KD 与 Kith 的共同叙事；但目前最重要的信息也最直接：这双鞋仍被标注为 Friends & Family，暂无公开发售计划。它的存在意义，更接近一份被公开展示的“私藏”。"
+      },
+      { "type": "h2", "text": "发售情报" },
+      {
+        "type": "ul",
+        "items": [
+          "鞋款：Kith x Nike KD 18 “Air Max 95”",
+          "性质：Friends & Family（暂无公开发售计划）",
+          "渠道：无公开零售信息"
+        ]
+      },
+      { "type": "h2", "text": "ColdTreasure 视角" },
+      {
+        "type": "p",
+        "text": "这类 F&F 项目最值得记录的并不是“买不买得到”，而是它把 Nike 的档案语言如何嫁接到篮球签名鞋上。它会成为一个参考样本：当性能鞋越来越同质化，真正能区分层次的，反而是这种“跨年代的引用能力”。"
+      }
+    ],
+    "source_url": "https://sneakerbardetroit.com/kith-nike-kd-18-air-max-95/",
+    "tags": ["KD 18", "Kith", "Air Max 95", "Friends & Family", "Archive"]
   }
 ]
