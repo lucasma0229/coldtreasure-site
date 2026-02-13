@@ -124,3 +124,121 @@ a:hover { opacity: 0.75; }
   .nav { gap: 16px; }
   .brand-logo { height: 24px; }
 }
+
+/* ===== 首屏：左轮播 + 右入口 ===== */
+.hero-rail{
+  display:grid;
+  grid-template-columns: 6fr 4fr;  /* 你要 6/4 */
+  gap: 28px;
+  margin-top: 26px;
+}
+
+/* 轮播容器 */
+.hero-carousel{
+  position: relative;
+  border: 1px solid #eee;
+  overflow: hidden;
+}
+
+/* slide */
+.hero-carousel .slides{
+  position: relative;
+}
+
+.slide{
+  display:none;
+  position: relative;
+  min-height: 520px;
+}
+.slide.is-active{ display:block; }
+
+.slide img{
+  width:100%;
+  height:520px;
+  object-fit: cover;
+  display:block;
+}
+
+/* 轮播文字（覆盖在图上） */
+.slide-meta{
+  position:absolute;
+  left:18px;
+  bottom:18px;
+  right:18px;
+  padding:14px 14px;
+  background: rgba(255,255,255,0.86);
+  border: 1px solid rgba(0,0,0,0.06);
+}
+
+.kicker{
+  font-size: 12px;
+  letter-spacing: 1.5px;
+  color:#555;
+  margin-bottom:6px;
+}
+.slide-title{
+  font-size: 20px;
+  line-height:1.25;
+  margin-bottom: 6px;
+}
+.slide-desc{
+  font-size: 13px;
+  color:#666;
+}
+
+/* 左右按钮 */
+.car-btn{
+  position:absolute;
+  top:50%;
+  transform: translateY(-50%);
+  width:40px;
+  height:40px;
+  border:1px solid #eee;
+  background: rgba(255,255,255,0.85);
+  cursor:pointer;
+  font-size:24px;
+  line-height:36px;
+}
+.car-btn.prev{ left:10px; }
+.car-btn.next{ right:10px; }
+.car-btn:hover{ background:#111; color:#fff; border-color:#111; }
+
+/* dots */
+.dots{
+  position:absolute;
+  left:14px;
+  top:14px;
+  display:flex;
+  gap:8px;
+}
+.dot{
+  width:8px;
+  height:8px;
+  border-radius:999px;
+  border:1px solid rgba(0,0,0,0.25);
+  background: rgba(255,255,255,0.7);
+  cursor:pointer;
+}
+.dot.is-active{
+  background:#111;
+  border-color:#111;
+}
+
+/* 右侧 5 入口 */
+.hero-entries{
+  display:flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.entry{
+  border:1px solid #eee;
+  padding:16px 16px;
+  transition: .2s;
+  min-height: 72px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+}
+.entry:hover{ background:#111; color:#fff; border-color:#111; }
+.entry-title{ font-size:14px; font-weight:600; margin-bottom:6px; }
+.entry-sub{ font-size:12px; c
