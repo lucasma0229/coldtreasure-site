@@ -4,7 +4,8 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>ColdTreasure</title>
-  <link rel="stylesheet" href="/assets/css/style.css?v=120" />
+  <!-- 强制刷新用：你每次改样式就把 v= 后面的数字加大 -->
+  <link rel="stylesheet" href="/assets/css/style.css?v=1000" />
 </head>
 
 <body class="is-home">
@@ -18,40 +19,43 @@
   <!-- 顶部导航（全站统一） -->
   <header class="topbar">
     <a class="brand-lockup" href="/" aria-label="ColdTreasure Home">
-      <!-- 左侧图标：先用占位路径，等你发 logo 我再帮你替换成最终路径 -->
-      <img class="brand-mark" src="/assets/img/brand/logo.png" alt="COLD TREASURE Logo" />
+      <!-- 左上角品牌 Logo（你已放到 assets/img/brand/logo.png） -->
+      <img class="brand-mark" src="/assets/img/brand/logo.png" alt="COLD TREASURE" />
       <div class="brand-text">
         <div class="brand-name">COLD TREASURE</div>
         <div class="brand-slogan">ARCHIVE IS NOT FOR RESALE</div>
       </div>
     </a>
 
-    <nav class="nav">
-      <a class="is-active" href="/news/">News</a>
-      <a href="/record/">Record</a>
-      <a href="/archive/">Archive</a>
+    <nav class="nav" aria-label="Primary">
+      <a class="is-active" href="/news/">NEWS</a>
+      <a href="/record/">RECORD</a>
+      <a href="/archive/">ARCHIVE</a>
     </nav>
   </header>
 
   <main class="page">
 
-    <!-- ① 首页上半页：Logo 区（你说的 1 号区域） -->
-    <section class="home-logo">
-      <!-- 建议你最终用 wordmark 图（更奢侈品质感），先用文字占位 -->
+    <!-- ① 首页上半页：Logo 区 -->
+    <section class="home-logo" aria-label="Brand">
       <div class="home-logo-inner">
-        <div class="home-wordmark">COLD TREASURE</div>
-        <div class="home-tagline">ARCHIVE IS NOT FOR RESALE</div>
+        <!-- 用你这张横幅 Logo 作为首页 1 区最合适 -->
+        <img
+          class="home-wordmark-img"
+          src="/assets/img/brand/logo.png"
+          alt="ColdTreasure"
+        />
       </div>
     </section>
 
     <!-- ②③ 首页下半页：6/4 主区 -->
-    <section class="home-hero">
+    <section class="home-hero" aria-label="Featured and Portals">
       <div class="hero-grid">
 
-        <!-- 左：轮播（图片在上，文字在下，不压图） -->
-        <section class="carousel" aria-label="Featured">
+        <!-- 左：轮播（图上文下，不压图；图片统一高度在 CSS 控制） -->
+        <section class="carousel" aria-label="Featured Carousel">
           <div class="carousel-viewport" id="carouselViewport">
-            <!-- JS 会填充 -->
+            <!-- JS 注入 -->
           </div>
 
           <div class="carousel-controls">
@@ -61,49 +65,49 @@
           </div>
         </section>
 
-        <!-- 右：五大入口（中文 + 英文辅助，英文更小） -->
-        <aside class="portal" aria-label="Sections">
+        <!-- 右：五大入口（中文 + 英文同行，英文更小，跟在中文后面） -->
+        <aside class="portal" aria-label="Portals">
           <a class="portal-item" href="/news/">
-            <div class="portal-cn">快讯</div>
-            <div class="portal-en">NEWS</div>
+            <span class="portal-cn">快讯</span>
+            <span class="portal-en">NEWS</span>
           </a>
 
           <a class="portal-item" href="/record/">
-            <div class="portal-cn">记录层</div>
-            <div class="portal-en">RECORD</div>
+            <span class="portal-cn">记录层</span>
+            <span class="portal-en">RECORD</span>
           </a>
 
           <a class="portal-item" href="/archive/">
-            <div class="portal-cn">档案馆</div>
-            <div class="portal-en">ARCHIVE</div>
+            <span class="portal-cn">档案馆</span>
+            <span class="portal-en">ARCHIVE</span>
           </a>
 
           <a class="portal-item" href="/guide/">
-            <div class="portal-cn">实用指南</div>
-            <div class="portal-en">GUIDE</div>
+            <span class="portal-cn">实用指南</span>
+            <span class="portal-en">GUIDE</span>
           </a>
 
           <a class="portal-item" href="/feature/">
-            <div class="portal-cn">专题</div>
-            <div class="portal-en">FEATURE</div>
+            <span class="portal-cn">专题</span>
+            <span class="portal-en">FEATURE</span>
           </a>
         </aside>
 
       </div>
     </section>
 
-    <!-- ⑤ 随滚轮出现的 News 层：三列，图上文下 -->
+    <!-- ⑥ 随滚动出现的 News 层：三列，图上文下 -->
     <section class="home-news" aria-label="Latest News">
       <div class="section-head">
-        <h2 class="section-title">News</h2>
+        <h2 class="section-title">NEWS</h2>
         <a class="section-link" href="/news/">查看全部资讯 →</a>
       </div>
 
       <div class="news-grid" id="homeNewsGrid">
-        <!-- JS 会填充 -->
+        <!-- JS 注入 -->
       </div>
 
-      <!-- ⑥ 可保留原 View All（再次出现也没问题，作为底部收口） -->
+      <!-- ⑦ View All（保留） -->
       <div class="view-all">
         <a class="btn btn-outline" href="/news/">查看全部资讯</a>
       </div>
@@ -111,12 +115,12 @@
 
   </main>
 
-  <!-- ⑪ 全站统一 footer -->
+  <!-- ⑫ 全站统一 footer -->
   <footer class="footer">
     © COLD TREASURE — Archive is not for resale.
   </footer>
 
-  <!-- 首页轻量数据渲染：从 posts.json 读取（不依赖你现有 app.js，避免冲突） -->
+  <!-- 首页数据渲染：读取 posts.json -->
   <script>
     (function () {
       const POSTS_URL = "/assets/data/posts.json";
@@ -177,13 +181,14 @@
         .then(posts => {
           if (!Array.isArray(posts) || posts.length === 0) return;
 
-          // 轮播：取前 3 条（你也可以之后加字段 featured 来筛选）
+          // 轮播：取前 3 条
           const slides = posts.slice(0, 3);
-
           viewport.innerHTML = slides.map(slideHTML).join("");
-          dots.innerHTML = slides.map((_, i) => `<button class="dot" type="button" aria-label="Go to slide ${i+1}" data-i="${i}"></button>`).join("");
+          dots.innerHTML = slides.map((_, i) =>
+            `<button class="dot" type="button" aria-label="Go to slide ${i + 1}" data-i="${i}"></button>`
+          ).join("");
 
-          // 首页 News：取最近 6 条（可按需调）
+          // 首页 News：取最近 6 条（保持三列密度）
           const latest = posts.slice(0, 6);
           newsGrid.innerHTML = latest.map(cardHTML).join("");
 
@@ -208,9 +213,7 @@
 
           render();
         })
-        .catch(() => {
-          // 静默失败：不影响页面结构
-        });
+        .catch(() => {});
     })();
   </script>
 
