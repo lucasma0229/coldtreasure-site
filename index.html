@@ -4,18 +4,12 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>ColdTreasure</title>
-  <link rel="stylesheet" href="/assets/css/style.css?v=2001" />
+  <link rel="stylesheet" href="/assets/css/style.css?v=2002" />
 </head>
 
 <body class="is-home">
 
-  <!-- 全站统一悬停（不位移，只淡入） -->
-  <div class="brand-hover" aria-hidden="true">
-    <div class="brand-hover-main">COLD TREASURE</div>
-    <div class="brand-hover-sub">Archive Is Not For Resale</div>
-  </div>
-
-  <!-- 顶部导航：仅文字（抛弃左上角图标） -->
+  <!-- 顶部导航：仅文字（左上角品牌可点击，但不再依赖任何 hover 浮层） -->
   <header class="topbar">
     <a class="brand-lockup" href="/" aria-label="ColdTreasure Home">
       <div class="brand-text">
@@ -25,41 +19,71 @@
     </a>
 
     <nav class="nav" aria-label="Primary">
-      <a class="is-active" href="/news/">NEWS</a>
-      <a href="/record/">RECORD</a>
-      <a href="/archive/">ARCHIVE</a>
+      <a class="nav-link is-active" href="/news/">NEWS</a>
+      <a class="nav-link" href="/record/">RECORD</a>
+      <a class="nav-link" href="/archive/">ARCHIVE</a>
     </nav>
   </header>
 
   <main class="page">
 
-    <!-- 主视觉：更 SneakerNews：左轮播（大图）右入口（独立列表，无外框） -->
+    <!-- 主视觉：左轮播（大图）右入口（独立列表） -->
     <section class="home-hero" aria-label="Featured and Portals">
       <div class="hero-grid">
 
         <section class="carousel" aria-label="Featured Carousel">
-          <div class="carousel-viewport" id="carouselViewport"></div>
+          <!-- 轮播可视区（图片层） -->
+          <div class="carousel-stage">
+            <div class="carousel-viewport" id="carouselViewport"></div>
 
-          <div class="carousel-controls">
-            <button class="btn btn-ghost" id="carouselPrev" type="button" aria-label="Previous">←</button>
-            <div class="carousel-dots" id="carouselDots" aria-label="Carousel pagination"></div>
-            <button class="btn btn-ghost" id="carouselNext" type="button" aria-label="Next">→</button>
+            <!-- 控件：全部进入图片区域内部（后续用 CSS 绝对定位实现：左右贴边、底部居中） -->
+            <div class="carousel-ui" aria-label="Carousel controls">
+              <button class="btn btn-ghost carousel-arrow is-prev" id="carouselPrev" type="button" aria-label="Previous">←</button>
+
+              <div class="carousel-dots" id="carouselDots" aria-label="Carousel pagination"></div>
+
+              <button class="btn btn-ghost carousel-arrow is-next" id="carouselNext" type="button" aria-label="Next">→</button>
+            </div>
           </div>
         </section>
 
-        <!-- 右侧入口：独立条目，不包在大卡片里 -->
+        <!-- 右侧入口：新增英文摘要（克制信息层） -->
         <aside class="portal" aria-label="Portals">
-          <a class="portal-item" href="/news/"><span class="portal-cn">快讯</span><span class="portal-en">NEWS</span></a>
-          <a class="portal-item" href="/record/"><span class="portal-cn">记录层</span><span class="portal-en">RECORD</span></a>
-          <a class="portal-item" href="/archive/"><span class="portal-cn">档案馆</span><span class="portal-en">ARCHIVE</span></a>
-          <a class="portal-item" href="/guide/"><span class="portal-cn">实用指南</span><span class="portal-en">GUIDE</span></a>
-          <a class="portal-item" href="/feature/"><span class="portal-cn">专题</span><span class="portal-en">FEATURE</span></a>
+          <a class="portal-item" href="/news/">
+            <span class="portal-cn">快讯</span>
+            <span class="portal-en">NEWS</span>
+            <span class="portal-desc">Real-time sneaker updates</span>
+          </a>
+
+          <a class="portal-item" href="/record/">
+            <span class="portal-cn">记录层</span>
+            <span class="portal-en">RECORD</span>
+            <span class="portal-desc">Release logs &amp; market notes</span>
+          </a>
+
+          <a class="portal-item" href="/archive/">
+            <span class="portal-cn">档案馆</span>
+            <span class="portal-en">ARCHIVE</span>
+            <span class="portal-desc">Curated historical catalogue</span>
+          </a>
+
+          <a class="portal-item" href="/guide/">
+            <span class="portal-cn">实用指南</span>
+            <span class="portal-en">GUIDE</span>
+            <span class="portal-desc">Practical buying &amp; care guides</span>
+          </a>
+
+          <a class="portal-item" href="/feature/">
+            <span class="portal-cn">专题</span>
+            <span class="portal-en">FEATURE</span>
+            <span class="portal-desc">In-depth stories &amp; editorial picks</span>
+          </a>
         </aside>
 
       </div>
     </section>
 
-    <!-- News 区：三列，图上文下，图片缩小（媒体密度） -->
+    <!-- News 区：三列，图上文下 -->
     <section class="home-news" aria-label="Latest News">
       <div class="section-head">
         <h2 class="section-title">NEWS</h2>
