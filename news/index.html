@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>News — ColdTreasure</title>
-  <link rel="stylesheet" href="/assets/css/style.css?v=20" />
+  <link rel="stylesheet" href="/assets/css/style.css?v=21" />
 </head>
 
 <body>
@@ -23,21 +23,74 @@
 
   <main class="page">
     <section class="page-head">
-      <h1 class="page-title">News</h1>
-      <p class="page-subtitle">Fresh drops, early looks, updates.</p>
+      <h1>News</h1>
+      <p class="sub">Fresh drops, early looks, updates.</p>
     </section>
 
-    <!-- 列表容器：JS 会把 posts.json 渲染进来 -->
-    <section class="list-wrap">
-      <div id="list" class="list"></div>
-      <div id="listEmpty" class="empty" style="display:none;">No posts yet.</div>
+    <!-- 列表：沿用你现成的 news-grid/news-card 样式 -->
+    <section class="news-block" style="margin-top:8px;">
+      <div id="newsGrid" class="news-grid"></div>
+      <div id="newsEmpty" class="empty" style="display:none; margin-top:14px; color:#666; font-size:13px;">
+        No posts yet.
+      </div>
+      <div id="newsError" class="empty" style="display:none; margin-top:14px; color:#b00020; font-size:13px;">
+        Failed to load posts.json. Please check console.
+      </div>
     </section>
   </main>
 
   <script>
-    // 告诉 app.js：这是 news 列表页
-    window.CT_PAGE = "news";
+    (async function () {
+      const grid = document.getElementById("newsGrid");
+      const empty = document.getElementById("newsEmpty");
+      const error = document.getElementById("newsError");
+
+      const esc = (s="") => String(s).replace(/[&<>"']/g, m => ({
+        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+      }[m]));
+
+      const toPostUrl = (p) => `/post/?id=${encodeURIComponent(p.id || "")}`;
+
+      try {
+        const res = await fetch("/assets/data/posts.json", { cache: "no-store" });
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        const posts = await res.json();
+        if (!Array.isArray(posts)) throw new Error("posts.json is not an array");
+
+        // 只取 news
+        const list = posts
+          .filter(p => String(p.section || "").toLowerCase() === "news")
+          // 你现在 release_date 可能是 "2026" / "2026-02-24" / "Summer 2026"
+          // 这里用字符串倒序，先保证“看起来是新的在前面”
+          .sort((a,b) => String(b.release_date || "").localeCompare(String(a.release_date || "")));
+
+        if (!list.length) {
+          empty.style.display = "block";
+          return;
+        }
+
+        grid.innerHTML = list.map(p => {
+          const img = p.cover || p.hero || "/assets/img/cover.jpg";
+          const metaParts = [];
+          if (p.colorway) metaParts.push(p.colorway);
+          if (p.price && p.price !== "TBA") metaParts.push(p.price);
+          if (p.release_date) metaParts.push(p.release_date);
+          const meta = metaParts.join(" · ");
+
+          return `
+            <a class="news-card" href="${toPostUrl(p)}">
+              <img src="${esc(img)}" alt="${esc(p.title || "")}" loading="lazy">
+              <div class="news-title">${esc(p.title || "")}</div>
+              ${meta ? `<div class="news-meta">${esc(meta)}</div>` : ``}
+            </a>
+          `;
+        }).join("");
+
+      } catch (e) {
+        console.error("[ColdTreasure] News list failed:", e);
+        error.style.display = "block";
+      }
+    })();
   </script>
-  <script src="/assets/js/app.js?v=20"></script>
 </body>
 </html>
