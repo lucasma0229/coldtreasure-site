@@ -1,42 +1,49 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="zh-Hans">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Archive · ColdTreasure</title>
-  <link rel="stylesheet" href="/assets/css/style.css?v=1" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Archive — ColdTreasure</title>
+
+  <link rel="stylesheet" href="/assets/css/style.css?v=20260213a" />
 </head>
 
 <body>
-  <header class="topbar">
-    <div class="brand">
-      <a class="brand-link" href="/">
-        <div class="brand-text">
-          <div class="brand-name">COLD TREASURE</div>
-          <div class="brand-slogan">ARCHIVE IS NOT FOR RESALE</div>
-        </div>
-      </a>
-    </div>
 
-    <nav class="nav">
-      <a href="/news/">News</a>
-      <a href="/record/">Record</a>
-      <a class="is-active" href="/archive/">Archive</a>
-    </nav>
-  </header>
+<header class="topbar">
+  <div class="brand">
+    <a class="brand-link" href="/">
+      <div class="brand-stack">
+        <div class="brand-name">COLD TREASURE</div>
+        <div class="brand-sub">ARCHIVE IS NOT FOR RESALE</div>
+      </div>
+    </a>
+  </div>
 
-  <main class="page">
-    <div class="page-head">
-      <h1 class="page-title">Archive</h1>
-      <p class="page-sub">Selected references, history, and keepers.</p>
-    </div>
+  <nav class="nav">
+    <a href="/news/">News</a>
+    <a href="/record/">Record</a>
+    <a href="/archive/">Archive</a>
+  </nav>
+</header>
 
-    <section class="rail" id="rail"></section>
-  </main>
+<main class="main">
 
-  <script>
-    window.CT_PAGE = "archive";
-  </script>
-  <script src="/assets/js/app.js?v=10"></script>
+  <section class="list-head">
+    <h1 class="list-title">Archive Index</h1>
+    <p class="list-desc">Curated reference. Past becomes future language.</p>
+  </section>
+
+  <section class="list-wrap">
+    <div id="rail" class="rail"></div>
+  </section>
+
+</main>
+
+<script>
+  window.CT_PAGE = "archive";
+</script>
+<script src="/assets/js/app.js?v=20260213a"></script>
+
 </body>
 </html>
