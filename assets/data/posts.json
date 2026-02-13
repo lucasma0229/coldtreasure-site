@@ -17,6 +17,60 @@
       { "src": "/assets/img/kd18-2.jpg", "credit": "Pic via: Nike / Kith" },
       { "src": "/assets/img/kd18-3.jpg", "credit": "Pic via: Nike / Kith" }
     ],
-    "content": "Kith × Nike KD 18 以 Air Max 95 为线索完成一次“鞋型语言嫁接”。首图用于档案封面，其余图片作为图集呈现；信息区保持克制：品牌、鞋名、配色、日期、价格一屏读完，下滑进入正文与 Update Log。"
+    "content": "Kith × Nike KD 18 以 Air Max 95 为线索完成一次“鞋型语言嫁接”。首图用于档案封面，其余图片作为图集呈现；信息区保持克制：品牌、鞋名、配色、日期、价格一屏读完。"
+  },
+  {
+    "id": "foamposite-one-floral-2026",
+    "title": "「花卉」喷 Nike Air Foamposite One “Floral” 定档 2026 再度返场",
+    "section": "news",
+    "tags": ["Nike", "Foamposite One", "Air Foamposite", "Floral"],
+    "brand": "Nike",
+    "model": "Air Foamposite One",
+    "colorway": "Black/Metallic Gold-Black",
+    "release_date": "2026",
+    "price": "$240",
+    "summary": "经典“花卉喷”确认 2026 年回归。黑金基调叠加花卉细节，依旧是 Foamposite 系列里最具辨识度的存在之一。",
+    "cover": "/assets/img/foamposite-floral.jpg",
+    "hero": "/assets/img/foamposite-floral.jpg",
+    "pics": [
+      { "src": "/assets/img/foamposite-floral.jpg", "credit": "Pic via: Sneaker Market RO" }
+    ],
+    "content": "Nike Air Foamposite One “Floral” 回归信息释出：配色 Black/Metallic Gold-Black，定价 $240，年份标注为 2026。现阶段以图像与基础发售信息为主，后续若出现更精确日期与渠道，将进入 Record 更新。"
+  },
+  {
+    "id": "air-jordan-6-psg-2026",
+    "title": "Air Jordan 6 “PSG”「大巴黎」官图曝光",
+    "section": "news",
+    "tags": ["Jordan", "Air Jordan 6", "AJ6", "PSG"],
+    "brand": "Jordan",
+    "model": "Air Jordan 6",
+    "colorway": "Metallic Silver/Pure Platinum/Oil Grey",
+    "release_date": "2026-02-24",
+    "price": "$215",
+    "summary": "AJ6 PSG 官图正式释出，金属银与冷灰调压住气质；细节取向更偏“城市制服”，适合进入你的长期 Archive 名单。",
+    "cover": "/assets/img/aj6-psg.jpg",
+    "hero": "/assets/img/aj6-psg.jpg",
+    "pics": [
+      { "src": "/assets/img/aj6-psg.jpg", "credit": "Pic via: Jordan" }
+    ],
+    "content": "Air Jordan 6 “PSG” 释出官图：货号 IQ5135-001，配色 Metallic Silver/Metallic Silver-Pure Platinum-Oil Grey，发售日期 2026-02-24，定价 $215。后续若上架渠道与尺码信息明确，将同步写入 Record。"
+  },
+  {
+    "id": "juju-watkins-lebron-nxxt-silver-lining-2026",
+    "title": "首发即 PE 配色：Juju Watkins x Nike LeBron NXXT Gen “Silver Lining” 情报图曝光",
+    "section": "news",
+    "tags": ["Nike", "LeBron", "NXXT Gen", "PE"],
+    "brand": "Nike",
+    "model": "LeBron NXXT Gen",
+    "colorway": "Metallic Silver/Light Crimson-Chalk",
+    "release_date": "Summer 2026",
+    "price": "$170",
+    "summary": "第二代 NXXT 以“首发即 PE”的方式开场：银色基底加轻红点缀，信息指向 2026 夏季。",
+    "cover": "/assets/img/lebron-nxxt.jpg",
+    "hero": "/assets/img/lebron-nxxt.jpg",
+    "pics": [
+      { "src": "/assets/img/lebron-nxxt.jpg", "credit": "Pic via: Nike" }
+    ],
+    "content": "Juju Watkins x Nike LeBron NXXT Gen “Silver Lining”：货号 IQ8495-002，配色 Metallic Silver/Light Crimson-Chalk，定价 $170，时间指向 2026 夏季。若后续确认具体月份/渠道，将进入 Record 做时间轴跟踪。"
   }
 ]
