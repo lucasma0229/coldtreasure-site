@@ -1,43 +1,48 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="zh-Hans">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>News · ColdTreasure</title>
-  <link rel="stylesheet" href="/assets/css/style.css?v=1" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>News — ColdTreasure</title>
+
+  <link rel="stylesheet" href="/assets/css/style.css?v=20260213a" />
 </head>
 
 <body>
+  <!-- 顶部栏（沿用你首页的样式类名） -->
   <header class="topbar">
     <div class="brand">
       <a class="brand-link" href="/">
-        <div class="brand-text">
+        <div class="brand-stack">
           <div class="brand-name">COLD TREASURE</div>
-          <div class="brand-slogan">ARCHIVE IS NOT FOR RESALE</div>
+          <div class="brand-sub">ARCHIVE IS NOT FOR RESALE</div>
         </div>
       </a>
     </div>
 
     <nav class="nav">
-      <a class="is-active" href="/news/">News</a>
+      <a href="/news/">News</a>
       <a href="/record/">Record</a>
       <a href="/archive/">Archive</a>
     </nav>
   </header>
 
-  <main class="page">
-    <div class="page-head">
-      <h1 class="page-title">News</h1>
-      <p class="page-sub">All updates, early looks, release info.</p>
-    </div>
+  <main class="main">
+    <section class="list-head">
+      <h1 class="list-title">News</h1>
+      <p class="list-desc">Fresh drops, early looks, updates.</p>
+    </section>
 
-    <!-- 列表容器：由 app.js 填充 -->
-    <section class="rail" id="rail"></section>
+    <!-- 关键：列表容器必须叫 rail -->
+    <section class="list-wrap">
+      <div id="rail" class="rail"></div>
+    </section>
   </main>
 
+  <!-- 关键：告诉 app.js 这是 news 页 -->
   <script>
     window.CT_PAGE = "news";
   </script>
-  <script src="/assets/js/app.js?v=10"></script>
+  <script src="/assets/js/app.js?v=20260213a"></script>
 </body>
 </html>
