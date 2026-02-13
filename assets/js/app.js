@@ -1,5 +1,5 @@
 (async function () {
-  const CT_PAGE = (window.CT_PAGE || "").toLowerCase(); // 期望：news / record / archive
+  const CT_PAGE = (window.CT_PAGE || "").toLowerCase();
   const $ = (sel) => document.querySelector(sel);
 
   const listEl = $("#list");
@@ -17,30 +17,24 @@
 
   function asText(v) { return (v == null) ? "" : String(v); }
 
-  // ✅ 统一文章链接：与首页一致（/news/<id>/）
-  // 同时按 section 走不同目录：/news/ /record/ /archive/
+  // ✅ A 路线：所有详情页统一 /news/<id>/
   function postUrl(p) {
     const id = encodeURIComponent(asText(p.id));
-    const section = asText(p.section || CT_PAGE || "news").toLowerCase();
-    const base = (section === "record" || section === "archive" || section === "news") ? section : "news";
-    return `/${base}/${id}/`;
+    return `/news/${id}/`;
   }
 
   function pickCover(p) {
     return p.cover || p.hero || "/assets/img/cover.jpg";
   }
 
-  // ✅ 更稳的排序键：优先 date/release_date，可解析就按时间，否则按字符串
   function parseDateKey(v) {
     const s = asText(v).trim();
     if (!s) return NaN;
-    // 允许 "2026" 这种：按年份 1/1 处理
     const normalized = /^\d{4}$/.test(s) ? `${s}-01-01` : s;
     const t = Date.parse(normalized);
     return Number.isFinite(t) ? t : NaN;
   }
 
-  // 读取 posts.json
   let posts = [];
   try {
     const res = await fetch("/assets/data/posts.json", { cache: "no-store" });
@@ -58,11 +52,11 @@
   // ✅ 只在列表页渲染（有 #list 才渲染）
   if (!listEl) return;
 
-  // 过滤 section：posts.json 约定 section: news / record / archive
+  // 列表页仍按 section 过滤展示（news/record/archive）
   const page = CT_PAGE || "news";
   const filtered = posts.filter(p => asText(p.section || "news").toLowerCase() === page);
 
-  // 排序：最新在前（能解析日期就按日期，不能就按字符串兜底）
+  // 最新在前
   filtered.sort((a, b) => {
     const ak = parseDateKey(a.date || a.release_date);
     const bk = parseDateKey(b.date || b.release_date);
@@ -76,7 +70,6 @@
     return;
   }
 
-  // 渲染列表
   listEl.innerHTML = filtered.map(p => {
     const url = postUrl(p);
     const cover = pickCover(p);
