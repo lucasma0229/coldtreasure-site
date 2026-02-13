@@ -1,55 +1,111 @@
-<!doctype html>
-<html lang="zh-CN">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>ColdTreasure</title>
-  <link rel="stylesheet" href="/assets/css/style.css" />
-</head>
+<header class="topbar">
+  <div class="brand">
+    <a class="brand-link" href="/">
+      <img class="brand-logo" src="/assets/img/logo.png?v=5" alt="ColdTreasure" />
+    </a>
+  </div>
 
-<body>
-  <header class="topbar">
-    <div class="brand">
-      <a class="brand-link" href="/">
-        <img class="brand-logo" src="/assets/img/logo.png?v=2" alt="ColdTreasure" />
-      </a>
-    </div>
+  <nav class="nav">
+    <a href="/news/">News</a>
+    <a href="/record/">Record</a>
+    <a href="/archive/">Archive</a>
+  </nav>
+</header>
 
-    <nav class="nav">
-      <a href="/news/">News</a>
-      <a href="/record/">Record</a>
-      <a href="/archive/">Archive</a>
-    </nav>
-  </header>
+<main class="main">
 
-  <main class="wrap">
-    <section class="layout">
-      <!-- 左侧轮转精选 -->
-      <div class="left">
-        <div class="hero" id="hero">
-          <div class="hero-media">
-            <img id="heroImg" alt="" />
+  <!-- 首屏：2/3 轮播 + 1/3 入口（你图的 2 和 3） -->
+  <section class="hero-rail">
+    <!-- 2号：轮播区 -->
+    <div class="hero-carousel" id="heroCarousel">
+      <div class="slides" id="heroSlides">
+        <!-- 你先用本地已有图；之后可让 app.js 从 posts.json 动态生成 -->
+        <article class="slide is-active">
+          <img src="/assets/img/cover.jpg" alt="">
+          <div class="slide-meta">
+            <div class="kicker">FEATURED</div>
+            <h2 class="slide-title">Kith × Nike KD 18 “Air Max 95”</h2>
+            <p class="slide-desc">Archive-level collaboration enters 2026 lineup.</p>
           </div>
-          <div class="hero-text">
-            <div class="hero-meta" id="heroMeta"></div>
-            <h1 class="hero-title" id="heroTitle"></h1>
-            <p class="hero-summary" id="heroSummary"></p>
-            <div class="hero-actions">
-              <a class="btn" id="heroBtn" href="#">Read</a>
-              <div class="dots" id="heroDots"></div>
-            </div>
+        </article>
+
+        <article class="slide">
+          <img src="/assets/img/kd18-1.jpg" alt="">
+          <div class="slide-meta">
+            <div class="kicker">NEWS</div>
+            <h2 class="slide-title">KD 18 Official Images</h2>
+            <p class="slide-desc">First detailed look and early colorway notes.</p>
           </div>
-        </div>
+        </article>
+
+        <article class="slide">
+          <img src="/assets/img/kd18-2.jpg" alt="">
+          <div class="slide-meta">
+            <div class="kicker">ARCHIVE</div>
+            <h2 class="slide-title">From Performance to Culture</h2>
+            <p class="slide-desc">Why “archive” matters in sneaker media.</p>
+          </div>
+        </article>
       </div>
 
-      <!-- 右侧 5 个入口 -->
-      <aside class="right">
-        <div class="rail-title">Latest</div>
-        <div class="rail" id="rail"></div>
-      </aside>
-    </section>
-  </main>
+      <button class="car-btn prev" type="button" aria-label="Previous">‹</button>
+      <button class="car-btn next" type="button" aria-label="Next">›</button>
+      <div class="dots" id="heroDots"></div>
+    </div>
 
-  <script src="/assets/js/app.js" defer></script>
-</body>
-</html>
+    <!-- 3号：5入口 -->
+    <aside class="hero-entries">
+      <a class="entry" href="/news/">
+        <div class="entry-title">Latest News</div>
+        <div class="entry-sub">Fresh drops, early looks</div>
+      </a>
+      <a class="entry" href="/record/">
+        <div class="entry-title">Release Record</div>
+        <div class="entry-sub">Calendar & history</div>
+      </a>
+      <a class="entry" href="/archive/">
+        <div class="entry-title">Archive Index</div>
+        <div class="entry-sub">Past becomes reference</div>
+      </a>
+      <a class="entry" href="/guide/">
+        <div class="entry-title">Guide</div>
+        <div class="entry-sub">How to read the market</div>
+      </a>
+      <a class="entry" href="/feature/">
+        <div class="entry-title">Feature</div>
+        <div class="entry-sub">Long-form stories</div>
+      </a>
+    </aside>
+  </section>
+
+  <!-- 下滑出现：News 区（先静态示例；后面你可接 posts.json） -->
+  <section class="news-block">
+    <div class="section-head">
+      <h3>News</h3>
+      <a class="more" href="/news/">View all</a>
+    </div>
+
+    <div class="news-grid reveal">
+      <a class="news-card" href="/news/">
+        <img src="/assets/img/kd18-3.jpg" alt="">
+        <div class="news-title">Kobe Protro 2026 Early Notes</div>
+        <div class="news-meta">Nike Basketball · 2026</div>
+      </a>
+
+      <a class="news-card" href="/news/">
+        <img src="/assets/img/kd18-4.jpg" alt="">
+        <div class="news-title">Fragment / Union Rumors Update</div>
+        <div class="news-meta">Jordan Brand · Rumor</div>
+      </a>
+
+      <a class="news-card" href="/news/">
+        <img src="/assets/img/kd18-5.jpg" alt="">
+        <div class="news-title">Archive: Why “Prototype” Matters</div>
+        <div class="news-meta">Archive · Editorial</div>
+      </a>
+    </div>
+  </section>
+
+</main>
+
+<script src="/assets/js/app.js?v=5"></script>
