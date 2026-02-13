@@ -1,49 +1,41 @@
 <!doctype html>
-<html lang="zh-Hans">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Record — ColdTreasure</title>
-
-  <link rel="stylesheet" href="/assets/css/style.css?v=20260213a" />
+  <link rel="stylesheet" href="/assets/css/style.css?v=30" />
 </head>
 
 <body>
-
-<header class="topbar">
-  <div class="brand">
-    <a class="brand-link" href="/">
-      <div class="brand-stack">
-        <div class="brand-name">COLD TREASURE</div>
-        <div class="brand-sub">ARCHIVE IS NOT FOR RESALE</div>
-      </div>
+  <header class="topbar">
+    <a class="brand-lockup" href="/" aria-label="ColdTreasure Home">
+      <div class="brand-name">COLD TREASURE</div>
+      <div class="brand-slogan">ARCHIVE IS NOT FOR RESALE</div>
     </a>
-  </div>
 
-  <nav class="nav">
-    <a href="/news/">News</a>
-    <a href="/record/">Record</a>
-    <a href="/archive/">Archive</a>
-  </nav>
-</header>
+    <nav class="nav">
+      <a href="/news/">News</a>
+      <a class="is-active" href="/record/">Record</a>
+      <a href="/archive/">Archive</a>
+    </nav>
+  </header>
 
-<main class="main">
+  <main class="page">
+    <section class="page-head">
+      <h1 class="page-title">Record</h1>
+      <p class="page-subtitle">Selected releases, dates, and confirmed intel.</p>
+    </section>
 
-  <section class="list-head">
-    <h1 class="list-title">Release Record</h1>
-    <p class="list-desc">Confirmed releases timeline & official data.</p>
-  </section>
+    <section class="list-wrap">
+      <div id="list" class="list"></div>
+      <div id="listEmpty" class="empty" style="display:none;">No records yet.</div>
+    </section>
+  </main>
 
-  <section class="list-wrap">
-    <div id="rail" class="rail"></div>
-  </section>
-
-</main>
-
-<script>
-  window.CT_PAGE = "record";
-</script>
-<script src="/assets/js/app.js?v=20260213a"></script>
-
+  <script>
+    window.CT_PAGE = "record";
+  </script>
+  <script src="/assets/js/app.js?v=30"></script>
 </body>
 </html>
