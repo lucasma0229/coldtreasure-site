@@ -5,13 +5,13 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>ColdTreasure</title>
 
-  <!-- CSS（务必存在） -->
-  <link rel="stylesheet" href="/assets/css/style.css?v=101" />
+  <!-- 主样式（你已经有 style.css，带版本号避免缓存） -->
+  <link rel="stylesheet" href="/assets/css/style.css?v=202" />
 </head>
 
 <body>
 
-<!-- ===== 1号区域：品牌区（文字 + slogan + hover） ===== -->
+<!-- ===== 1号区域：品牌区（文字 + slogan） ===== -->
 <header class="topbar">
   <div class="brand">
     <a class="brand-lockup" href="/">
@@ -68,9 +68,10 @@
 
       <button class="car-btn prev" id="prevBtn" type="button" aria-label="Previous">‹</button>
       <button class="car-btn next" id="nextBtn" type="button" aria-label="Next">›</button>
+
+      <!-- dots 可选（你 CSS 里若没写也不影响轮播） -->
       <div class="dots" id="heroDots"></div>
     </div>
-
 
     <!-- 3号：5入口区域 -->
     <aside class="hero-entries">
@@ -103,107 +104,115 @@
   </section>
 
 
-  <!-- ===== 下滑出现：News（你后面要用3篇文章替换就改这里） ===== -->
+  <!-- ===== NEWS / 情报区：仅3双鞋（示例） ===== -->
   <section class="news-block">
+
     <div class="section-head">
-      <h3>News</h3>
-      <a class="more" href="/news/">View all</a>
+      <h3>LATEST INTELLIGENCE</h3>
     </div>
 
     <div class="news-grid">
 
-      <a class="news-card" href="/news/">
-        <img src="/assets/img/kd18-3.jpg" alt="">
-        <div class="news-title">KD 18 Gallery – Angle 03</div>
-        <div class="news-meta">Nike · Update</div>
+      <!-- 1 Foamposite Floral -->
+      <a class="news-card" href="#">
+        <img src="/assets/img/foamposite-floral.jpg" alt="">
+        <div class="news-info">
+          <div class="news-title">
+            「花卉」喷 Nike Air Foamposite One “Floral” 定档 2026 再度返场
+          </div>
+          <div class="news-meta">
+            AA3963-002 · Black/Metallic Gold · $240 · 2026 · Pic via Sneaker Market RO
+          </div>
+        </div>
       </a>
 
-      <a class="news-card" href="/news/">
-        <img src="/assets/img/kd18-4.jpg" alt="">
-        <div class="news-title">KD 18 Gallery – Angle 04</div>
-        <div class="news-meta">Nike · Update</div>
+      <!-- 2 AJ6 PSG -->
+      <a class="news-card" href="#">
+        <img src="/assets/img/aj6-psg.jpg" alt="">
+        <div class="news-info">
+          <div class="news-title">
+            Air Jordan 6 “PSG”「大巴黎」官图曝光
+          </div>
+          <div class="news-meta">
+            IQ5135-001 · Metallic Silver · $215 · Feb 24 2026 · Pic via Jordan
+          </div>
+        </div>
       </a>
 
-      <a class="news-card" href="/news/">
-        <img src="/assets/img/kd18-5.jpg" alt="">
-        <div class="news-title">KD 18 Gallery – Angle 05</div>
-        <div class="news-meta">Nike · Update</div>
+      <!-- 3 LeBron NXXT -->
+      <a class="news-card" href="#">
+        <img src="/assets/img/lebron-nxxt.jpg" alt="">
+        <div class="news-info">
+          <div class="news-title">
+            首发即 PE 配色：Juju Watkins x Nike LeBron NXXT Gen “Silver Lining”
+          </div>
+          <div class="news-meta">
+            IQ8495-002 · Metallic Silver/Light Crimson · $170 · Summer 2026 · Pic via Nike
+          </div>
+        </div>
       </a>
 
     </div>
+
   </section>
 
 </main>
 
 
-<!-- ===== 轮播 JS（内置，100%可动，不依赖你现有 app.js） ===== -->
+<!-- ===== 轮播 JS（内置，100%可动） ===== -->
 <script>
 (function(){
   const slides = Array.from(document.querySelectorAll(".slide"));
   const next = document.getElementById("nextBtn");
   const prev = document.getElementById("prevBtn");
   const dotsWrap = document.getElementById("heroDots");
+  const carousel = document.getElementById("heroCarousel");
 
-  if(!slides.length || !next || !prev || !dotsWrap) return;
+  if(!slides.length || !next || !prev) return;
 
   let index = 0;
   let timer = null;
 
-  function render(){
-    slides.forEach((s,i)=>s.classList.toggle("is-active", i===index));
-    const dots = Array.from(dotsWrap.querySelectorAll("button"));
-    dots.forEach((d,i)=>d.classList.toggle("is-active", i===index));
-  }
-
-  function go(i){
+  function show(i){
     index = (i + slides.length) % slides.length;
-    render();
+    slides.forEach((s,idx)=>s.classList.toggle("is-active", idx===index));
+    if(dotsWrap){
+      const dots = Array.from(dotsWrap.querySelectorAll("button"));
+      dots.forEach((d,idx)=>d.classList.toggle("is-active", idx===index));
+    }
   }
 
   function start(){
     stop();
-    timer = setInterval(()=>go(index+1), 5000);
+    timer = setInterval(()=>show(index+1), 5000);
   }
-
   function stop(){
     if(timer) clearInterval(timer);
     timer = null;
   }
 
-  // dots
-  dotsWrap.innerHTML = "";
-  slides.forEach((_,i)=>{
-    const b = document.createElement("button");
-    b.type = "button";
-    b.setAttribute("aria-label", "Go to slide " + (i+1));
-    b.style.width = "8px";
-    b.style.height = "8px";
-    b.style.borderRadius = "999px";
-    b.style.border = "0";
-    b.style.margin = "0 4px";
-    b.style.opacity = i===0 ? "1" : ".45";
-    b.style.cursor = "pointer";
-    b.addEventListener("click", ()=>{ go(i); start(); });
-    dotsWrap.appendChild(b);
-  });
-
-  function syncDots(){
-    const dots = Array.from(dotsWrap.querySelectorAll("button"));
-    dots.forEach((d,i)=> d.style.opacity = (i===index ? "1" : ".45"));
+  // build dots
+  if(dotsWrap){
+    dotsWrap.innerHTML = "";
+    slides.forEach((_,i)=>{
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = (i===0 ? "is-active" : "");
+      b.setAttribute("aria-label","Go to slide "+(i+1));
+      b.addEventListener("click", ()=>{ show(i); start(); });
+      dotsWrap.appendChild(b);
+    });
   }
-  const oldRender = render;
-  render = function(){ oldRender(); syncDots(); };
 
-  next.addEventListener("click", ()=>{ go(index+1); start(); });
-  prev.addEventListener("click", ()=>{ go(index-1); start(); });
+  next.addEventListener("click", ()=>{ show(index+1); start(); });
+  prev.addEventListener("click", ()=>{ show(index-1); start(); });
 
-  const carousel = document.getElementById("heroCarousel");
   if(carousel){
     carousel.addEventListener("mouseenter", stop);
     carousel.addEventListener("mouseleave", start);
   }
 
-  render();
+  show(0);
   start();
 })();
 </script>
