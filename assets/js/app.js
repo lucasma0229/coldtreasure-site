@@ -108,3 +108,73 @@
   renderHero(0);
   if (carousel.length > 1) restart();
 })();
+
+// ===== Hero Carousel + Reveal =====
+(function () {
+  function ready(fn){ document.readyState !== 'loading' ? fn() : document.addEventListener('DOMContentLoaded', fn); }
+
+  ready(() => {
+    // --- Carousel ---
+    const root = document.getElementById('heroCarousel');
+    const slidesWrap = document.getElementById('heroSlides');
+    const dotsWrap = document.getElementById('heroDots');
+    if (!root || !slidesWrap || !dotsWrap) return;
+
+    const slides = Array.from(slidesWrap.querySelectorAll('.slide'));
+    let idx = 0;
+    let timer = null;
+
+    // build dots
+    dotsWrap.innerHTML = '';
+    slides.forEach((_, i) => {
+      const b = document.createElement('button');
+      b.className = 'dot' + (i === 0 ? ' is-active' : '');
+      b.type = 'button';
+      b.addEventListener('click', () => go(i));
+      dotsWrap.appendChild(b);
+    });
+    const dots = Array.from(dotsWrap.querySelectorAll('.dot'));
+
+    function paint() {
+      slides.forEach((s, i) => s.classList.toggle('is-active', i === idx));
+      dots.forEach((d, i) => d.classList.toggle('is-active', i === idx));
+    }
+
+    function go(i) {
+      idx = (i + slides.length) % slides.length;
+      paint();
+    }
+
+    function next(){ go(idx + 1); }
+    function prev(){ go(idx - 1); }
+
+    const btnNext = root.querySelector('.car-btn.next');
+    const btnPrev = root.querySelector('.car-btn.prev');
+    btnNext && btnNext.addEventListener('click', next);
+    btnPrev && btnPrev.addEventListener('click', prev);
+
+    function start(){
+      stop();
+      timer = setInterval(next, 5000);
+    }
+    function stop(){
+      if (timer) clearInterval(timer);
+      timer = null;
+    }
+
+    root.addEventListener('mouseenter', stop);
+    root.addEventListener('mouseleave', start);
+    start();
+
+    // --- Reveal on scroll ---
+    const reveal = document.querySelector('.reveal');
+    if (reveal) {
+      const io = new IntersectionObserver((entries) => {
+        entries.forEach(e => {
+          if (e.isIntersecting) reveal.classList.add('in-view');
+        });
+      }, { threshold: 0.15 });
+      io.observe(reveal);
+    }
+  });
+})();
