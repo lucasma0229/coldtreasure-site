@@ -284,3 +284,60 @@ a:hover{opacity:.88}
   .news-grid{grid-template-columns:1fr}
   .news-card img{height:220px}
 }
+
+/* =========================
+   ColdTreasure Brand Header
+   ========================= */
+
+.brand{
+  display:flex;
+  align-items:center;
+}
+
+.brand-lockup{
+  text-decoration:none;
+  color:#111;
+  display:block;
+  line-height:1.1;
+  padding-left:4px;
+}
+
+/* 主标题 */
+.ct-logo{
+  font-size:20px;
+  font-weight:600;
+  letter-spacing:4px;
+  color:#111;
+  transition:.35s ease;
+}
+
+/* 副标 */
+.ct-slogan{
+  font-size:11px;
+  font-weight:400;
+  letter-spacing:2.5px;
+  color:#8a8a8a;
+  margin-top:3px;
+  transition:.35s ease;
+  opacity:.55;
+}
+
+/* hover效果（高级感关键） */
+.brand-lockup:hover .ct-logo{
+  letter-spacing:6px;
+}
+
+.brand-lockup:hover .ct-slogan{
+  opacity:1;
+  color:#111;
+}
+
+/* 顶部整体空间 */
+.topbar{
+  height:84px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 48px;
+  border-bottom:1px solid #eee;
+}
