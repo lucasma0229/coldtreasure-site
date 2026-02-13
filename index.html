@@ -5,17 +5,18 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>ColdTreasure</title>
 
-  <!-- 主样式（必须存在） -->
-  <link rel="stylesheet" href="/assets/css/style.css?v=100">
+  <!-- CSS（务必存在） -->
+  <link rel="stylesheet" href="/assets/css/style.css?v=101" />
 </head>
 
 <body>
 
-<!-- ===== 1号：LOGO区 ===== -->
+<!-- ===== 1号区域：品牌区（文字 + slogan + hover） ===== -->
 <header class="topbar">
   <div class="brand">
-    <a class="brand-link" href="/">
-      <img class="brand-logo" src="/assets/img/logo.png?v=10" alt="ColdTreasure" />
+    <a class="brand-lockup" href="/">
+      <div class="ct-logo">COLD TREASURE</div>
+      <div class="ct-slogan">ARCHIVE IS NOT FOR RESALE</div>
     </a>
   </div>
 
@@ -29,143 +30,182 @@
 
 <main class="main">
 
-<!-- ===== 首屏 ===== -->
-<section class="hero-rail">
+  <!-- ===== 首屏：2号(轮播) + 3号(5入口) ===== -->
+  <section class="hero-rail">
 
-  <!-- ===== 2号：轮播 ===== -->
-  <div class="hero-carousel" id="heroCarousel">
+    <!-- 2号：轮播区域 -->
+    <div class="hero-carousel" id="heroCarousel">
+      <div class="slides" id="heroSlides">
 
-    <div class="slides" id="heroSlides">
+        <article class="slide is-active">
+          <img src="/assets/img/cover.jpg?v=3" alt="">
+          <div class="slide-meta">
+            <div class="kicker">FEATURED</div>
+            <h2 class="slide-title">Kith × Nike KD 18 “Air Max 95”</h2>
+            <p class="slide-desc">Archive-level collaboration enters 2026 lineup.</p>
+          </div>
+        </article>
 
-      <article class="slide is-active">
-        <img src="/assets/img/cover.jpg?v=3" alt="">
-        <div class="slide-meta">
-          <div class="kicker">FEATURED</div>
-          <h2 class="slide-title">Kith × Nike KD 18 “Air Max 95”</h2>
-          <p class="slide-desc">Archive-level collaboration enters 2026 lineup.</p>
-        </div>
-      </article>
+        <article class="slide">
+          <img src="/assets/img/kd18-1.jpg" alt="">
+          <div class="slide-meta">
+            <div class="kicker">NEWS</div>
+            <h2 class="slide-title">KD 18 Gallery – Angle 01</h2>
+            <p class="slide-desc">Materials / panel lines / first details.</p>
+          </div>
+        </article>
 
-      <article class="slide">
-        <img src="/assets/img/kd18-1.jpg" alt="">
-        <div class="slide-meta">
-          <div class="kicker">NEWS</div>
-          <h2 class="slide-title">KD 18 Gallery – Angle 01</h2>
-          <p class="slide-desc">Materials / panel lines / first details.</p>
-        </div>
-      </article>
+        <article class="slide">
+          <img src="/assets/img/kd18-2.jpg" alt="">
+          <div class="slide-meta">
+            <div class="kicker">NEWS</div>
+            <h2 class="slide-title">KD 18 Gallery – Angle 02</h2>
+            <p class="slide-desc">Color accents and shape notes.</p>
+          </div>
+        </article>
 
-      <article class="slide">
-        <img src="/assets/img/kd18-2.jpg" alt="">
-        <div class="slide-meta">
-          <div class="kicker">NEWS</div>
-          <h2 class="slide-title">KD 18 Gallery – Angle 02</h2>
-          <p class="slide-desc">Color accents and shape notes.</p>
-        </div>
-      </article>
+      </div>
 
+      <button class="car-btn prev" id="prevBtn" type="button" aria-label="Previous">‹</button>
+      <button class="car-btn next" id="nextBtn" type="button" aria-label="Next">›</button>
+      <div class="dots" id="heroDots"></div>
     </div>
 
-    <!-- 按钮 -->
-    <button class="car-btn prev" id="prevBtn">‹</button>
-    <button class="car-btn next" id="nextBtn">›</button>
 
-    <div class="dots" id="heroDots"></div>
-  </div>
+    <!-- 3号：5入口区域 -->
+    <aside class="hero-entries">
+      <a class="entry" href="/news/">
+        <div class="entry-title">Latest News</div>
+        <div class="entry-sub">Fresh drops, early looks</div>
+      </a>
 
+      <a class="entry" href="/record/">
+        <div class="entry-title">Release Record</div>
+        <div class="entry-sub">Calendar & history</div>
+      </a>
 
-  <!-- ===== 3号：五入口 ===== -->
-  <aside class="hero-entries">
+      <a class="entry" href="/archive/">
+        <div class="entry-title">Archive Index</div>
+        <div class="entry-sub">Past becomes reference</div>
+      </a>
 
-    <a class="entry" href="/news/">
-      <div class="entry-title">Latest News</div>
-      <div class="entry-sub">Fresh drops, early looks</div>
-    </a>
+      <a class="entry" href="/guide/">
+        <div class="entry-title">Guide</div>
+        <div class="entry-sub">How to read the market</div>
+      </a>
 
-    <a class="entry" href="/record/">
-      <div class="entry-title">Release Record</div>
-      <div class="entry-sub">Calendar & history</div>
-    </a>
+      <a class="entry" href="/feature/">
+        <div class="entry-title">Feature</div>
+        <div class="entry-sub">Long-form stories</div>
+      </a>
+    </aside>
 
-    <a class="entry" href="/archive/">
-      <div class="entry-title">Archive Index</div>
-      <div class="entry-sub">Past becomes reference</div>
-    </a>
-
-    <a class="entry" href="/guide/">
-      <div class="entry-title">Guide</div>
-      <div class="entry-sub">How to read the market</div>
-    </a>
-
-    <a class="entry" href="/feature/">
-      <div class="entry-title">Feature</div>
-      <div class="entry-sub">Long-form stories</div>
-    </a>
-
-  </aside>
-</section>
+  </section>
 
 
-<!-- ===== 下滑出现：News ===== -->
-<section class="news-block">
-  <div class="section-head">
-    <h3>News</h3>
-    <a class="more" href="/news/">View all</a>
-  </div>
+  <!-- ===== 下滑出现：News（你后面要用3篇文章替换就改这里） ===== -->
+  <section class="news-block">
+    <div class="section-head">
+      <h3>News</h3>
+      <a class="more" href="/news/">View all</a>
+    </div>
 
-  <div class="news-grid">
+    <div class="news-grid">
 
-    <a class="news-card" href="#">
-      <img src="/assets/img/kd18-3.jpg">
-      <div class="news-title">KD 18 Gallery – Angle 03</div>
-      <div class="news-meta">Nike · Update</div>
-    </a>
+      <a class="news-card" href="/news/">
+        <img src="/assets/img/kd18-3.jpg" alt="">
+        <div class="news-title">KD 18 Gallery – Angle 03</div>
+        <div class="news-meta">Nike · Update</div>
+      </a>
 
-    <a class="news-card" href="#">
-      <img src="/assets/img/kd18-4.jpg">
-      <div class="news-title">KD 18 Gallery – Angle 04</div>
-      <div class="news-meta">Nike · Update</div>
-    </a>
+      <a class="news-card" href="/news/">
+        <img src="/assets/img/kd18-4.jpg" alt="">
+        <div class="news-title">KD 18 Gallery – Angle 04</div>
+        <div class="news-meta">Nike · Update</div>
+      </a>
 
-    <a class="news-card" href="#">
-      <img src="/assets/img/kd18-5.jpg">
-      <div class="news-title">KD 18 Gallery – Angle 05</div>
-      <div class="news-meta">Nike · Update</div>
-    </a>
+      <a class="news-card" href="/news/">
+        <img src="/assets/img/kd18-5.jpg" alt="">
+        <div class="news-title">KD 18 Gallery – Angle 05</div>
+        <div class="news-meta">Nike · Update</div>
+      </a>
 
-  </div>
-</section>
+    </div>
+  </section>
 
 </main>
 
 
-<!-- ===== 轮播JS（内置版100%能动） ===== -->
+<!-- ===== 轮播 JS（内置，100%可动，不依赖你现有 app.js） ===== -->
 <script>
-const slides = document.querySelectorAll(".slide");
-const next = document.getElementById("nextBtn");
-const prev = document.getElementById("prevBtn");
+(function(){
+  const slides = Array.from(document.querySelectorAll(".slide"));
+  const next = document.getElementById("nextBtn");
+  const prev = document.getElementById("prevBtn");
+  const dotsWrap = document.getElementById("heroDots");
 
-let index = 0;
+  if(!slides.length || !next || !prev || !dotsWrap) return;
 
-function showSlide(i){
-  slides.forEach(s=>s.classList.remove("is-active"));
-  slides[i].classList.add("is-active");
-}
+  let index = 0;
+  let timer = null;
 
-next.onclick = ()=>{
-  index = (index + 1) % slides.length;
-  showSlide(index);
-}
+  function render(){
+    slides.forEach((s,i)=>s.classList.toggle("is-active", i===index));
+    const dots = Array.from(dotsWrap.querySelectorAll("button"));
+    dots.forEach((d,i)=>d.classList.toggle("is-active", i===index));
+  }
 
-prev.onclick = ()=>{
-  index = (index - 1 + slides.length) % slides.length;
-  showSlide(index);
-}
+  function go(i){
+    index = (i + slides.length) % slides.length;
+    render();
+  }
 
-setInterval(()=>{
-  index = (index + 1) % slides.length;
-  showSlide(index);
-},5000);
+  function start(){
+    stop();
+    timer = setInterval(()=>go(index+1), 5000);
+  }
+
+  function stop(){
+    if(timer) clearInterval(timer);
+    timer = null;
+  }
+
+  // dots
+  dotsWrap.innerHTML = "";
+  slides.forEach((_,i)=>{
+    const b = document.createElement("button");
+    b.type = "button";
+    b.setAttribute("aria-label", "Go to slide " + (i+1));
+    b.style.width = "8px";
+    b.style.height = "8px";
+    b.style.borderRadius = "999px";
+    b.style.border = "0";
+    b.style.margin = "0 4px";
+    b.style.opacity = i===0 ? "1" : ".45";
+    b.style.cursor = "pointer";
+    b.addEventListener("click", ()=>{ go(i); start(); });
+    dotsWrap.appendChild(b);
+  });
+
+  function syncDots(){
+    const dots = Array.from(dotsWrap.querySelectorAll("button"));
+    dots.forEach((d,i)=> d.style.opacity = (i===index ? "1" : ".45"));
+  }
+  const oldRender = render;
+  render = function(){ oldRender(); syncDots(); };
+
+  next.addEventListener("click", ()=>{ go(index+1); start(); });
+  prev.addEventListener("click", ()=>{ go(index-1); start(); });
+
+  const carousel = document.getElementById("heroCarousel");
+  if(carousel){
+    carousel.addEventListener("mouseenter", stop);
+    carousel.addEventListener("mouseleave", start);
+  }
+
+  render();
+  start();
+})();
 </script>
 
 </body>
