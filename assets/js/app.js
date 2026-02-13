@@ -1,7 +1,7 @@
 (async function () {
-  const CT_PAGE = (window.CT_PAGE || "home").toLowerCase();
-
+  const CT_PAGE = (window.CT_PAGE || "").toLowerCase(); // 期望：news / record / archive
   const $ = (sel) => document.querySelector(sel);
+
   const listEl = $("#list");
   const emptyEl = $("#listEmpty");
 
@@ -17,19 +17,27 @@
 
   function asText(v) { return (v == null) ? "" : String(v); }
 
+  // ✅ 统一文章链接：与首页一致（/news/<id>/）
+  // 同时按 section 走不同目录：/news/ /record/ /archive/
   function postUrl(p) {
-    // 你的文章页是 /post/?id=xxx
-    return `/post/?id=${encodeURIComponent(p.id)}`;
+    const id = encodeURIComponent(asText(p.id));
+    const section = asText(p.section || CT_PAGE || "news").toLowerCase();
+    const base = (section === "record" || section === "archive" || section === "news") ? section : "news";
+    return `/${base}/${id}/`;
   }
 
   function pickCover(p) {
     return p.cover || p.hero || "/assets/img/cover.jpg";
   }
 
-  function sortKey(p) {
-    // 你目前 release_date 多是 "2026" 或 "2026-02-24" 这类字符串
-    // 这里做一个“尽量可比”的排序键：优先 date/release_date，否则空
-    return asText(p.date || p.release_date || "");
+  // ✅ 更稳的排序键：优先 date/release_date，可解析就按时间，否则按字符串
+  function parseDateKey(v) {
+    const s = asText(v).trim();
+    if (!s) return NaN;
+    // 允许 "2026" 这种：按年份 1/1 处理
+    const normalized = /^\d{4}$/.test(s) ? `${s}-01-01` : s;
+    const t = Date.parse(normalized);
+    return Number.isFinite(t) ? t : NaN;
   }
 
   // 读取 posts.json
@@ -47,16 +55,20 @@
     return;
   }
 
-  // 只在列表页渲染（news/record/archive）
+  // ✅ 只在列表页渲染（有 #list 才渲染）
   if (!listEl) return;
 
-  // 过滤 section
-  // 约定：posts.json 每条有 "section": "news" / "record" / "archive"
-  const filtered = posts
-    .filter(p => asText(p.section || "news").toLowerCase() === CT_PAGE);
+  // 过滤 section：posts.json 约定 section: news / record / archive
+  const page = CT_PAGE || "news";
+  const filtered = posts.filter(p => asText(p.section || "news").toLowerCase() === page);
 
-  // 排序：倒序（最新在前）
-  filtered.sort((a, b) => sortKey(b).localeCompare(sortKey(a)));
+  // 排序：最新在前（能解析日期就按日期，不能就按字符串兜底）
+  filtered.sort((a, b) => {
+    const ak = parseDateKey(a.date || a.release_date);
+    const bk = parseDateKey(b.date || b.release_date);
+    if (Number.isFinite(ak) && Number.isFinite(bk)) return bk - ak;
+    return asText(b.date || b.release_date || "").localeCompare(asText(a.date || a.release_date || ""));
+  });
 
   if (!filtered.length) {
     if (emptyEl) emptyEl.style.display = "block";
@@ -70,7 +82,8 @@
     const cover = pickCover(p);
     const title = esc(p.title || "");
     const summary = esc(p.summary || "");
-    const brand = esc(p.brand || "");
+
+    const brand = Array.isArray(p.brand) ? esc(p.brand.join(", ")) : esc(p.brand || "");
     const model = esc(p.model || "");
     const date = esc(p.release_date || p.date || "");
 
