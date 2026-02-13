@@ -1,94 +1,131 @@
 <!doctype html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>News — ColdTreasure</title>
-  <link rel="stylesheet" href="/assets/css/style.css?v=21" />
+  <title>ColdTreasure | News</title>
+  <style>
+    :root { --w: 1100px; --muted:#777; --line:#eee; }
+    body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans SC", Arial; background:#fff; color:#111; }
+    header { border-bottom:1px solid var(--line); padding:14px 18px; position:sticky; top:0; background:#fff; z-index:10; }
+    header .wrap { max-width: var(--w); margin:0 auto; display:flex; align-items:center; justify-content:space-between; gap:12px; }
+    header a { color:#111; text-decoration:none; font-weight:700; letter-spacing:.6px; }
+    header nav { display:flex; gap:18px; }
+    header nav a { font-weight:600; color:#111; opacity:.85; }
+    main { max-width: var(--w); margin: 24px auto 64px; padding: 0 18px; }
+    h1 { font-size: 34px; margin: 0 0 6px; }
+    .sub { color:var(--muted); margin-bottom: 18px; }
+    .grid { display:grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+    .card { border:1px solid var(--line); border-radius:14px; overflow:hidden; background:#fff; display:flex; gap:12px; }
+    .thumb { width: 210px; flex: 0 0 210px; background:#f6f6f6; border-right:1px solid var(--line); display:flex; align-items:center; justify-content:center; }
+    .thumb img { width:100%; height:100%; object-fit:cover; display:block; }
+    .body { padding: 12px 12px 12px 0; flex:1; min-width:0; }
+    .title { font-size:18px; font-weight:700; margin: 8px 0 6px; line-height:1.35; }
+    .title a { color:#111; text-decoration:none; }
+    .meta { color:var(--muted); font-size:13px; display:flex; flex-wrap:wrap; gap:10px; }
+    .summary { color:#222; font-size:14px; line-height:1.65; margin: 8px 0 0; }
+    .empty { padding: 14px; border:1px solid var(--line); border-radius:14px; color:var(--muted); }
+    .error { padding: 14px; border:1px solid #ffd0d0; background:#fff5f5; border-radius:14px; }
+    @media (max-width: 900px){
+      .grid{ grid-template-columns: 1fr; }
+      .thumb{ width: 160px; flex-basis:160px; }
+    }
+    @media (max-width: 560px){
+      .card{ flex-direction:column; }
+      .thumb{ width:100%; height: 200px; border-right:none; border-bottom:1px solid var(--line); }
+      .body{ padding:12px; }
+    }
+  </style>
 </head>
-
 <body>
-  <header class="topbar">
-    <a class="brand-lockup" href="/" aria-label="ColdTreasure Home">
-      <div class="brand-name">COLD TREASURE</div>
-      <div class="brand-slogan">ARCHIVE IS NOT FOR RESALE</div>
-    </a>
-
-    <nav class="nav">
-      <a class="is-active" href="/news/">News</a>
-      <a href="/record/">Record</a>
-      <a href="/archive/">Archive</a>
-    </nav>
+  <header>
+    <div class="wrap">
+      <a href="/">COLD TREASURE</a>
+      <nav>
+        <a href="/news/">News</a>
+        <a href="/record/">Record</a>
+        <a href="/archive/">Archive</a>
+      </nav>
+    </div>
   </header>
 
-  <main class="page">
-    <section class="page-head">
-      <h1>News</h1>
-      <p class="sub">Fresh drops, early looks, updates.</p>
-    </section>
+  <main>
+    <h1>News</h1>
+    <div class="sub">Fresh drops, early looks, updates.</div>
 
-    <!-- 列表：沿用你现成的 news-grid/news-card 样式 -->
-    <section class="news-block" style="margin-top:8px;">
-      <div id="newsGrid" class="news-grid"></div>
-      <div id="newsEmpty" class="empty" style="display:none; margin-top:14px; color:#666; font-size:13px;">
-        No posts yet.
-      </div>
-      <div id="newsError" class="empty" style="display:none; margin-top:14px; color:#b00020; font-size:13px;">
-        Failed to load posts.json. Please check console.
-      </div>
-    </section>
+    <div id="app" class="empty">Loading…</div>
   </main>
 
   <script>
-    (async function () {
-      const grid = document.getElementById("newsGrid");
-      const empty = document.getElementById("newsEmpty");
-      const error = document.getElementById("newsError");
+    function escapeHtml(str){
+      return String(str ?? "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
 
-      const esc = (s="") => String(s).replace(/[&<>"']/g, m => ({
-        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
-      }[m]));
+    async function loadPosts(){
+      // 关键：绝对路径，避免 /news/ 下相对路径 404
+      const res = await fetch(`/assets/data/posts.json?v=${Date.now()}`, { cache:"no-store" });
+      if(!res.ok) throw new Error(`Failed to load /assets/data/posts.json (${res.status})`);
+      return await res.json();
+    }
 
-      const toPostUrl = (p) => `/post/?id=${encodeURIComponent(p.id || "")}`;
+    function card(post){
+      const title = post.title || post.name || post.id || "Untitled";
+      const summary = post.summary || post.desc || "";
+      const date = post.date || post.release_date || "";
+      const brand = Array.isArray(post.brand) ? post.brand.join(" / ") : (post.brand || "");
+      const hero = post.hero || post.cover || post.image || "";
 
-      try {
-        const res = await fetch("/assets/data/posts.json", { cache: "no-store" });
-        if (!res.ok) throw new Error("HTTP " + res.status);
-        const posts = await res.json();
-        if (!Array.isArray(posts)) throw new Error("posts.json is not an array");
+      return `
+        <div class="card">
+          <div class="thumb">
+            ${hero ? `<img src="${escapeHtml(hero)}" alt="${escapeHtml(title)}" loading="lazy">` : ""}
+          </div>
+          <div class="body">
+            <div class="meta">
+              ${brand ? `<span>${escapeHtml(brand)}</span>` : ""}
+              ${date ? `<span>${escapeHtml(date)}</span>` : ""}
+            </div>
+            <div class="title">
+              <a href="/post/?id=${encodeURIComponent(post.id)}">${escapeHtml(title)}</a>
+            </div>
+            ${summary ? `<div class="summary">${escapeHtml(summary)}</div>` : ""}
+          </div>
+        </div>
+      `;
+    }
 
-        // 只取 news
-        const list = posts
-          .filter(p => String(p.section || "").toLowerCase() === "news")
-          // 你现在 release_date 可能是 "2026" / "2026-02-24" / "Summer 2026"
-          // 这里用字符串倒序，先保证“看起来是新的在前面”
-          .sort((a,b) => String(b.release_date || "").localeCompare(String(a.release_date || "")));
-
-        if (!list.length) {
-          empty.style.display = "block";
+    (async function main(){
+      const app = document.getElementById("app");
+      try{
+        const posts = await loadPosts();
+        const list = Array.isArray(posts) ? posts : [];
+        if(!list.length){
+          app.className = "empty";
+          app.textContent = "No posts yet.";
           return;
         }
-
-        grid.innerHTML = list.map(p => {
-          const img = p.cover || p.hero || "/assets/img/cover.jpg";
-          const metaParts = [];
-          if (p.colorway) metaParts.push(p.colorway);
-          if (p.price && p.price !== "TBA") metaParts.push(p.price);
-          if (p.release_date) metaParts.push(p.release_date);
-          const meta = metaParts.join(" · ");
-
-          return `
-            <a class="news-card" href="${toPostUrl(p)}">
-              <img src="${esc(img)}" alt="${esc(p.title || "")}" loading="lazy">
-              <div class="news-title">${esc(p.title || "")}</div>
-              ${meta ? `<div class="news-meta">${esc(meta)}</div>` : ``}
-            </a>
-          `;
-        }).join("");
-
-      } catch (e) {
-        console.error("[ColdTreasure] News list failed:", e);
-        error.style.display = "block";
+        // 默认按 date 倒序（如果 date 为空，就按原顺序）
+        const sorted = [...list].sort((a,b)=>{
+          const da = (a.date || "").toString();
+          const db = (b.date || "").toString();
+          return db.localeCompare(da);
+        });
+        app.className = "";
+        app.innerHTML = `<div class="grid">${sorted.map(card).join("")}</div>`;
+      }catch(err){
+        app.className = "error";
+        app.innerHTML = `
+          <b>Load failed</b>
+          <div style="margin-top:8px;color:#777;">${escapeHtml(err.message || err)}</div>
+          <div style="margin-top:8px;color:#777;">
+            请确认：<code>/assets/data/posts.json</code> 真实存在，并且文件名不是 <code>posts.jason</code>
+          </div>
+        `;
       }
     })();
   </script>
