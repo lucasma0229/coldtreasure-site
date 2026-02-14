@@ -41,9 +41,8 @@ header{
   align-items:flex-start;
 }
 
-.brand{
-  line-height:1.2;
-}
+.brand{ line-height:1.2; }
+.brand a{ text-decoration:none; color:inherit; display:inline-block; }
 
 .brand-title{
   font-size:14px;
@@ -70,9 +69,7 @@ nav a{
   transition:.15s;
 }
 
-nav a:hover{
-  color:#000;
-}
+nav a:hover{ color:#000; }
 
 /* search */
 .search-wrap{
@@ -86,6 +83,7 @@ nav a:hover{
   color:#999;
   cursor:pointer;
   transition:.15s;
+  user-select:none;
 }
 .search-trigger:hover{color:#000}
 
@@ -104,6 +102,7 @@ nav a:hover{
   padding:12px 4px;
   font-size:14px;
   outline:none;
+  background:transparent;
 }
 
 .search-box input:focus{
@@ -124,11 +123,19 @@ nav a:hover{
   padding:16px;
 }
 
+.hero-link{
+  text-decoration:none;
+  color:inherit;
+  display:block;
+}
+
 .hero-img{
   width:100%;
   height:420px;
   object-fit:cover;
   border-radius:12px;
+  display:block;
+  background:#fafafa;
 }
 
 .meta{
@@ -143,17 +150,23 @@ nav a:hover{
 }
 
 /* right menu */
-.side-menu div{
+.side-menu a{
+  display:block;
   padding:18px 0;
   border-bottom:1px solid var(--border);
+  text-decoration:none;
+  color:inherit;
 }
 
 .side-menu h4{
   font-size:15px;
   margin-bottom:4px;
+  transition:.15s;
+  color:#111;
 }
 
 .side-menu small{
+  display:block;
   font-size:11px;
   color:#aaa;
   letter-spacing:.15em;
@@ -165,16 +178,28 @@ nav a:hover{
   margin-top:4px;
 }
 
-.side-menu div:hover h4{
-  color:#000;
-}
+.side-menu a:hover h4{ color:#000; }
 
 /* NEWS */
-.section-title{
+.section-head{
   margin-top:70px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+
+.section-title{
   font-size:13px;
   letter-spacing:.22em;
 }
+
+.section-more{
+  font-size:12px;
+  color:#999;
+  text-decoration:none;
+  transition:.15s;
+}
+.section-more:hover{ color:#000; }
 
 .news-grid{
   margin-top:18px;
@@ -187,12 +212,21 @@ nav a:hover{
   border:1px solid var(--border);
   border-radius:16px;
   overflow:hidden;
+  background:#fff;
+}
+
+.card a{
+  text-decoration:none;
+  color:inherit;
+  display:block;
 }
 
 .card img{
   width:100%;
   height:190px;
   object-fit:cover;
+  display:block;
+  background:#fafafa;
 }
 
 .card-inner{
@@ -202,6 +236,7 @@ nav a:hover{
 .card-title{
   font-size:14px;
   margin-top:6px;
+  transition:.15s;
 }
 
 .card:hover .card-title{color:#000}
@@ -214,6 +249,12 @@ footer{
   font-size:11px;
   color:#aaa;
 }
+
+/* graceful image fallback (if broken, keep layout clean) */
+img[data-fallback="1"]{
+  background:
+    linear-gradient(90deg, #fafafa 0%, #f5f5f5 50%, #fafafa 100%);
+}
 </style>
 </head>
 
@@ -223,19 +264,21 @@ footer{
   <div class="container header-inner">
 
     <div class="brand">
-      <div class="brand-title">COLD TREASURE</div>
-      <div class="brand-sub">Archive Is Not For Resale</div>
+      <a href="/" aria-label="ColdTreasure Home">
+        <div class="brand-title">COLD TREASURE</div>
+        <div class="brand-sub">Archive Is Not For Resale</div>
+      </a>
     </div>
 
     <nav>
-      <a href="#">NEWS</a>
-      <a href="#">RECORD</a>
-      <a href="#">ARCHIVE</a>
+      <a href="/news/">NEWS</a>
+      <a href="/record/">RECORD</a>
+      <a href="/archive/">ARCHIVE</a>
 
       <div class="search-wrap">
         <span class="search-trigger" onclick="toggleSearch()">🔍 Search</span>
         <div class="search-box" id="searchBox">
-          <input placeholder="Search archive..." />
+          <input id="searchInput" placeholder="Search archive..." />
         </div>
       </div>
 
@@ -249,69 +292,50 @@ footer{
 <section class="hero">
 
   <div class="hero-card">
-    <img class="hero-img" src="/assets/img/hero.jpg">
-    <div class="meta">2026-02-10 · Nike</div>
-    <div class="hero-title">Nike Air Foamposite One “Floral” 确认回归：Holiday 2026 再度登场</div>
+    <a class="hero-link" id="heroLink" href="/news/">
+      <img class="hero-img" id="heroImg" data-fallback="1" alt="Hero">
+      <div class="meta" id="heroMeta">—</div>
+      <div class="hero-title" id="heroTitle">Loading…</div>
+    </a>
   </div>
 
   <div class="side-menu">
-    <div>
+    <a href="/news/">
       <h4>快讯</h4>
       <small>NEWS</small>
-      <p>Real‑time sneaker updates</p>
-    </div>
-    <div>
+      <p>Real-time sneaker updates</p>
+    </a>
+    <a href="/record/">
       <h4>记录层</h4>
       <small>RECORD</small>
       <p>Release logs & market notes</p>
-    </div>
-    <div>
+    </a>
+    <a href="/archive/">
       <h4>档案馆</h4>
       <small>ARCHIVE</small>
       <p>Curated historical catalogue</p>
-    </div>
-    <div>
+    </a>
+    <a href="/guide/">
       <h4>实用指南</h4>
       <small>GUIDE</small>
       <p>Buying & care guides</p>
-    </div>
-    <div>
+    </a>
+    <a href="/feature/">
       <h4>专题</h4>
       <small>FEATURE</small>
-      <p>In‑depth stories</p>
-    </div>
+      <p>In-depth stories</p>
+    </a>
   </div>
 
 </section>
 
-<div class="section-title">NEWS</div>
+<div class="section-head">
+  <div class="section-title">NEWS</div>
+  <a class="section-more" href="/news/">查看全部资讯 →</a>
+</div>
 
-<section class="news-grid">
-
-  <div class="card">
-    <img src="/assets/img/1.jpg">
-    <div class="card-inner">
-      <div class="meta">2026-02-10 · Nike</div>
-      <div class="card-title">Nike Air Foamposite One “Floral” 确认回归</div>
-    </div>
-  </div>
-
-  <div class="card">
-    <img src="/assets/img/2.jpg">
-    <div class="card-inner">
-      <div class="meta">2026-02-11 · Jordan</div>
-      <div class="card-title">PSG x Air Jordan 6 Metallic Silver 官图释出</div>
-    </div>
-  </div>
-
-  <div class="card">
-    <img src="/assets/img/3.jpg">
-    <div class="card-inner">
-      <div class="meta">2026-02-11 · Nike</div>
-      <div class="card-title">LeBron NXXT Gen Silver Lining</div>
-    </div>
-  </div>
-
+<section class="news-grid" id="newsGrid">
+  <!-- populated by JS -->
 </section>
 
 </main>
@@ -322,9 +346,99 @@ footer{
 
 <script>
 function toggleSearch(){
-  const box=document.getElementById('searchBox');
-  box.style.display = box.style.display==='block'?'none':'block';
+  const box = document.getElementById('searchBox');
+  const open = box.style.display === 'block';
+  box.style.display = open ? 'none' : 'block';
+  if(!open){
+    setTimeout(()=>document.getElementById('searchInput')?.focus(), 0);
+  }
 }
+
+/** Build absolute URL from a possibly-relative path like /assets/... */
+function absUrl(path){
+  if(!path) return '';
+  if(path.startsWith('http://') || path.startsWith('https://')) return path;
+  // ensure leading slash
+  const p = path.startsWith('/') ? path : ('/' + path);
+  return window.location.origin + p;
+}
+
+/** Image fallback: keep clean layout if missing */
+function safeSetImg(imgEl, src){
+  imgEl.src = src || '';
+  imgEl.onerror = () => {
+    // make it visually quiet (no broken icon), keep height
+    imgEl.removeAttribute('src');
+  };
+}
+
+/** Derive post url: prefer /news/<id>/ if your site uses that pattern */
+function postUrl(post){
+  // If you already have per-post pages under /news/<id>/, this will work.
+  // Otherwise, adjust here to match your real routing.
+  return post?.id ? (`/news/${post.id}/`) : '/news/';
+}
+
+async function loadHome(){
+  const heroImg = document.getElementById('heroImg');
+  const heroMeta = document.getElementById('heroMeta');
+  const heroTitle = document.getElementById('heroTitle');
+  const heroLink = document.getElementById('heroLink');
+  const newsGrid = document.getElementById('newsGrid');
+
+  try{
+    const res = await fetch('/assets/data/posts.json', { cache: 'no-store' });
+    if(!res.ok) throw new Error('posts.json not found');
+    const posts = await res.json();
+
+    if(!Array.isArray(posts) || posts.length === 0){
+      heroTitle.textContent = 'No posts yet';
+      heroMeta.textContent = '';
+      return;
+    }
+
+    // Sort newest first by date if available
+    posts.sort((a,b)=>{
+      const da = Date.parse(a?.date || '') || 0;
+      const db = Date.parse(b?.date || '') || 0;
+      return db - da;
+    });
+
+    const hero = posts[0];
+    heroTitle.textContent = hero?.title || '—';
+    heroMeta.textContent = `${hero?.date || ''}${hero?.brand?.[0] ? ' · ' + hero.brand[0] : ''}`.trim() || '—';
+    heroLink.href = postUrl(hero);
+    safeSetImg(heroImg, absUrl(hero?.hero));
+
+    // News cards: latest 3
+    const latest = posts.slice(0,3);
+    newsGrid.innerHTML = latest.map(p=>{
+      const meta = `${p?.date || ''}${p?.brand?.[0] ? ' · ' + p.brand[0] : ''}`.trim();
+      const img = absUrl(p?.hero);
+      const url = postUrl(p);
+      const title = p?.title || '—';
+      return `
+        <div class="card">
+          <a href="${url}">
+            <img data-fallback="1" alt="${title.replaceAll('"','&quot;')}" src="${img}" onerror="this.removeAttribute('src')">
+            <div class="card-inner">
+              <div class="meta">${meta || '&nbsp;'}</div>
+              <div class="card-title">${title}</div>
+            </div>
+          </a>
+        </div>
+      `;
+    }).join('');
+
+  }catch(err){
+    // graceful fallback: keep layout, show message
+    heroTitle.textContent = 'Failed to load posts';
+    heroMeta.textContent = 'Check /assets/data/posts.json';
+    // keep grid empty
+  }
+}
+
+loadHome();
 </script>
 
 </body>
