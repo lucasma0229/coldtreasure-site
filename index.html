@@ -1,201 +1,331 @@
-<!doctype html>
-<html lang="zh-Hans">
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>ColdTreasure</title>
-  <link rel="stylesheet" href="/assets/css/style.css?v=2002" />
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ColdTreasure</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --max:1440px;
+  --text:#111;
+  --muted:#888;
+  --border:#eee;
+  --hover:#000;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:"Inter",system-ui;
+  background:#fff;
+  color:var(--text);
+}
+
+.container{
+  max-width:var(--max);
+  margin:0 auto;
+  padding:0 40px;
+}
+
+/* HEADER */
+header{
+  border-bottom:1px solid var(--border);
+  padding:26px 0 22px;
+}
+
+.header-inner{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+}
+
+.brand{
+  line-height:1.2;
+}
+
+.brand-title{
+  font-size:14px;
+  letter-spacing:.18em;
+}
+
+.brand-sub{
+  font-size:11px;
+  color:var(--muted);
+  margin-top:4px;
+}
+
+nav{
+  display:flex;
+  align-items:center;
+  gap:34px;
+}
+
+nav a{
+  font-size:13px;
+  letter-spacing:.18em;
+  text-decoration:none;
+  color:#999;
+  transition:.15s;
+}
+
+nav a:hover{
+  color:#000;
+}
+
+/* search */
+.search-wrap{
+  position:relative;
+  margin-left:10px;
+}
+
+.search-trigger{
+  font-size:13px;
+  letter-spacing:.18em;
+  color:#999;
+  cursor:pointer;
+  transition:.15s;
+}
+.search-trigger:hover{color:#000}
+
+.search-box{
+  position:absolute;
+  right:0;
+  top:40px;
+  width:460px;
+  display:none;
+}
+
+.search-box input{
+  width:100%;
+  border:none;
+  border-bottom:1px solid var(--border);
+  padding:12px 4px;
+  font-size:14px;
+  outline:none;
+}
+
+.search-box input:focus{
+  border-bottom:1px solid #aaa;
+}
+
+/* HERO */
+.hero{
+  margin-top:40px;
+  display:grid;
+  grid-template-columns:1.7fr .9fr;
+  gap:40px;
+}
+
+.hero-card{
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:16px;
+}
+
+.hero-img{
+  width:100%;
+  height:420px;
+  object-fit:cover;
+  border-radius:12px;
+}
+
+.meta{
+  font-size:12px;
+  color:var(--muted);
+  margin-top:14px;
+}
+
+.hero-title{
+  font-size:20px;
+  margin-top:6px;
+}
+
+/* right menu */
+.side-menu div{
+  padding:18px 0;
+  border-bottom:1px solid var(--border);
+}
+
+.side-menu h4{
+  font-size:15px;
+  margin-bottom:4px;
+}
+
+.side-menu small{
+  font-size:11px;
+  color:#aaa;
+  letter-spacing:.15em;
+}
+
+.side-menu p{
+  font-size:12px;
+  color:var(--muted);
+  margin-top:4px;
+}
+
+.side-menu div:hover h4{
+  color:#000;
+}
+
+/* NEWS */
+.section-title{
+  margin-top:70px;
+  font-size:13px;
+  letter-spacing:.22em;
+}
+
+.news-grid{
+  margin-top:18px;
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:28px;
+}
+
+.card{
+  border:1px solid var(--border);
+  border-radius:16px;
+  overflow:hidden;
+}
+
+.card img{
+  width:100%;
+  height:190px;
+  object-fit:cover;
+}
+
+.card-inner{
+  padding:14px 16px 18px;
+}
+
+.card-title{
+  font-size:14px;
+  margin-top:6px;
+}
+
+.card:hover .card-title{color:#000}
+
+/* footer */
+footer{
+  text-align:center;
+  margin-top:120px;
+  padding-bottom:80px;
+  font-size:11px;
+  color:#aaa;
+}
+</style>
 </head>
 
-<body class="is-home">
+<body>
 
-  <!-- 顶部导航：仅文字（左上角品牌可点击，但不再依赖任何 hover 浮层） -->
-  <header class="topbar">
-    <a class="brand-lockup" href="/" aria-label="ColdTreasure Home">
-      <div class="brand-text">
-        <div class="brand-name">COLD TREASURE</div>
-        <div class="brand-slogan">Archive Is Not For Resale</div>
+<header>
+  <div class="container header-inner">
+
+    <div class="brand">
+      <div class="brand-title">COLD TREASURE</div>
+      <div class="brand-sub">Archive Is Not For Resale</div>
+    </div>
+
+    <nav>
+      <a href="#">NEWS</a>
+      <a href="#">RECORD</a>
+      <a href="#">ARCHIVE</a>
+
+      <div class="search-wrap">
+        <span class="search-trigger" onclick="toggleSearch()">🔍 Search</span>
+        <div class="search-box" id="searchBox">
+          <input placeholder="Search archive..." />
+        </div>
       </div>
-    </a>
 
-    <nav class="nav" aria-label="Primary">
-      <a class="nav-link is-active" href="/news/">NEWS</a>
-      <a class="nav-link" href="/record/">RECORD</a>
-      <a class="nav-link" href="/archive/">ARCHIVE</a>
     </nav>
-  </header>
 
-  <main class="page">
+  </div>
+</header>
 
-    <!-- 主视觉：左轮播（大图）右入口（独立列表） -->
-    <section class="home-hero" aria-label="Featured and Portals">
-      <div class="hero-grid">
+<main class="container">
 
-        <section class="carousel" aria-label="Featured Carousel">
-          <!-- 轮播可视区（图片层） -->
-          <div class="carousel-stage">
-            <div class="carousel-viewport" id="carouselViewport"></div>
+<section class="hero">
 
-            <!-- 控件：全部进入图片区域内部（后续用 CSS 绝对定位实现：左右贴边、底部居中） -->
-            <div class="carousel-ui" aria-label="Carousel controls">
-              <button class="btn btn-ghost carousel-arrow is-prev" id="carouselPrev" type="button" aria-label="Previous">←</button>
+  <div class="hero-card">
+    <img class="hero-img" src="/assets/img/hero.jpg">
+    <div class="meta">2026-02-10 · Nike</div>
+    <div class="hero-title">Nike Air Foamposite One “Floral” 确认回归：Holiday 2026 再度登场</div>
+  </div>
 
-              <div class="carousel-dots" id="carouselDots" aria-label="Carousel pagination"></div>
+  <div class="side-menu">
+    <div>
+      <h4>快讯</h4>
+      <small>NEWS</small>
+      <p>Real‑time sneaker updates</p>
+    </div>
+    <div>
+      <h4>记录层</h4>
+      <small>RECORD</small>
+      <p>Release logs & market notes</p>
+    </div>
+    <div>
+      <h4>档案馆</h4>
+      <small>ARCHIVE</small>
+      <p>Curated historical catalogue</p>
+    </div>
+    <div>
+      <h4>实用指南</h4>
+      <small>GUIDE</small>
+      <p>Buying & care guides</p>
+    </div>
+    <div>
+      <h4>专题</h4>
+      <small>FEATURE</small>
+      <p>In‑depth stories</p>
+    </div>
+  </div>
 
-              <button class="btn btn-ghost carousel-arrow is-next" id="carouselNext" type="button" aria-label="Next">→</button>
-            </div>
-          </div>
-        </section>
+</section>
 
-        <!-- 右侧入口：新增英文摘要（克制信息层） -->
-        <aside class="portal" aria-label="Portals">
-          <a class="portal-item" href="/news/">
-            <span class="portal-cn">快讯</span>
-            <span class="portal-en">NEWS</span>
-            <span class="portal-desc">Real-time sneaker updates</span>
-          </a>
+<div class="section-title">NEWS</div>
 
-          <a class="portal-item" href="/record/">
-            <span class="portal-cn">记录层</span>
-            <span class="portal-en">RECORD</span>
-            <span class="portal-desc">Release logs &amp; market notes</span>
-          </a>
+<section class="news-grid">
 
-          <a class="portal-item" href="/archive/">
-            <span class="portal-cn">档案馆</span>
-            <span class="portal-en">ARCHIVE</span>
-            <span class="portal-desc">Curated historical catalogue</span>
-          </a>
+  <div class="card">
+    <img src="/assets/img/1.jpg">
+    <div class="card-inner">
+      <div class="meta">2026-02-10 · Nike</div>
+      <div class="card-title">Nike Air Foamposite One “Floral” 确认回归</div>
+    </div>
+  </div>
 
-          <a class="portal-item" href="/guide/">
-            <span class="portal-cn">实用指南</span>
-            <span class="portal-en">GUIDE</span>
-            <span class="portal-desc">Practical buying &amp; care guides</span>
-          </a>
+  <div class="card">
+    <img src="/assets/img/2.jpg">
+    <div class="card-inner">
+      <div class="meta">2026-02-11 · Jordan</div>
+      <div class="card-title">PSG x Air Jordan 6 Metallic Silver 官图释出</div>
+    </div>
+  </div>
 
-          <a class="portal-item" href="/feature/">
-            <span class="portal-cn">专题</span>
-            <span class="portal-en">FEATURE</span>
-            <span class="portal-desc">In-depth stories &amp; editorial picks</span>
-          </a>
-        </aside>
+  <div class="card">
+    <img src="/assets/img/3.jpg">
+    <div class="card-inner">
+      <div class="meta">2026-02-11 · Nike</div>
+      <div class="card-title">LeBron NXXT Gen Silver Lining</div>
+    </div>
+  </div>
 
-      </div>
-    </section>
+</section>
 
-    <!-- News 区：三列，图上文下 -->
-    <section class="home-news" aria-label="Latest News">
-      <div class="section-head">
-        <h2 class="section-title">NEWS</h2>
-        <a class="section-link" href="/news/">查看全部资讯 →</a>
-      </div>
+</main>
 
-      <div class="news-grid" id="homeNewsGrid"></div>
+<footer>
+© COLD TREASURE — Archive is not for resale.
+</footer>
 
-      <div class="view-all">
-        <a class="btn btn-outline" href="/news/">查看全部资讯</a>
-      </div>
-    </section>
-
-  </main>
-
-  <footer class="footer">
-    © COLD TREASURE — Archive is not for resale.
-  </footer>
-
-  <!-- 首页数据渲染：读取 posts.json -->
-  <script>
-    (function () {
-      const POSTS_URL = "/assets/data/posts.json";
-
-      const viewport = document.getElementById("carouselViewport");
-      const dots = document.getElementById("carouselDots");
-      const btnPrev = document.getElementById("carouselPrev");
-      const btnNext = document.getElementById("carouselNext");
-      const newsGrid = document.getElementById("homeNewsGrid");
-
-      if (!viewport || !dots || !btnPrev || !btnNext || !newsGrid) return;
-
-      const safeText = (s) => (s ?? "").toString();
-      const fmtDate = (d) => safeText(d);
-
-      const cardHTML = (p) => {
-        const href = "/news/" + safeText(p.id) + "/";
-        const title = safeText(p.title);
-        const date = fmtDate(p.date);
-        const brand = Array.isArray(p.brand) ? p.brand.join(", ") : safeText(p.brand || "");
-        const img = safeText(p.hero || "");
-        return `
-          <article class="news-card">
-            <a class="card-link" href="${href}">
-              <div class="card-media">
-                <img src="${img}" alt="${title}">
-              </div>
-              <div class="card-body">
-                <div class="card-meta">${date}${brand ? " · " + brand : ""}</div>
-                <h3 class="card-title">${title}</h3>
-              </div>
-            </a>
-          </article>
-        `;
-      };
-
-      const slideHTML = (p) => {
-        const href = "/news/" + safeText(p.id) + "/";
-        const title = safeText(p.title);
-        const date = fmtDate(p.date);
-        const brand = Array.isArray(p.brand) ? p.brand.join(", ") : safeText(p.brand || "");
-        const img = safeText(p.hero || "");
-        return `
-          <div class="slide">
-            <a class="slide-media" href="${href}">
-              <img src="${img}" alt="${title}">
-            </a>
-            <div class="slide-text">
-              <div class="slide-meta">${date}${brand ? " · " + brand : ""}</div>
-              <a class="slide-title" href="${href}">${title}</a>
-            </div>
-          </div>
-        `;
-      };
-
-      fetch(POSTS_URL, { cache: "no-store" })
-        .then(r => r.json())
-        .then(posts => {
-          if (!Array.isArray(posts) || posts.length === 0) return;
-
-          const slides = posts.slice(0, 3);
-          viewport.innerHTML = slides.map(slideHTML).join("");
-          dots.innerHTML = slides.map((_, i) =>
-            `<button class="dot" type="button" aria-label="Go to slide ${i + 1}" data-i="${i}"></button>`
-          ).join("");
-
-          const latest = posts.slice(0, 6);
-          newsGrid.innerHTML = latest.map(cardHTML).join("");
-
-          let index = 0;
-          const slideEls = Array.from(viewport.querySelectorAll(".slide"));
-          const dotEls = Array.from(dots.querySelectorAll(".dot"));
-
-          const render = () => {
-            slideEls.forEach((el, i) => el.classList.toggle("is-active", i === index));
-            dotEls.forEach((el, i) => el.classList.toggle("is-active", i === index));
-          };
-
-          const go = (i) => {
-            index = (i + slideEls.length) % slideEls.length;
-            render();
-          };
-
-          btnPrev.addEventListener("click", () => go(index - 1));
-          btnNext.addEventListener("click", () => go(index + 1));
-          dotEls.forEach(el => el.addEventListener("click", () => go(parseInt(el.dataset.i, 10) || 0)));
-
-          render();
-        })
-        .catch(() => {});
-    })();
-  </script>
+<script>
+function toggleSearch(){
+  const box=document.getElementById('searchBox');
+  box.style.display = box.style.display==='block'?'none':'block';
+}
+</script>
 
 </body>
 </html>
