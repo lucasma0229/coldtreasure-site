@@ -559,3 +559,79 @@ COLDTREASURE — FOOTER FINAL
 
 /* HOTFIX: Home hero 改为单列（只保留轮播） */
 .home-hero .hero-grid{ grid-template-columns: 1fr !important; }
+
+
+/* ===============================
+ENTRY STRIP — KITH-LIKE (HERO 下方一行入口条)
+=============================== */
+
+/* 让 entry 紧贴 hero 下沿，干净分割 */
+.entry-strip{
+  max-width:1240px;
+  margin:18px auto 0;
+  padding:0 26px;
+}
+
+.entry-strip__inner{
+  display:grid;
+  grid-template-columns:repeat(5, minmax(0, 1fr));
+  border-top:1px solid rgba(18,18,18,.10);
+  border-bottom:1px solid rgba(18,18,18,.10);
+}
+
+/* 每个入口：标题居中（双语），摘要靠左 */
+.entry-item{
+  display:block;
+  padding:18px 14px 16px;
+  border-right:1px solid rgba(18,18,18,.08);
+  background:transparent;
+  transition: opacity var(--t-fast) var(--ease), background var(--t-fast) var(--ease);
+}
+.entry-item:last-child{ border-right:none; }
+
+.entry-item:hover{
+  opacity:1;
+  background:rgba(0,0,0,.015);
+}
+
+/* 标题居中 */
+.entry-title{
+  text-align:center;
+  line-height:1.05;
+}
+
+.entry-en{
+  font-size:13px;
+  letter-spacing:.18em;
+  text-transform:uppercase;
+}
+
+.entry-cn{
+  margin-top:7px;
+  font-size:11px;            /* 中文小于英文 */
+  letter-spacing:.10em;
+  opacity:.78;
+}
+
+/* 摘要：在标题下方，但靠左；更弱化；尽量短 */
+.entry-desc{
+  margin-top:12px;
+  font-size:10px;            /* 小于中文 */
+  letter-spacing:.08em;
+  opacity:.52;
+  text-align:left;
+}
+
+/* 响应式：移动端改两行/三行，保持秩序 */
+@media (max-width: 980px){
+  .entry-strip__inner{ grid-template-columns:repeat(3, minmax(0, 1fr)); }
+  .entry-item:nth-child(3){ border-right:none; }
+  .entry-item:nth-child(5){ border-right:none; }
+}
+
+@media (max-width: 620px){
+  .entry-strip{ padding:0 18px; }
+  .entry-strip__inner{ grid-template-columns:repeat(2, minmax(0, 1fr)); }
+  .entry-item:nth-child(2),
+  .entry-item:nth-child(4){ border-right:none; }
+}
