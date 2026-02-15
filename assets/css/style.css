@@ -434,3 +434,35 @@ button:active{ opacity:.92; }
   .carousel-arrow.is-next{ right:8px; }
   .carousel-dots{ bottom:8px; }
 }
+
+/* ===============================
+COLDTREASURE — FOOTER FINAL
+模块化安全版（不污染全站 footer）
+=============================== */
+.site-footer{
+  width:100%;
+  text-align:center;
+
+  /* 字体系统 */
+  font-size:14px;
+  font-weight:400;
+  letter-spacing:0.14em;
+  line-height:1.2;
+
+  /* 颜色（高级灰，不抢画面） */
+  color:#A3A3A3;
+  opacity:0.9;
+
+  /* 防止任何继承污染 */
+  background:transparent;
+  border:none;
+
+  /* 留白（相当于“下移两行”的安全做法） */
+  padding: 28px 16px;
+}
+
+.site-footer__inner{
+  /* 让文字更稳定，不被某些全局样式影响 */
+  display:inline-block;
+  white-space:nowrap;
+}
