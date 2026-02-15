@@ -461,3 +461,35 @@ button:active{ opacity:.92; }
   .carousel-arrow.is-next{ right:10px; }
   .carousel-dots{ bottom:12px; }
 }
+
+/* Hero carousel */
+.hero.hero--carousel { position: relative; overflow: hidden; }
+.hero.hero--carousel .hero-track {
+  display: flex;
+  width: 100%;
+  transition: transform .6s ease;
+}
+.hero.hero--carousel .hero-slide { flex: 0 0 100%; }
+.hero.hero--carousel img { width: 100%; height: auto; display: block; }
+
+.hero.hero--carousel .hero-nav{
+  position:absolute; top:50%; transform:translateY(-50%);
+  width:34px; height:34px; border:1px solid rgba(255,255,255,.25);
+  background:rgba(0,0,0,.25); color:#fff;
+  border-radius:8px; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+}
+.hero.hero--carousel .hero-prev{ left:12px; }
+.hero.hero--carousel .hero-next{ right:12px; }
+
+.hero.hero--carousel .hero-dots{
+  position:absolute; left:50%; bottom:12px; transform:translateX(-50%);
+  display:flex; gap:8px; padding:6px 10px;
+  background:rgba(0,0,0,.18); border:1px solid rgba(255,255,255,.12);
+  border-radius:999px;
+}
+.hero.hero--carousel .hero-dot{
+  width:6px; height:6px; border-radius:999px;
+  background:rgba(255,255,255,.35); border:0; padding:0; cursor:pointer;
+}
+.hero.hero--carousel .hero-dot.is-active{ background:rgba(255,255,255,.9); }
