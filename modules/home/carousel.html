@@ -1,14 +1,74 @@
-<section class="carousel">
-  <div class="carousel-viewport">
-    <article class="slide is-active">
-      <a class="slide-media" href="/news/">
-        <img src="/assets/img/cover.jpg" alt="">
+<section class="hero" aria-label="Featured">
+  <div class="hero-stage" data-hero>
+    <!-- Slide 1 -->
+    <article class="hero-slide is-active">
+      <a class="hero-media" href="/news/">
+        <img src="/assets/img/hero/coldtreasure-hero-1.jpg" alt="">
       </a>
 
-      <div class="slide-text">
-        <div class="slide-meta">2026-02-11 · Jordan Brand</div>
-        <a class="slide-title" href="/news/">PSG x Air Jordan 6 “Metallic Silver” 官方释出</a>
+      <div class="hero-caption">
+        <div class="hero-kicker">FEATURED</div>
+        <h2 class="hero-title">Seasonal Performance Lineup</h2>
+        <p class="hero-desc">Selected highlights, curated.</p>
       </div>
     </article>
+
+    <!-- Slide 2 -->
+    <article class="hero-slide">
+      <a class="hero-media" href="/news/">
+        <img src="/assets/img/hero/coldtreasure-hero-2.jpg" alt="">
+      </a>
+
+      <div class="hero-caption">
+        <div class="hero-kicker">FEATURED</div>
+        <h2 class="hero-title">Court Rotation — Warm Tones</h2>
+        <p class="hero-desc">Shoes on floor, real context.</p>
+      </div>
+    </article>
+
+    <!-- UI -->
+    <button class="hero-arrow is-prev" type="button" aria-label="Previous">‹</button>
+    <button class="hero-arrow is-next" type="button" aria-label="Next">›</button>
+
+    <div class="hero-dots" role="tablist" aria-label="Hero pagination">
+      <button class="hero-dot is-active" type="button" aria-label="Slide 1"></button>
+      <button class="hero-dot" type="button" aria-label="Slide 2"></button>
+    </div>
   </div>
+
+  <!-- tiny JS: self-contained -->
+  <script>
+    (function(){
+      const root = document.querySelector('[data-hero]');
+      if(!root) return;
+
+      const slides = Array.from(root.querySelectorAll('.hero-slide'));
+      const dots = Array.from(root.querySelectorAll('.hero-dot'));
+      const prev = root.querySelector('.hero-arrow.is-prev');
+      const next = root.querySelector('.hero-arrow.is-next');
+
+      let i = slides.findIndex(s => s.classList.contains('is-active'));
+      if(i < 0) i = 0;
+
+      function render(n){
+        slides.forEach((s,idx)=>s.classList.toggle('is-active', idx===n));
+        dots.forEach((d,idx)=>d.classList.toggle('is-active', idx===n));
+        i = n;
+      }
+
+      function go(step){
+        const n = (i + step + slides.length) % slides.length;
+        render(n);
+      }
+
+      prev && prev.addEventListener('click', ()=>go(-1));
+      next && next.addEventListener('click', ()=>go(1));
+      dots.forEach((d,idx)=>d.addEventListener('click', ()=>render(idx)));
+
+      // autoplay (Kith-like quiet)
+      let timer = setInterval(()=>go(1), 6500);
+      root.addEventListener('mouseenter', ()=>{ clearInterval(timer); });
+      root.addEventListener('mouseleave', ()=>{ timer = setInterval(()=>go(1), 6500); });
+    })();
+  </script>
 </section>
