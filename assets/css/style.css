@@ -553,3 +553,9 @@ COLDTREASURE — FOOTER FINAL
     border-right:1px solid rgba(18,18,18,.08);
   }
 }
+
+/* HOTFIX: Home hero 右侧旧 portal 先隐藏，避免和新 entry-strip 冲突 */
+.home-hero .portal{ display:none !important; }
+
+/* HOTFIX: Home hero 改为单列（只保留轮播） */
+.home-hero .hero-grid{ grid-template-columns: 1fr !important; }
