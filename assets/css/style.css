@@ -19,10 +19,13 @@ body{
   font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "PingFang SC", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
   color:var(--ink);
   background:var(--bg);
+  overflow-x:hidden; /* ✅ 防止任何横向溢出导致右滑 */
 }
 
+img{ max-width:100%; height:auto; display:block; }
+
 /* ---------------------------
-   全站交互语言（克制）
+   Interaction (quiet)
 --------------------------- */
 a{
   color:inherit;
@@ -38,20 +41,8 @@ button{
 button:hover{ opacity:.80; }
 button:active{ opacity:.92; }
 
-.btn{
-  display:inline-flex; align-items:center; justify-content:center;
-  padding:10px 14px;
-  border-radius:999px;
-  border:1px solid var(--hair);
-  background:transparent;
-  cursor:pointer;
-}
-.btn-ghost{ border-color:transparent; }
-.btn-outline{ background:transparent; }
-
 /* ---------------------------
-   顶部导航（当前：白底 sticky 版本）
-   （你后面要做 Kith 融合 Hero，我们再在这段上做升级）
+   Topbar
 --------------------------- */
 .topbar{
   position:sticky;
@@ -96,6 +87,7 @@ button:active{ opacity:.92; }
   text-transform:uppercase;
   align-items:center;
 }
+
 .nav .nav-link,
 .nav a{
   position:relative;
@@ -107,8 +99,10 @@ button:active{ opacity:.92; }
 }
 .nav .nav-link:hover,
 .nav a:hover{ opacity:.92; }
+
 .nav .nav-link.is-active,
 .nav a.is-active{ opacity:1; }
+
 .nav .nav-link.is-active::after,
 .nav a.is-active::after{
   content:"";
@@ -121,7 +115,7 @@ button:active{ opacity:.92; }
 }
 
 /* ---------------------------
-   页面容器
+   Page container
 --------------------------- */
 .page{
   max-width:1240px;
@@ -129,127 +123,156 @@ button:active{ opacity:.92; }
   padding:26px 26px 40px;
 }
 
-/* ---------------------------
-   Home Hero（当前：轮播卡片风格）
---------------------------- */
+/* =========================================================
+   HOME HERO — KITH-LIKE FULL BLEED CAROUSEL
+   依赖你的 carousel.html 结构包含：
+   .carousel / .carousel-stage / .carousel-viewport / .slide / .slide-media img / .slide-text 等
+========================================================= */
 .home-hero{ padding-top:6px; }
 
-.hero-grid{
-  display:grid;
-  grid-template-columns: 1fr; /* 只保留轮播。入口条由 entry.html 承担 */
-  gap:26px;
-  align-items:stretch;
+/* ✅ 关键：让 hero 全宽但不产生横向滚动 */
+.hero-bleed{
+  width:100vw;
+  margin-left:calc(50% - 50vw);
+  margin-right:calc(50% - 50vw);
 }
 
 .carousel{
-  border:1px solid var(--hair);
-  border-radius:var(--radius);
+  border:0;
+  border-radius:0;
   overflow:hidden;
-  background:#fff;
+  background:#000; /* 轮播图加载前不露白 */
 }
 
 .carousel-stage{ position:relative; }
-.carousel-viewport{ padding:14px; }
+
+/* 让 viewport 变成“贴边大图” */
+.carousel-viewport{ padding:0; }
 
 .slide{ display:none; }
 .slide.is-active{ display:block; }
 
+/* 大图区域 */
 .slide-media{
+  position:relative;
   display:block;
+  width:100%;
   overflow:hidden;
-  border-radius:12px;
-  border:1px solid rgba(0,0,0,.08);
 }
 .slide-media img{
   width:100%;
-  height:380px;
+  height:min(74vh, 680px);
   object-fit:cover;
-  display:block;
-  transform:scale(1);
-  transition:transform var(--t-mid) var(--ease);
-}
-.slide-media:hover img{ transform:scale(1.02); }
-
-.slide-text{ padding:12px 4px 2px; }
-.slide-meta{
-  font-size:11px;
-  opacity:.62;
-  letter-spacing:.08em;
-}
-.slide-title{
-  display:inline-block;
-  margin-top:9px;
-  font-size:18px;
-  line-height:1.35;
 }
 
-/* 轮播控件进图 */
-.carousel-ui{
+/* ✅ 左下角叠字（Kith-like） */
+.slide-text{
   position:absolute;
-  inset:14px;
+  left:44px;
+  bottom:34px;
+  max-width:min(560px, 78vw);
+  color:#fff;
+  z-index:2;
+}
+
+/* 叠字保护：底部渐变承托 */
+.slide-media::after{
+  content:"";
+  position:absolute;
+  left:0; right:0; bottom:0;
+  height:44%;
+  background:linear-gradient(to top, rgba(0,0,0,.62), rgba(0,0,0,0));
   pointer-events:none;
 }
+
+.slide-kicker{
+  font-size:12px;
+  letter-spacing:.22em;
+  text-transform:uppercase;
+  opacity:.88;
+}
+
+.slide-title{
+  margin-top:12px;
+  display:block;
+  font-size:36px;
+  line-height:1.1;
+  letter-spacing:.01em;
+  text-shadow:0 2px 14px rgba(0,0,0,.35);
+}
+
+.slide-desc{
+  margin-top:14px;
+  font-size:14px;
+  line-height:1.5;
+  opacity:.90;
+  max-width:52ch;
+  text-shadow:0 2px 14px rgba(0,0,0,.30);
+}
+
+/* ---------------------------
+   Carousel UI in-image (arrows + dots)
+--------------------------- */
+.carousel-ui{
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  z-index:3;
+}
+
 .carousel-arrow{
   pointer-events:auto;
   position:absolute;
   top:50%;
   transform:translateY(-50%);
-  width:36px;
-  height:36px;
+  width:38px;
+  height:38px;
   border-radius:999px;
   border:1px solid rgba(255,255,255,.35);
-  background:rgba(18,18,18,.20);
-  color:rgba(255,255,255,.85);
+  background:rgba(18,18,18,.22);
+  color:rgba(255,255,255,.88);
   opacity:.55;
   backdrop-filter: blur(6px) saturate(120%);
   transition: opacity var(--t-fast) var(--ease), background var(--t-fast) var(--ease);
 }
-.carousel-arrow.is-prev{ left:10px; }
-.carousel-arrow.is-next{ right:10px; }
-.carousel-arrow:hover{
-  opacity:.85;
-  background:rgba(18,18,18,.30);
-}
+.carousel-arrow.is-prev{ left:18px; }
+.carousel-arrow.is-next{ right:18px; }
+.carousel-arrow:hover{ opacity:.88; background:rgba(18,18,18,.32); }
 
 .carousel-dots{
   pointer-events:auto;
   position:absolute;
   left:50%;
-  bottom:10px;
+  bottom:18px;
   transform:translateX(-50%);
   display:flex;
   gap:8px;
   align-items:center;
-  padding:6px 8px;
+  padding:7px 10px;
   border-radius:999px;
-  background:rgba(255,255,255,.22);
+  background:rgba(255,255,255,.18);
   backdrop-filter: blur(6px) saturate(120%);
   opacity:.60;
   transition: opacity var(--t-fast) var(--ease);
 }
-.carousel-dots:hover{ opacity:.85; }
+.carousel-dots:hover{ opacity:.88; }
 
 .dot{
-  width:7px; height:7px;
+  width:8px; height:8px;
   border-radius:999px;
   border:1px solid rgba(255,255,255,.55);
   background:transparent;
   cursor:pointer;
   padding:0;
 }
-.dot.is-active{ background:rgba(255,255,255,.78); }
+.dot.is-active{ background:rgba(255,255,255,.82); }
 
-.carousel-controls{ display:none; } /* 兼容旧结构 */
+/* 如果旧控件还在，直接隐藏避免重复 */
+.carousel-controls{ display:none !important; }
 
-/* ---------------------------
-   ENTRY STRIP — KITH-LIKE (FINAL)
-   规则：
-   1) 标题居中
-   2) 英文在前，中文在后（中文更小）
-   3) 摘要在标题下方，靠左
-   4) 摘要小于中文且更淡；尽量短（ellipsis）
-   5) 强秩序：上下发丝线 + 竖分割线
---------------------------- */
+/* =========================================================
+   ENTRY STRIP — one row, strong order
+========================================================= */
 .entry-strip{
   max-width:1240px;
   margin:18px auto 0;
@@ -264,54 +287,53 @@ button:active{ opacity:.92; }
 }
 
 .entry-item{
-  display:block;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  gap:12px;
   padding:18px 16px 16px;
+  min-height:92px;
   border-right:1px solid rgba(18,18,18,.08);
   background:transparent;
   opacity:.92;
   transition: opacity var(--t-fast) var(--ease), background var(--t-fast) var(--ease);
 }
 .entry-item:last-child{ border-right:none; }
-
-.entry-item:hover{
-  opacity:1;
-  background:rgba(0,0,0,.015);
-}
+.entry-item:hover{ opacity:1; background:rgba(0,0,0,.012); }
 
 .entry-title{
   text-align:center;
-  line-height:1.06;
+  line-height:1.05;
 }
 
 .entry-en{
-  font-size:14px;
-  letter-spacing:.16em;
+  font-size:13px;
+  letter-spacing:.18em;
   text-transform:uppercase;
   color:rgba(18,18,18,.92);
 }
 
 .entry-cn{
   margin-top:7px;
-  font-size:11px;
-  letter-spacing:.08em;
+  font-size:11px; /* 小于英文 */
+  letter-spacing:.10em;
   color:rgba(18,18,18,.70);
 }
 
 .entry-desc{
-  margin-top:12px;
-  text-align:left;
-  font-size:10px;
+  font-size:10px; /* 小于中文 */
   letter-spacing:.08em;
   color:rgba(18,18,18,.46);
   line-height:1.25;
+  text-align:left; /* ✅ 摘要靠左 */
   white-space:nowrap;
   overflow:hidden;
   text-overflow:ellipsis;
 }
 
-/* ---------------------------
-   News 区（首页三列卡片）
---------------------------- */
+/* =========================================================
+   News (keep your current)
+========================================================= */
 .home-news{
   margin-top:34px;
   padding-top:10px;
@@ -351,6 +373,7 @@ button:active{ opacity:.92; }
   background:#fff;
   transition: opacity var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
 }
+
 .news-card:hover{
   transform:translateY(-1px);
   opacity:1;
@@ -371,26 +394,29 @@ button:active{ opacity:.92; }
 .card-meta{ font-size:11px; opacity:.62; letter-spacing:.06em; }
 .card-title{ margin:8px 0 0; font-size:13px; line-height:1.45; }
 
-.view-all{ display:flex; justify-content:center; margin:26px 0 10px; }
+/* Footer */
+.footer{
+  max-width:1240px;
+  margin:64px auto 34px;
+  padding:0 26px;
+  text-align:center;
+  font-size:11px;
+  letter-spacing:.12em;
+  opacity:.45;
+}
 
-/* ---------------------------
-   Footer（模块化安全版）
---------------------------- */
+/* Modular footer (your final) */
 .site-footer{
   width:100%;
   text-align:center;
-
   font-size:14px;
   font-weight:400;
   letter-spacing:0.14em;
   line-height:1.2;
-
   color:#A3A3A3;
   opacity:0.9;
-
   background:transparent;
   border:none;
-
   padding: 28px 16px;
 }
 .site-footer__inner{
@@ -398,16 +424,19 @@ button:active{ opacity:.92; }
   white-space:nowrap;
 }
 
-/* ---------------------------
-   响应式
---------------------------- */
+/* =========================================================
+   Responsive
+========================================================= */
 @media (max-width: 980px){
   .page{ padding:22px 18px 40px; }
-  .slide-media img{ height:300px; }
-
   .news-grid{ grid-template-columns:repeat(2, minmax(0, 1fr)); }
 
-  /* entry：小屏改为横向滑动，保持“一行”逻辑 */
+  .slide-media img{ height:min(62vh, 520px); }
+  .slide-text{ left:18px; right:18px; bottom:18px; max-width:none; }
+  .slide-title{ font-size:26px; }
+  .slide-desc{ font-size:13px; }
+
+  /* entry 小屏变横向滑动，依然“一行逻辑” */
   .entry-strip__inner{
     display:flex;
     overflow:auto;
@@ -415,20 +444,20 @@ button:active{ opacity:.92; }
   }
   .entry-item{
     flex:0 0 220px;
+    border-right:1px solid rgba(18,18,18,.08);
   }
 }
 
 @media (max-width: 620px){
   .nav{ gap:14px; font-size:11px; }
-  .slide-media img{ height:230px; }
-
   .news-grid{ grid-template-columns:1fr; }
   .card-media img{ height:190px; }
 
-  .carousel-arrow{ width:34px; height:34px; }
-  .carousel-arrow.is-prev{ left:8px; }
-  .carousel-arrow.is-next{ right:8px; }
-  .carousel-dots{ bottom:8px; }
+  .slide-media img{ height:min(56vh, 420px); }
+  .slide-title{ font-size:22px; }
 
-  .entry-strip{ padding:0 18px; }
+  .carousel-arrow{ width:34px; height:34px; }
+  .carousel-arrow.is-prev{ left:10px; }
+  .carousel-arrow.is-next{ right:10px; }
+  .carousel-dots{ bottom:12px; }
 }
