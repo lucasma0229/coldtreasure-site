@@ -5,25 +5,22 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>ColdTreasure</title>
 
-  <!-- 先保留你现有的总样式 -->
-  <link rel="stylesheet" href="/assets/css/style.css?v=100" />
+  <!-- 保留你现有总样式（先不拆 CSS，保证不崩） -->
+  <link rel="stylesheet" href="/assets/css/style.css?v=200" />
 </head>
 
 <body>
-
   <!-- Header -->
   <div data-include="/modules/header/header.html"></div>
 
-  <!-- Main layout shell (负责承载 home 模块) -->
+  <!-- Main layout shell -->
   <main data-include="/modules/layout/shell.html"></main>
 
   <!-- Footer -->
   <div data-include="/modules/footer/footer.html"></div>
 
-  <!-- 拼装引擎：必须在 app.js 之前 -->
-  <script src="/assets/js/include.js?v=1" defer></script>
-
-  <!-- 你原本的逻辑脚本 -->
-  <script src="/assets/js/app.js?v=100" defer></script>
+  <!-- include.js 必须在 app.js 前面 -->
+  <script src="/assets/js/include.js?v=200" defer></script>
+  <script src="/assets/js/app.js?v=200" defer></script>
 </body>
 </html>
