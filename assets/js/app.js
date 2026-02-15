@@ -131,3 +131,35 @@
   // 列表渲染（首页没有 #list 的话会自动跳过）
   renderList(posts);
 })();
+
+/* ===============================
+HOME — Latest 3 posts loader
+=============================== */
+document.addEventListener("modules:loaded", async () => {
+  const homeNews = document.getElementById("homeNews");
+  if (!homeNews) return;
+
+  try {
+    const res = await fetch("/assets/data/posts.json?v=" + Date.now());
+    const posts = await res.json();
+
+    const latest = posts
+      .sort((a,b)=> new Date(b.date)-new Date(a.date))
+      .slice(0,3);
+
+    homeNews.innerHTML = latest.map(p => `
+      <a class="news-card" href="/post/#${p.id}">
+        <div class="card-media">
+          <img src="${p.thumb || p.cover || p.image}" alt="">
+        </div>
+        <div class="card-body">
+          <div class="card-meta">${p.date} · ${(p.brand||[]).join(", ")}</div>
+          <div class="card-title">${p.title}</div>
+        </div>
+      </a>
+    `).join("");
+
+  } catch(e){
+    console.error("home news load fail", e);
+  }
+});
