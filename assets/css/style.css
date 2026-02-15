@@ -466,3 +466,90 @@ COLDTREASURE — FOOTER FINAL
   display:inline-block;
   white-space:nowrap;
 }
+
+/* ===============================
+   HOME ENTRY — KITH-LIKE STRIP (FINAL)
+   Rules:
+   1) Title centered
+   2) EN first, ZH second (smaller)
+   3) Desc under title, LEFT aligned
+   4) Desc smaller than ZH, weaker color, <=5 words (ellipsis)
+   5) Strong order: top/bottom hairline + vertical dividers
+=============================== */
+
+.home-entry{
+  max-width:1240px;
+  margin:18px auto 0;         /* Hero下沿呼吸 */
+  padding:0 26px;
+}
+
+/* 一条“目录横条”：强秩序 */
+.entry-strip{
+  display:grid;
+  grid-template-columns:repeat(5, minmax(0, 1fr));
+  border-top:1px solid rgba(18,18,18,.12);
+  border-bottom:1px solid rgba(18,18,18,.12);
+}
+
+/* 单元格：上部居中标题，下部左对齐摘要 */
+.entry-cell{
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  gap:10px;
+  padding:18px 16px 16px;
+  min-height:92px;
+  border-right:1px solid rgba(18,18,18,.08);
+  opacity:.90;
+  transition: opacity var(--t-fast) var(--ease);
+}
+.entry-cell:last-child{ border-right:none; }
+.entry-cell:hover{ opacity:1; }
+
+/* 标题块：整体居中 */
+.entry-title{
+  text-align:center;
+  line-height:1.08;
+}
+
+/* 英文：更大、更“目录感” */
+.entry-en{
+  font-size:14px;
+  letter-spacing:.16em;
+  text-transform:uppercase;
+  color:rgba(18,18,18,.92);
+}
+
+/* 中文：更小 */
+.entry-zh{
+  margin-top:6px;
+  font-size:11px;             /* 小于英文 */
+  letter-spacing:.06em;
+  color:rgba(18,18,18,.70);
+}
+
+/* 摘要：在下方、靠左、更小、更淡、限制长度 */
+.entry-desc{
+  text-align:left;            /* 关键：摘要靠左 */
+  font-size:10px;             /* 小于中文 */
+  letter-spacing:.08em;
+  color:rgba(18,18,18,.46);   /* 弱化 */
+  line-height:1.25;
+
+  white-space:nowrap;         /* ≤5词的“短句感” */
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+/* 响应式：仍保持“一行逻辑” → 小屏变横向滑动 */
+@media (max-width: 980px){
+  .entry-strip{
+    display:flex;
+    overflow:auto;
+    -webkit-overflow-scrolling:touch;
+  }
+  .entry-cell{
+    flex:0 0 220px;            /* 每项固定宽度，保持秩序 */
+    border-right:1px solid rgba(18,18,18,.08);
+  }
+}
