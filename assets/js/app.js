@@ -34,19 +34,14 @@
 
   // 等待模块注入完成：由 include.js 触发 modules:loaded
   function waitForModulesLoaded(timeoutMs = 2500) {
-    // 若页面没用 include.js / 没有模块系统，也要能继续执行（兜底）
     return new Promise((resolve) => {
       let done = false;
-
       const finish = () => {
         if (done) return;
         done = true;
         resolve();
       };
-
       document.addEventListener("modules:loaded", finish, { once: true });
-
-      // 兜底：超时也继续（避免卡死）
       setTimeout(finish, timeoutMs);
     });
   }
@@ -62,15 +57,11 @@
   function renderList(posts) {
     const listEl = $("#list");
     const emptyEl = $("#listEmpty");
-
-    // ✅ 只在列表页渲染（有 #list 才渲染）
     if (!listEl) return;
 
-    // 列表页仍按 section 过滤展示（news/record/archive）
     const page = CT_PAGE || "news";
     const filtered = posts.filter(p => asText(p.section || "news").toLowerCase() === page);
 
-    // 最新在前
     filtered.sort((a, b) => {
       const ak = parseDateKey(a.date || a.release_date);
       const bk = parseDateKey(b.date || b.release_date);
@@ -111,8 +102,95 @@
     }).join("");
   }
 
+  // ✅ Hero carousel (HOME)
+  function initHeroCarousel() {
+    const hero = document.querySelector(".hero");
+    if (!hero) return;
+
+    // 允许你的 hero 容器里放一个 <img> 或者空容器都行
+    // 优先使用 data-hero-images，其次用默认两张图
+    const attr = hero.getAttribute("data-hero-images");
+    const images = (attr ? attr.split(",") : [
+      "/assets/img/hero/coldtreasure-hero-1.jpg",
+      "/assets/img/hero/coldtreasure-hero-2.jpg",
+    ]).map(s => s.trim()).filter(Boolean);
+
+    if (images.length <= 1) return;
+
+    // 建一个最小结构（不依赖你现有 HTML）
+    hero.classList.add("hero--carousel");
+    hero.innerHTML = `
+      <div class="hero-track"></div>
+      <button class="hero-nav hero-prev" aria-label="Previous">‹</button>
+      <button class="hero-nav hero-next" aria-label="Next">›</button>
+      <div class="hero-dots" aria-label="Carousel pagination"></div>
+    `;
+
+    const track = hero.querySelector(".hero-track");
+    const dots = hero.querySelector(".hero-dots");
+    const prevBtn = hero.querySelector(".hero-prev");
+    const nextBtn = hero.querySelector(".hero-next");
+
+    track.innerHTML = images.map((src, i) => `
+      <div class="hero-slide" data-i="${i}">
+        <img src="${esc(src)}" alt="" loading="${i === 0 ? "eager" : "lazy"}">
+      </div>
+    `).join("");
+
+    dots.innerHTML = images.map((_, i) =>
+      `<button class="hero-dot" data-i="${i}" aria-label="Go to slide ${i + 1}"></button>`
+    ).join("");
+
+    let idx = 0;
+    let timer = null;
+
+    const setActive = (n) => {
+      idx = (n + images.length) % images.length;
+      track.style.transform = `translateX(${-idx * 100}%)`;
+      dots.querySelectorAll(".hero-dot").forEach((b, i) => {
+        if (i === idx) b.classList.add("is-active");
+        else b.classList.remove("is-active");
+      });
+    };
+
+    const start = () => {
+      stop();
+      timer = setInterval(() => setActive(idx + 1), 4500);
+    };
+
+    const stop = () => {
+      if (timer) clearInterval(timer);
+      timer = null;
+    };
+
+    prevBtn.addEventListener("click", () => { setActive(idx - 1); start(); });
+    nextBtn.addEventListener("click", () => { setActive(idx + 1); start(); });
+
+    dots.addEventListener("click", (e) => {
+      const b = e.target.closest(".hero-dot");
+      if (!b) return;
+      const n = parseInt(b.getAttribute("data-i"), 10);
+      if (Number.isFinite(n)) { setActive(n); start(); }
+    });
+
+    hero.addEventListener("mouseenter", stop);
+    hero.addEventListener("mouseleave", start);
+
+    // reduced motion：不自动轮播
+    if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setActive(0);
+      return;
+    }
+
+    setActive(0);
+    start();
+  }
+
   // ✅ 关键：等模块注入完成后再开始（避免 “找不到元素”）
   await waitForModulesLoaded();
+
+  // 初始化 hero 轮播（只要首页有 .hero 就会启动）
+  initHeroCarousel();
 
   let posts = [];
   try {
@@ -120,7 +198,6 @@
   } catch (e) {
     console.error("[ColdTreasure] failed to load posts.json:", e);
 
-    // 只有在列表页（存在 #list）才显示错误提示
     const listEl = $("#list");
     if (listEl) {
       listEl.innerHTML = `<div class="empty">posts.json 读取失败：请打开控制台查看报错（F12 → Console）</div>`;
@@ -144,22 +221,23 @@ document.addEventListener("modules:loaded", async () => {
     const posts = await res.json();
 
     const latest = posts
-      .sort((a,b)=> new Date(b.date)-new Date(a.date))
-      .slice(0,3);
+      .slice()
+      .sort((a, b) => new Date(b.date) - new Date(a.date))
+      .slice(0, 3);
 
     homeNews.innerHTML = latest.map(p => `
-      <a class="news-card" href="/post/#${p.id}">
+      <a class="news-card" href="/news/${encodeURIComponent(p.id)}/">
         <div class="card-media">
-          <img src="${p.thumb || p.cover || p.image}" alt="">
+          <img src="${esc(p.thumb || p.cover || p.image || p.hero || "")}" alt="">
         </div>
         <div class="card-body">
-          <div class="card-meta">${p.date} · ${(p.brand||[]).join(", ")}</div>
-          <div class="card-title">${p.title}</div>
+          <div class="card-meta">${esc(p.date || "")} · ${esc((p.brand || []).join(", "))}</div>
+          <div class="card-title">${esc(p.title || "")}</div>
         </div>
       </a>
     `).join("");
 
-  } catch(e){
+  } catch (e) {
     console.error("home news load fail", e);
   }
 });
