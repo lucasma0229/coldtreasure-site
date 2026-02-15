@@ -6,7 +6,6 @@
   --hair2:rgba(18,18,18,.10);
   --radius:14px;
 
-  /* 交互统一节奏 */
   --ease: cubic-bezier(.2,.8,.2,1);
   --t-fast: 140ms;
   --t-mid: 180ms;
@@ -51,13 +50,8 @@ button:active{ opacity:.92; }
 .btn-outline{ background:transparent; }
 
 /* ---------------------------
-   顶部导航（Kith-like：中间 Logo）
-   结构建议：
-   <header class="topbar">
-     <nav class="nav nav-left">...</nav>
-     <a class="brand-lockup">...</a>
-     <div class="nav-right"><button class="search-btn">⌕</button></div>
-   </header>
+   顶部导航（当前：白底 sticky 版本）
+   （你后面要做 Kith 融合 Hero，我们再在这段上做升级）
 --------------------------- */
 .topbar{
   position:sticky;
@@ -66,23 +60,19 @@ button:active{ opacity:.92; }
   background:rgba(255,255,255,.94);
   backdrop-filter:saturate(130%) blur(10px);
   border-bottom:1px solid var(--hair);
-  padding:14px 26px;
-
-  display:grid;
-  grid-template-columns: 1fr auto 1fr; /* 左菜单 / 中Logo / 右搜索 */
+  padding:16px 26px;
+  display:flex;
   align-items:center;
-  gap:18px;
+  justify-content:space-between;
 }
 
-/* 中间品牌（静态档案馆标识感） */
 .brand-lockup{
-  justify-self:center;
   display:flex;
   align-items:center;
   min-width:0;
 }
 .brand-lockup:hover{ opacity:1; }
-.brand-text{ display:flex; flex-direction:column; line-height:1.05; text-align:center; }
+.brand-text{ display:flex; flex-direction:column; line-height:1.05; }
 
 .brand-name{
   font-size:12px;
@@ -98,18 +88,14 @@ button:active{ opacity:.92; }
   white-space:nowrap;
 }
 
-/* 左侧主导航：目录索引气质 */
 .nav{
   display:flex;
-  gap:16px;
+  gap:18px;
   font-size:11.5px;
   letter-spacing:.14em;
   text-transform:uppercase;
   align-items:center;
-  min-width:0;
 }
-.nav-left{ justify-self:start; }
-
 .nav .nav-link,
 .nav a{
   position:relative;
@@ -121,7 +107,6 @@ button:active{ opacity:.92; }
 }
 .nav .nav-link:hover,
 .nav a:hover{ opacity:.92; }
-
 .nav .nav-link.is-active,
 .nav a.is-active{ opacity:1; }
 .nav .nav-link.is-active::after,
@@ -135,25 +120,6 @@ button:active{ opacity:.92; }
   background:rgba(18,18,18,.65);
 }
 
-/* 右侧：只保留搜索图标 */
-.nav-right{
-  justify-self:end;
-  display:flex;
-  align-items:center;
-  gap:10px;
-}
-.search-btn{
-  appearance:none;
-  border:0;
-  background:transparent;
-  padding:6px;
-  line-height:1;
-  cursor:pointer;
-  opacity:.72;
-  transition: opacity var(--t-fast) var(--ease);
-}
-.search-btn:hover{ opacity:.95; }
-
 /* ---------------------------
    页面容器
 --------------------------- */
@@ -164,9 +130,16 @@ button:active{ opacity:.92; }
 }
 
 /* ---------------------------
-   Home Hero（第一屏：轮播）
+   Home Hero（当前：轮播卡片风格）
 --------------------------- */
 .home-hero{ padding-top:6px; }
+
+.hero-grid{
+  display:grid;
+  grid-template-columns: 1fr; /* 只保留轮播。入口条由 entry.html 承担 */
+  gap:26px;
+  align-items:stretch;
+}
 
 .carousel{
   border:1px solid var(--hair);
@@ -189,7 +162,7 @@ button:active{ opacity:.92; }
 }
 .slide-media img{
   width:100%;
-  height:420px;
+  height:380px;
   object-fit:cover;
   display:block;
   transform:scale(1);
@@ -210,7 +183,7 @@ button:active{ opacity:.92; }
   line-height:1.35;
 }
 
-/* 轮播控件进图（低存在感） */
+/* 轮播控件进图 */
 .carousel-ui{
   position:absolute;
   inset:14px;
@@ -233,7 +206,10 @@ button:active{ opacity:.92; }
 }
 .carousel-arrow.is-prev{ left:10px; }
 .carousel-arrow.is-next{ right:10px; }
-.carousel-arrow:hover{ opacity:.85; background:rgba(18,18,18,.30); }
+.carousel-arrow:hover{
+  opacity:.85;
+  background:rgba(18,18,18,.30);
+}
 
 .carousel-dots{
   pointer-events:auto;
@@ -263,16 +239,16 @@ button:active{ opacity:.92; }
 }
 .dot.is-active{ background:rgba(255,255,255,.78); }
 
-/* 兼容旧控件容器 */
-.carousel-controls{ display:none; }
+.carousel-controls{ display:none; } /* 兼容旧结构 */
 
 /* ---------------------------
-   第二屏：5 大入口（Kith-like 横条）
-   你的规则：
+   ENTRY STRIP — KITH-LIKE (FINAL)
+   规则：
    1) 标题居中
-   2) 英文在前 中文在后（中文更小）
+   2) 英文在前，中文在后（中文更小）
    3) 摘要在标题下方，靠左
-   4) 摘要更小更淡，尽量 <= 5 words（ellipsis）
+   4) 摘要小于中文且更淡；尽量短（ellipsis）
+   5) 强秩序：上下发丝线 + 竖分割线
 --------------------------- */
 .entry-strip{
   max-width:1240px;
@@ -283,45 +259,48 @@ button:active{ opacity:.92; }
 .entry-strip__inner{
   display:grid;
   grid-template-columns:repeat(5, minmax(0, 1fr));
-  border-top:1px solid rgba(18,18,18,.12);
-  border-bottom:1px solid rgba(18,18,18,.12);
+  border-top:1px solid rgba(18,18,18,.10);
+  border-bottom:1px solid rgba(18,18,18,.10);
 }
 
 .entry-item{
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  gap:10px;
+  display:block;
   padding:18px 16px 16px;
-  min-height:96px;
   border-right:1px solid rgba(18,18,18,.08);
   background:transparent;
-  opacity:.90;
+  opacity:.92;
   transition: opacity var(--t-fast) var(--ease), background var(--t-fast) var(--ease);
 }
 .entry-item:last-child{ border-right:none; }
-.entry-item:hover{ opacity:1; background:rgba(0,0,0,.015); }
+
+.entry-item:hover{
+  opacity:1;
+  background:rgba(0,0,0,.015);
+}
 
 .entry-title{
   text-align:center;
-  line-height:1.08;
+  line-height:1.06;
 }
+
 .entry-en{
   font-size:14px;
   letter-spacing:.16em;
   text-transform:uppercase;
   color:rgba(18,18,18,.92);
 }
-.entry-zh{
-  margin-top:6px;
-  font-size:11px; /* 中文小于英文 */
+
+.entry-cn{
+  margin-top:7px;
+  font-size:11px;
   letter-spacing:.08em;
   color:rgba(18,18,18,.70);
 }
 
 .entry-desc{
-  text-align:left;            /* 摘要靠左 */
-  font-size:10px;             /* 小于中文 */
+  margin-top:12px;
+  text-align:left;
+  font-size:10px;
   letter-spacing:.08em;
   color:rgba(18,18,18,.46);
   line-height:1.25;
@@ -331,10 +310,7 @@ button:active{ opacity:.92; }
 }
 
 /* ---------------------------
-   Home News（你要的：单列信息密度版）
-   说明：如果你把首页 News 输出容器改成 .news-list / .news-row
-   就会自动变成“左图右文”的单列。
-   旧的 .news-grid（三列卡片）仍保留给 news 页用。
+   News 区（首页三列卡片）
 --------------------------- */
 .home-news{
   margin-top:34px;
@@ -362,59 +338,6 @@ button:active{ opacity:.92; }
   opacity:.72;
 }
 
-/* 单列列表（推荐用于首页） */
-.news-list{
-  display:flex;
-  flex-direction:column;
-  gap:14px;
-  border-top:1px solid rgba(18,18,18,.08);
-  padding-top:18px;
-}
-
-.news-row{
-  display:grid;
-  grid-template-columns: 220px 1fr;
-  gap:18px;
-  align-items:center;
-  padding:12px 0;
-  border-bottom:1px solid rgba(18,18,18,.08);
-}
-
-.news-row__media{
-  border-radius:12px;
-  overflow:hidden;
-  border:1px solid rgba(18,18,18,.10);
-  background:rgba(0,0,0,.03);
-}
-.news-row__media img{
-  width:100%;
-  height:140px;
-  object-fit:cover;
-  display:block;
-  transform:scale(1);
-  transition:transform var(--t-mid) var(--ease);
-}
-.news-row:hover .news-row__media img{ transform:scale(1.02); }
-
-.news-row__meta{
-  font-size:11px;
-  opacity:.62;
-  letter-spacing:.06em;
-}
-.news-row__title{
-  margin-top:8px;
-  font-size:15px;
-  line-height:1.35;
-}
-.news-row__excerpt{
-  margin-top:8px;
-  font-size:12px;
-  opacity:.62;
-  line-height:1.5;
-  max-width:64ch;
-}
-
-/* 旧：三列卡片（保留给 /news/ 页） */
 .news-grid{
   display:grid;
   grid-template-columns:repeat(3, minmax(0, 1fr));
@@ -428,7 +351,10 @@ button:active{ opacity:.92; }
   background:#fff;
   transition: opacity var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
 }
-.news-card:hover{ transform:translateY(-1px); opacity:1; }
+.news-card:hover{
+  transform:translateY(-1px);
+  opacity:1;
+}
 
 .card-media{ overflow:hidden; background:rgba(0,0,0,.03); }
 .card-media img{
@@ -445,7 +371,6 @@ button:active{ opacity:.92; }
 .card-meta{ font-size:11px; opacity:.62; letter-spacing:.06em; }
 .card-title{ margin:8px 0 0; font-size:13px; line-height:1.45; }
 
-/* View all */
 .view-all{ display:flex; justify-content:center; margin:26px 0 10px; }
 
 /* ---------------------------
@@ -478,10 +403,11 @@ button:active{ opacity:.92; }
 --------------------------- */
 @media (max-width: 980px){
   .page{ padding:22px 18px 40px; }
+  .slide-media img{ height:300px; }
 
-  .slide-media img{ height:320px; }
+  .news-grid{ grid-template-columns:repeat(2, minmax(0, 1fr)); }
 
-  /* Entry：小屏保持“一行逻辑” → 变横向滑动更像目录 */
+  /* entry：小屏改为横向滑动，保持“一行”逻辑 */
   .entry-strip__inner{
     display:flex;
     overflow:auto;
@@ -489,182 +415,20 @@ button:active{ opacity:.92; }
   }
   .entry-item{
     flex:0 0 220px;
-    border-right:1px solid rgba(18,18,18,.08);
-  }
-
-  .news-grid{ grid-template-columns:repeat(2, minmax(0, 1fr)); }
-
-  .news-row{
-    grid-template-columns: 200px 1fr;
   }
 }
 
 @media (max-width: 620px){
-  .topbar{
-    padding:12px 16px;
-    grid-template-columns: 1fr auto 1fr;
-  }
-  .nav{ gap:12px; font-size:11px; }
-
-  .slide-media img{ height:240px; }
+  .nav{ gap:14px; font-size:11px; }
+  .slide-media img{ height:230px; }
 
   .news-grid{ grid-template-columns:1fr; }
   .card-media img{ height:190px; }
-
-  .news-row{
-    grid-template-columns: 1fr;
-    gap:12px;
-  }
-  .news-row__media img{ height:180px; }
 
   .carousel-arrow{ width:34px; height:34px; }
   .carousel-arrow.is-prev{ left:8px; }
   .carousel-arrow.is-next{ right:8px; }
   .carousel-dots{ bottom:8px; }
-}
 
-/* ===============================
-   HERO (KITH-LIKE) — FULL WIDTH CAROUSEL
-   - near full-screen height
-   - caption bottom-left
-   - quiet dots + arrows
-=============================== */
-
-.hero{
-  width:100%;
-}
-
-.hero-stage{
-  position:relative;
-  width:100%;
-  height:min(86vh, 820px);          /* 近似 Kith 首屏高度 */
-  overflow:hidden;
-  background:#000;
-}
-
-.hero-slide{
-  position:absolute;
-  inset:0;
-  opacity:0;
-  transition: opacity 420ms var(--ease);
-}
-
-.hero-slide.is-active{
-  opacity:1;
-  z-index:2;
-}
-
-.hero-media{
-  display:block;
-  width:100%;
-  height:100%;
-}
-
-.hero-media img{
-  width:100%;
-  height:100%;
-  object-fit:cover;
-  display:block;
-}
-
-/* 左下角标题/摘要覆盖 */
-.hero-caption{
-  position:absolute;
-  left:clamp(18px, 3vw, 54px);
-  bottom:clamp(18px, 4vw, 54px);
-  max-width:min(640px, 72vw);
-
-  color:rgba(255,255,255,.92);
-  text-shadow: 0 8px 28px rgba(0,0,0,.55);
-}
-
-.hero-kicker{
-  font-size:11px;
-  letter-spacing:.18em;
-  text-transform:uppercase;
-  opacity:.80;
-}
-
-.hero-title{
-  margin:10px 0 0;
-  font-size:clamp(22px, 3.0vw, 44px);
-  line-height:1.08;
-  letter-spacing:.02em;
-}
-
-.hero-desc{
-  margin:10px 0 0;
-  font-size:12px;
-  letter-spacing:.06em;
-  opacity:.78;
-  max-width:52ch;
-}
-
-/* arrows */
-.hero-arrow{
-  position:absolute;
-  top:50%;
-  transform:translateY(-50%);
-  width:44px;
-  height:44px;
-  border-radius:999px;
-  border:1px solid rgba(255,255,255,.35);
-  background:rgba(0,0,0,.22);
-  color:rgba(255,255,255,.92);
-  font-size:24px;
-  line-height:42px;
-  cursor:pointer;
-  opacity:.45;
-  backdrop-filter: blur(6px) saturate(120%);
-  transition: opacity var(--t-fast) var(--ease), background var(--t-fast) var(--ease);
-}
-
-.hero-arrow.is-prev{ left:16px; }
-.hero-arrow.is-next{ right:16px; }
-
-.hero-arrow:hover{
-  opacity:.82;
-  background:rgba(0,0,0,.32);
-}
-
-/* dots */
-.hero-dots{
-  position:absolute;
-  left:50%;
-  bottom:22px;
-  transform:translateX(-50%);
-  display:flex;
-  gap:8px;
-  padding:6px 10px;
-  border-radius:999px;
-  background:rgba(0,0,0,.18);
-  border:1px solid rgba(255,255,255,.18);
-  backdrop-filter: blur(6px) saturate(120%);
-  opacity:.62;
-  transition: opacity var(--t-fast) var(--ease);
-}
-
-.hero-dots:hover{ opacity:.90; }
-
-.hero-dot{
-  width:7px;
-  height:7px;
-  border-radius:999px;
-  border:1px solid rgba(255,255,255,.55);
-  background:transparent;
-  padding:0;
-  cursor:pointer;
-}
-
-.hero-dot.is-active{
-  background:rgba(255,255,255,.78);
-}
-
-/* mobile */
-@media (max-width: 620px){
-  .hero-stage{ height:min(78vh, 640px); }
-  .hero-arrow{ width:40px; height:40px; font-size:22px; line-height:38px; }
-  .hero-arrow.is-prev{ left:10px; }
-  .hero-arrow.is-next{ right:10px; }
-  .hero-dots{ bottom:14px; }
+  .entry-strip{ padding:0 18px; }
 }
