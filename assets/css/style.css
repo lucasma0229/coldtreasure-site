@@ -325,7 +325,7 @@ button:active{ opacity:.92; }
   letter-spacing:.08em;
   color:rgba(18,18,18,.46);
   line-height:1.25;
-  text-align:left; /* ✅ 摘要靠左 */
+  text-align:center; /* ✅ 摘要居中（仅移动位置） */
   white-space:nowrap;
   overflow:hidden;
   text-overflow:ellipsis;
