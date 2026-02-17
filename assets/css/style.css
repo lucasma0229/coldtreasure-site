@@ -399,7 +399,7 @@ Footer — ColdTreasure (Kith-ish)
 仅作用于 <footer class="site-footer">
 =============================== */
 
-/* 旧 footer class（如果页面里不存在 .footer，可保留但降权避免误伤） */
+/* 旧 footer class（保留但降权，不影响新 footer） */
 .footer{
   max-width:1240px;
   margin:64px auto 34px;
@@ -415,21 +415,21 @@ Footer — ColdTreasure (Kith-ish)
   width:100%;
   text-align:center;
 
-  /* 字体（更克制、更像 Kith） */
-  font-size:13px !important;
+  /* 字体：恢复早前版本质感 */
+  font-size:11px;
   font-weight:400;
-  letter-spacing:0.14em;
-  line-height:1.15;
+  letter-spacing:0.12em;
+  line-height:1.2;
 
-  /* 颜色 */
+  /* 颜色：museum级低存在感 */
   color:#A3A3A3;
-  opacity:0.9;
+  opacity:0.45;
 
-  /* 位置：整体下移两行（可微调） */
-  margin-top:104px !important;       /* 想更低：112 / 120 */
+  /* 位置：保持你刚刚设定（不动） */
+  margin-top:104px !important;
   margin-bottom:0;
 
-  /* 底部留白：不贴边 */
+  /* 底部呼吸 */
   padding:0 16px 1.5em;
 
   background:transparent;
