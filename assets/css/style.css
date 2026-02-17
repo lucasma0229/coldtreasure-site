@@ -416,7 +416,7 @@ Footer — ColdTreasure (Kith-ish)
   text-align:center;
 
   /* 字体（更克制、更像 Kith） */
-  font-size:13px;
+  font-size:13px !important;
   font-weight:400;
   letter-spacing:0.14em;
   line-height:1.15;
@@ -426,7 +426,7 @@ Footer — ColdTreasure (Kith-ish)
   opacity:0.9;
 
   /* 位置：整体下移两行（可微调） */
-  margin-top:104px;       /* 想更低：112 / 120 */
+  margin-top:104px !important;       /* 想更低：112 / 120 */
   margin-bottom:0;
 
   /* 底部留白：不贴边 */
