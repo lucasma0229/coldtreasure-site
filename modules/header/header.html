@@ -7,8 +7,22 @@
   </a>
 
   <nav class="nav" aria-label="Primary">
-    <a class="is-active" href="/news/">News</a>
+    <a href="/news/">News</a>
     <a href="/record/">Record</a>
     <a href="/archive/">Archive</a>
   </nav>
 </header>
+
+<script>
+(function(){
+  const path = location.pathname.toLowerCase();
+
+  document.querySelectorAll(".nav a").forEach(a=>{
+    const href = a.getAttribute("href").toLowerCase();
+
+    if(path.startsWith(href)){
+      a.classList.add("is-active");
+    }
+  });
+})();
+</script>
