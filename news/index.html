@@ -177,22 +177,6 @@
   </main>
 
   <script>
-    // 轻量 include：只处理 data-include（不影响其它脚本）
-    (async function includeHTML(){
-      const nodes = document.querySelectorAll("[data-include]");
-      await Promise.all([...nodes].map(async (el) => {
-        const url = el.getAttribute("data-include");
-        if (!url) return;
-        try{
-          const res = await fetch(url, { cache: "no-store" });
-          if (!res.ok) throw new Error(res.status);
-          el.outerHTML = await res.text();
-        }catch(e){
-          console.warn("Include failed:", url, e);
-        }
-      }));
-    })();
-
     function escapeHtml(str){
       return String(str ?? "")
         .replaceAll("&","&amp;")
