@@ -166,8 +166,15 @@
 
   <main class="page">
     <header class="page-head">
-      <h1 class="page-title">News</h1>
-      <p class="page-sub">Daily drops</p>
+      <div class="page-head__top">
+      <div class="page-head__right">
+        <span class="page-kicker">Daily drops</span>
+        <span class="page-dot" aria-hidden="true">•</span>
+        <span class="page-status" id="pageStatus">Loading…</span>
+      </div>
+    </div>
+
+    <div class="page-rule" aria-hidden="true"></div>
     </header>
 
     <div id="app" class="empty">Loading…</div>
