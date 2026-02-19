@@ -117,10 +117,10 @@
     }
     .news-media img{
       width:100%;
-      height:auto;
+      height:100%;   
       aspect-ratio: 3 / 2;
-      object-fit: contain;      /* ✅ 锁定封面，不再二次裁切 */
-      background:#f3f3f3;
+      object-fit: cover;    /* ★关键：铺满不留边 */
+      background:transparent;
       display:block;
     }
 
