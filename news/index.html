@@ -8,25 +8,15 @@
   <!-- 全站样式 -->
   <link rel="stylesheet" href="/assets/css/style.css?v=20" />
 
-  <!-- News 页专属布局（精校版：空气层阴影 + 高级间距） -->
+  <!-- News 页专属布局 -->
   <style>
     :root{
       --ct-w: 1240px;
       --ct-pad: 26px;
-
-      /* 更像 Kith：发丝线 */
-      --ct-line: rgba(18,18,18,.10);
-      --ct-muted: rgba(18,18,18,.62);
-
+      --ct-line: #ececec;
+      --ct-muted:#6f6f6f;
+      --ct-shadow: 0 10px 30px rgba(0,0,0,.06);
       --ct-radius: 18px;
-
-      /* Kith-ish 空气层阴影（基础 + hover） */
-      --ct-shadow-0:
-        0 1px 2px rgba(0,0,0,.03),
-        0 8px 22px rgba(0,0,0,.04);
-      --ct-shadow-1:
-        0 2px 6px rgba(0,0,0,.05),
-        0 14px 34px rgba(0,0,0,.06);
     }
 
     /* 页面容器（对齐首页留白） */
@@ -36,9 +26,9 @@
       padding: 0 var(--ct-pad);
     }
 
-    /* Page head（编辑部信息条 + 分割线） */
+    /* Page head（升级：编辑部信息条 + 分割线） */
     .page-head{
-      margin: 18px 0 22px;
+      margin: 18px 0 18px;
     }
     .page-head__top{
       display:flex;
@@ -74,61 +64,52 @@
       opacity:.9;
     }
 
-    /* 单列列表：高级呼吸感 */
+    /* 单列列表 */
     .news-list{
       display:flex;
       flex-direction:column;
-
-      /* ✅ 关键：从 18 → 42（杂志/展陈节奏） */
-      gap: 42px;
-
-      margin: 22px 0 0;
+      gap: 18px;
+      margin: 18px 0 0;
       padding: 0;
     }
 
-    /* 单条资讯：左图右文（装裱感，不像 UI 卡片） */
+    /* 单条资讯：左图右文 */
     .news-item{
       display:flex;
-      gap: 0; /* ✅ 图贴边更高级，文字呼吸交给 padding */
-
+      gap: 18px;
       align-items: stretch;
       border: 1px solid var(--ct-line);
       border-radius: var(--ct-radius);
       background:#fff;
       overflow:hidden;
-
-      /* ✅ 基础就有空气层 */
-      box-shadow: var(--ct-shadow-0);
-
-      transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
+      transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
     }
     .news-item:hover{
-      transform: translateY(-2px);
-      box-shadow: var(--ct-shadow-1);
-      border-color: rgba(18,18,18,.14);
+      transform: translateY(-3px);
+      box-shadow: var(--ct-shadow);
+      border-color: rgba(0,0,0,.08);
     }
 
-    /* 左侧大图：大，但不挤爆留白 */
+    /* 左侧大图：尽可能大但不挤爆留白 */
     .news-media{
-      flex: 0 0 clamp(420px, 44vw, 560px);
+      flex: 0 0 clamp(380px, 42vw, 520px);
       display:block;
-      background: rgba(0,0,0,.02);
+      background:#f6f6f6;
       overflow:hidden;
     }
     .news-media img{
       width:100%;
-      height:100%;   
+      height:100%;
       aspect-ratio: 3 / 2;
-      object-fit: cover;    /* ★关键：铺满不留边 */
-      background:transparent;
+      object-fit: cover;
       display:block;
     }
 
-    /* 右侧文字：装裱感 */
+    /* 右侧文字 */
     .news-body{
       flex:1;
       min-width:0;
-      padding: 22px 22px 22px 26px; /* ✅ 精校：更高级的呼吸 */
+      padding: 16px 16px 16px 0;
       display:flex;
       flex-direction:column;
       justify-content:center;
@@ -143,12 +124,11 @@
       color: var(--ct-muted);
       margin-bottom: 10px;
     }
-
     .pill{
       border:1px solid var(--ct-line);
       border-radius:999px;
       padding: 4px 10px;
-      background: rgba(0,0,0,.012);
+      background:#fff;
     }
 
     .news-title{
@@ -167,14 +147,12 @@
       margin:0;
       font-size:14px;
       line-height: 1.65;
-      color: rgba(18,18,18,.88);
-      opacity:.86;
-
+      color:#2b2b2b;
+      opacity:.85;
       display:-webkit-box;
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
       overflow:hidden;
-
       max-width: 68ch;
     }
 
@@ -184,7 +162,6 @@
       border-radius: var(--ct-radius);
       color: var(--ct-muted);
       background:#fff;
-      box-shadow: var(--ct-shadow-0);
     }
     .error{
       border-color:#ffd0d0;
@@ -203,13 +180,10 @@
       }
       .page-title{ font-size: 34px; }
 
-      .news-list{ gap: 26px; }
-
-      .news-item{ flex-direction:column; }
+      .news-item{ flex-direction:column; gap: 0; }
       .news-media{ flex: 0 0 auto; width:100%; }
       .news-media img{ aspect-ratio: 16 / 10; }
-
-      .news-body{ padding: 16px 16px 18px; }
+      .news-body{ padding: 14px 16px 16px; }
       .news-title{ font-size: 20px; }
     }
   </style>
@@ -264,17 +238,23 @@
       const summary = post.summary || post.desc || "";
       const date = post.date || post.release_date || "";
       const brand = Array.isArray(post.brand) ? post.brand.join(" / ") : (post.brand || "");
-      const hero = post.hero || post.cover || post.image || "";
+
+      // ✅ 改动点 1：优先使用 thumb（你裁切工具导出的封面）
+      // 其他字段作为兜底，避免旧文章没有 thumb 时空白
+      const hero = post.thumb || post.hero || post.cover || post.image || "";
 
       const brandHtml = brand ? `<span class="pill">${escapeHtml(brand)}</span>` : "";
       const dateHtml  = date  ? `<span class="date">${escapeHtml(date)}</span>` : "";
 
       const href = `/post/?id=${encodeURIComponent(id)}`;
 
+      // ✅ 改动点 2：轻量 cache bust（用 date 作为版本号，确保你改了封面/日期后列表一定拉新图）
+      const v = encodeURIComponent((date || "1").toString());
+
       return `
         <article class="news-item">
           <a class="news-media" href="${href}" aria-label="${escapeHtml(title)}">
-            ${hero ? `<img src="${escapeHtml(hero)}" alt="${escapeHtml(title)}" loading="lazy">` : ``}
+            ${hero ? `<img src="${escapeHtml(hero)}?v=${v}" alt="${escapeHtml(title)}" loading="lazy">` : ``}
           </a>
 
           <div class="news-body">
