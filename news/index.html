@@ -117,17 +117,11 @@
     }
     .news-media img{
       width:100%;
-      height:100%;
+      height:auto;
       aspect-ratio: 3 / 2;
-      object-fit: contain;
+      object-fit: contain;      /* ✅ 锁定封面，不再二次裁切 */
       background:#f3f3f3;
       display:block;
-
-      transform: scale(1);
-      transition: transform .32s ease;
-    }
-    .news-item:hover .news-media img{
-      transform: scale(1.02);
     }
 
     /* 右侧文字：装裱感 */
