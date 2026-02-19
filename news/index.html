@@ -8,15 +8,25 @@
   <!-- 全站样式 -->
   <link rel="stylesheet" href="/assets/css/style.css?v=20" />
 
-  <!-- News 页专属布局 -->
+  <!-- News 页专属布局（精校版：空气层阴影 + 高级间距） -->
   <style>
     :root{
       --ct-w: 1240px;
       --ct-pad: 26px;
-      --ct-line: #ececec;
-      --ct-muted:#6f6f6f;
-      --ct-shadow: 0 10px 30px rgba(0,0,0,.06);
+
+      /* 更像 Kith：发丝线 */
+      --ct-line: rgba(18,18,18,.10);
+      --ct-muted: rgba(18,18,18,.62);
+
       --ct-radius: 18px;
+
+      /* Kith-ish 空气层阴影（基础 + hover） */
+      --ct-shadow-0:
+        0 1px 2px rgba(0,0,0,.03),
+        0 8px 22px rgba(0,0,0,.04);
+      --ct-shadow-1:
+        0 2px 6px rgba(0,0,0,.05),
+        0 14px 34px rgba(0,0,0,.06);
     }
 
     /* 页面容器（对齐首页留白） */
@@ -26,9 +36,9 @@
       padding: 0 var(--ct-pad);
     }
 
-    /* Page head（升级：编辑部信息条 + 分割线） */
+    /* Page head（编辑部信息条 + 分割线） */
     .page-head{
-      margin: 18px 0 18px;
+      margin: 18px 0 22px;
     }
     .page-head__top{
       display:flex;
@@ -64,37 +74,45 @@
       opacity:.9;
     }
 
-    /* 单列列表 */
+    /* 单列列表：高级呼吸感 */
     .news-list{
       display:flex;
       flex-direction:column;
-      gap: 18px;
-      margin: 18px 0 0;
+
+      /* ✅ 关键：从 18 → 42（杂志/展陈节奏） */
+      gap: 42px;
+
+      margin: 22px 0 0;
       padding: 0;
     }
 
-    /* 单条资讯：左图右文 */
+    /* 单条资讯：左图右文（装裱感，不像 UI 卡片） */
     .news-item{
       display:flex;
-      gap: 18px;
+      gap: 0; /* ✅ 图贴边更高级，文字呼吸交给 padding */
+
       align-items: stretch;
       border: 1px solid var(--ct-line);
       border-radius: var(--ct-radius);
       background:#fff;
       overflow:hidden;
-      transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+
+      /* ✅ 基础就有空气层 */
+      box-shadow: var(--ct-shadow-0);
+
+      transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
     }
     .news-item:hover{
-      transform: translateY(-3px);
-      box-shadow: var(--ct-shadow);
-      border-color: rgba(0,0,0,.08);
+      transform: translateY(-2px);
+      box-shadow: var(--ct-shadow-1);
+      border-color: rgba(18,18,18,.14);
     }
 
-    /* 左侧大图：尽可能大但不挤爆留白 */
+    /* 左侧大图：大，但不挤爆留白 */
     .news-media{
-      flex: 0 0 clamp(380px, 42vw, 520px);
+      flex: 0 0 clamp(420px, 44vw, 560px);
       display:block;
-      background:#f6f6f6;
+      background: rgba(0,0,0,.02);
       overflow:hidden;
     }
     .news-media img{
@@ -103,14 +121,19 @@
       aspect-ratio: 3 / 2;
       object-fit: cover;
       display:block;
+
+      transform: scale(1);
+      transition: transform .32s ease;
+    }
+    .news-item:hover .news-media img{
       transform: scale(1.02);
     }
 
-    /* 右侧文字 */
+    /* 右侧文字：装裱感 */
     .news-body{
       flex:1;
       min-width:0;
-      padding: 16px 16px 16px 0;
+      padding: 22px 22px 22px 26px; /* ✅ 精校：更高级的呼吸 */
       display:flex;
       flex-direction:column;
       justify-content:center;
@@ -125,11 +148,12 @@
       color: var(--ct-muted);
       margin-bottom: 10px;
     }
+
     .pill{
       border:1px solid var(--ct-line);
       border-radius:999px;
       padding: 4px 10px;
-      background:#fff;
+      background: rgba(0,0,0,.012);
     }
 
     .news-title{
@@ -148,12 +172,14 @@
       margin:0;
       font-size:14px;
       line-height: 1.65;
-      color:#2b2b2b;
-      opacity:.85;
+      color: rgba(18,18,18,.88);
+      opacity:.86;
+
       display:-webkit-box;
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
       overflow:hidden;
+
       max-width: 68ch;
     }
 
@@ -163,6 +189,7 @@
       border-radius: var(--ct-radius);
       color: var(--ct-muted);
       background:#fff;
+      box-shadow: var(--ct-shadow-0);
     }
     .error{
       border-color:#ffd0d0;
@@ -181,10 +208,13 @@
       }
       .page-title{ font-size: 34px; }
 
-      .news-item{ flex-direction:column; gap: 0; }
+      .news-list{ gap: 26px; }
+
+      .news-item{ flex-direction:column; }
       .news-media{ flex: 0 0 auto; width:100%; }
       .news-media img{ aspect-ratio: 16 / 10; }
-      .news-body{ padding: 14px 16px 16px; }
+
+      .news-body{ padding: 16px 16px 18px; }
       .news-title{ font-size: 20px; }
     }
   </style>
