@@ -15,14 +15,18 @@
 
 <script>
 (function(){
-  const path = location.pathname.toLowerCase();
+  const path = (location.pathname || "/").toLowerCase();
 
-  document.querySelectorAll(".nav a").forEach(a=>{
-    const href = a.getAttribute("href").toLowerCase();
+  document.querySelectorAll(".nav a").forEach(a => {
+    const href = (a.getAttribute("href") || "").toLowerCase();
 
-    if(path.startsWith(href)){
-      a.classList.add("is-active");
-    }
+    // News：/news/ + 文章页 /post/ 都算 News 体系
+    const isNews = (href === "/news/") && (path.startsWith("/news") || path.startsWith("/post"));
+
+    // 其他栏目：按各自路径前缀匹配
+    const isSection = (href !== "/news/") && href !== "/" && path.startsWith(href);
+
+    if (isNews || isSection) a.classList.add("is-active");
   });
 })();
 </script>
