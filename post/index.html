@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>ColdTreasure | Post</title>
 
-  <!-- 与全站一致（如需强刷缓存，把 v=20 改成 v=21） -->
-  <link rel="stylesheet" href="/assets/css/main.css?v=1" />
+  <!-- 与全站一致 -->
+  <link rel="stylesheet" href="/assets/css/main.css?v=203" />
 
   <!-- 文章页自身排版（不覆盖 topbar / footer） -->
   <style>
@@ -81,6 +81,11 @@
       h1{ font-size:26px; }
     }
   </style>
+
+  <!-- ✅ 统一：在脚本前声明页面类型 -->
+  <script>window.CT_PAGE = "post";</script>
+  <script src="/assets/js/include.v3.js?v=2" defer></script>
+  <script src="/assets/js/app.js?v=203" defer></script>
 </head>
 
 <body>
@@ -93,24 +98,6 @@
 
   <!-- ✅ 统一 Footer -->
   <div data-include="/modules/footer/footer.html"></div>
-
-  <script>
-    // include loader：加载 header/footer 模块（post 页面独立可用）
-    (async function includeHTML(){
-      const nodes = document.querySelectorAll("[data-include]");
-      await Promise.all(Array.from(nodes).map(async (el) => {
-        const url = el.getAttribute("data-include");
-        if(!url) return;
-        try{
-          const res = await fetch(url, { cache: "no-store" });
-          if(!res.ok) throw new Error(res.status);
-          el.outerHTML = await res.text();
-        }catch(e){
-          console.warn("Include failed:", url, e);
-        }
-      }));
-    })();
-  </script>
 
   <script>
     function escapeHtml(str){
@@ -145,10 +132,6 @@
     }
 
     function normalizeFocus(v){
-      // 允许：
-      // - "50% 30%"
-      // - [50, 30] (当作百分比)
-      // - {x:50,y:30}
       if(!v) return "";
       if(typeof v === "string") return v.trim();
       if(Array.isArray(v) && v.length >= 2) return `${v[0]}% ${v[1]}%`;
@@ -164,7 +147,6 @@
       if(post.date) metaParts.push(escapeHtml(post.date));
       if(tags.length) metaParts.push(tags.map(t => `#${escapeHtml(t)}`).join(" "));
 
-      // ✅ 每篇文章可覆盖首图裁切焦点：post.heroFocus = "50% 30%"
       const heroFocus = normalizeFocus(post.heroFocus);
       const heroStyle = heroFocus ? ` style="--hero-focus:${escapeHtml(heroFocus)}"` : "";
 
@@ -199,9 +181,18 @@
       `;
     }
 
+    // ✅ 等 header/footer 注入完成后再渲染正文（避免跳动）
     (async function main(){
       const app = document.getElementById("app");
       const id = getId();
+
+      // 等 include.v3.js 注入完（如果没有 modules:loaded，也不会卡死）
+      await new Promise((resolve) => {
+        let done = false;
+        const finish = () => { if(done) return; done = true; resolve(); };
+        document.addEventListener("modules:loaded", finish, { once: true });
+        setTimeout(finish, 1200);
+      });
 
       if(!id){
         app.innerHTML = `<div class="error"><b>Missing id</b><div class="muted">URL 需要带参数：<code>?id=xxx</code></div></div>`;
