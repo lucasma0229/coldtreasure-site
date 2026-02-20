@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>ColdTreasure | Post</title>
 
-  <!-- 与全站一致 -->
+  <!-- 与全站一致（如需强刷缓存，把 v=20 改成 v=21） -->
   <link rel="stylesheet" href="/assets/css/style.css?v=20" />
 
   <!-- 文章页自身排版（不覆盖 topbar / footer） -->
@@ -21,11 +21,38 @@
 
     main{ max-width: var(--w); margin: 24px auto 64px; padding: 0 18px; }
 
-    .meta{ color:var(--muted); font-size:14px; margin: 8px 0 18px; display:flex; flex-wrap:wrap; gap:10px; }
+    .meta{
+      color:var(--muted);
+      font-size:14px;
+      margin: 8px 0 18px;
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+    }
+
     h1{ font-size:30px; line-height:1.2; margin:0 0 8px; letter-spacing:.2px; }
 
-    .hero{ width:100%; border-radius:14px; overflow:hidden; background:#f6f6f6; border:1px solid var(--line); }
-    .hero img{ width:100%; height:auto; display:block; }
+    /* =========================================================
+       ✅ Post 首图：统一 3:2（与 News 封面一致）+ 自动裁切长图
+       - 默认居中裁切
+       - 可用每篇文章字段 post.heroFocus 覆盖裁切焦点，如："50% 30%"
+    ========================================================= */
+    .hero{
+      width:100%;
+      border-radius:14px;
+      overflow:hidden;
+      background:#f6f6f6;
+      border:1px solid var(--line);
+
+      aspect-ratio: 3 / 2;   /* ★核心：固定 3:2 */
+    }
+    .hero img{
+      width:100%;
+      height:100%;           /* ★让容器高度生效 */
+      object-fit:cover;      /* ★自动裁切 */
+      object-position: var(--hero-focus, 50% 50%); /* ★可被每篇文章覆盖 */
+      display:block;
+    }
 
     .summary{ font-size:16px; line-height:1.7; margin: 16px 0 6px; color:#222; }
 
@@ -37,7 +64,14 @@
     .gallery{ margin-top:26px; }
     .gallery h2{ font-size:18px; margin:0 0 10px; }
     .grid{ display:grid; grid-template-columns: repeat(2, 1fr); gap:10px; }
-    .grid img{ width:100%; height:auto; border-radius:12px; border:1px solid var(--line); background:#f6f6f6; }
+    .grid img{
+      width:100%;
+      height:auto;
+      border-radius:12px;
+      border:1px solid var(--line);
+      background:#f6f6f6;
+      display:block;
+    }
 
     .error{ padding:14px; border:1px solid #ffd0d0; background:#fff5f5; border-radius:14px; }
     .muted{ color:var(--muted); }
@@ -57,7 +91,7 @@
     <div class="muted">Loading…</div>
   </main>
 
-  <!-- ✅ 统一 Footer（来自你 repo 的 modules/footer/footer.html） -->
+  <!-- ✅ 统一 Footer -->
   <div data-include="/modules/footer/footer.html"></div>
 
   <script>
@@ -110,6 +144,18 @@
       return "";
     }
 
+    function normalizeFocus(v){
+      // 允许：
+      // - "50% 30%"
+      // - [50, 30] (当作百分比)
+      // - {x:50,y:30}
+      if(!v) return "";
+      if(typeof v === "string") return v.trim();
+      if(Array.isArray(v) && v.length >= 2) return `${v[0]}% ${v[1]}%`;
+      if(typeof v === "object" && v.x != null && v.y != null) return `${v.x}% ${v.y}%`;
+      return "";
+    }
+
     function render(post){
       const brand = Array.isArray(post.brand) ? post.brand.join(" / ") : (post.brand || "");
       const tags = Array.isArray(post.tags) ? post.tags : [];
@@ -118,8 +164,12 @@
       if(post.date) metaParts.push(escapeHtml(post.date));
       if(tags.length) metaParts.push(tags.map(t => `#${escapeHtml(t)}`).join(" "));
 
+      // ✅ 每篇文章可覆盖首图裁切焦点：post.heroFocus = "50% 30%"
+      const heroFocus = normalizeFocus(post.heroFocus);
+      const heroStyle = heroFocus ? ` style="--hero-focus:${escapeHtml(heroFocus)}"` : "";
+
       const heroHtml = post.hero ? `
-        <div class="hero">
+        <div class="hero"${heroStyle}>
           <img src="${escapeHtml(post.hero)}" alt="${escapeHtml(post.title)}" loading="eager" />
         </div>
       ` : "";
@@ -136,7 +186,6 @@
         </section>
       ` : "";
 
-      /* ✅ 已移除 Source（来源） */
       return `
         <article>
           <h1>${escapeHtml(post.title || "Untitled")}</h1>
