@@ -171,7 +171,6 @@
       const heroSrc = post.thumb || post.cover || post.hero || "";
       const heroHtml = heroSrc ? `
         <div class="hero"${heroStyle}>
-        <div class="hero"${heroStyle}>
           <img src="${escapeHtml(heroSrc)}" alt="${escapeHtml(post.title)}" loading="eager" />
         </div>
       ` : "";
