@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Record — ColdTreasure</title>
-  <link rel="stylesheet" href="/assets/css/main.css?v=1" />
+  <link rel="stylesheet" href="/assets/css/main.css?v=203" />
 </head>
 
 <body>
@@ -24,18 +24,22 @@
   <main class="page">
     <section class="page-head">
       <h1 class="page-title">Record</h1>
-      <p class="page-subtitle">Selected releases, dates, and confirmed intel.</p>
+      <p class="page-subtitle">Timeline notes — coming soon.</p>
     </section>
 
     <section class="list-wrap">
+      <!-- 占位信息：避免空白页 -->
+      <div class="empty" style="display:block;">
+        No records yet.
+      </div>
+
+      <!-- 未来如果你要接入 posts.json 的 record 分区，这两行保留即可 -->
       <div id="list" class="list"></div>
       <div id="listEmpty" class="empty" style="display:none;">No records yet.</div>
     </section>
   </main>
 
-  <script>
-    window.CT_PAGE = "record";
-  </script>
-  <script src="/assets/js/app.js?v=30"></script>
+  <script>window.CT_PAGE = "record";</script>
+  <script src="/assets/js/app.js?v=203" defer></script>
 </body>
 </html>
