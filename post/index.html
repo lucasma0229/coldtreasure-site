@@ -5,10 +5,10 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>ColdTreasure | Post</title>
 
-  <!-- ✅ 与全站一致：吃同一份主样式（topbar/nav 等都靠它） -->
+  <!-- 与全站一致 -->
   <link rel="stylesheet" href="/assets/css/style.css?v=20" />
 
-  <!-- ✅ 文章页自身的排版（不再写 header 的样式，避免覆盖全站 topbar） -->
+  <!-- 文章页自身排版（不覆盖 topbar / footer） -->
   <style>
     :root { --w: 980px; --muted:#777; --line:#eee; }
 
@@ -19,7 +19,6 @@
       color:#111;
     }
 
-    /* ✅ 给文章内容留出呼吸感：不要去动 topbar */
     main{ max-width: var(--w); margin: 24px auto 64px; padding: 0 18px; }
 
     .meta{ color:var(--muted); font-size:14px; margin: 8px 0 18px; display:flex; flex-wrap:wrap; gap:10px; }
@@ -40,9 +39,6 @@
     .grid{ display:grid; grid-template-columns: repeat(2, 1fr); gap:10px; }
     .grid img{ width:100%; height:auto; border-radius:12px; border:1px solid var(--line); background:#f6f6f6; }
 
-    .card{ margin-top:22px; border:1px solid var(--line); border-radius:14px; padding:14px; }
-    .card a{ color:#111; }
-
     .error{ padding:14px; border:1px solid #ffd0d0; background:#fff5f5; border-radius:14px; }
     .muted{ color:var(--muted); }
 
@@ -54,15 +50,18 @@
 </head>
 
 <body>
-  <!-- ✅ 统一导航：直接引用模块（与首页 /news/ 完全一致） -->
+  <!-- ✅ 统一导航 -->
   <div data-include="/modules/header/header.html"></div>
 
   <main id="app">
     <div class="muted">Loading…</div>
   </main>
 
+  <!-- ✅ 统一 Footer（来自你 repo 的 modules/footer/footer.html） -->
+  <div data-include="/modules/footer/footer.html"></div>
+
   <script>
-    // ✅ 通用 include loader（如果你全站已经有，就算重复也没事；但为了 post 页独立可用，这里保留）
+    // include loader：加载 header/footer 模块（post 页面独立可用）
     (async function includeHTML(){
       const nodes = document.querySelectorAll("[data-include]");
       await Promise.all(Array.from(nodes).map(async (el) => {
@@ -70,6 +69,7 @@
         if(!url) return;
         try{
           const res = await fetch(url, { cache: "no-store" });
+          if(!res.ok) throw new Error(res.status);
           el.outerHTML = await res.text();
         }catch(e){
           console.warn("Include failed:", url, e);
@@ -94,7 +94,6 @@
     }
 
     async function loadPosts(){
-      // 强制带一个 cache-buster，避免 Cloudflare 缓存导致“我改了但没生效”
       const res = await fetch(`/assets/data/posts.json?v=${Date.now()}`, { cache: "no-store" });
       if(!res.ok) throw new Error(`Failed to load posts.json (${res.status})`);
       return await res.json();
@@ -137,13 +136,7 @@
         </section>
       ` : "";
 
-      const sourceHtml = post.source_url ? `
-        <div class="card">
-          <div class="muted">Source</div>
-          <div><a href="${escapeHtml(post.source_url)}" target="_blank" rel="noreferrer">${escapeHtml(post.source_url)}</a></div>
-        </div>
-      ` : "";
-
+      /* ✅ 已移除 Source（来源） */
       return `
         <article>
           <h1>${escapeHtml(post.title || "Untitled")}</h1>
@@ -152,7 +145,6 @@
           ${post.summary ? `<div class="summary">${escapeHtml(post.summary)}</div>` : ""}
           <div class="content">${contentHtml}</div>
           ${galleryHtml}
-          ${sourceHtml}
         </article>
       `;
     }
@@ -169,6 +161,7 @@
       try{
         const posts = await loadPosts();
         const post = (Array.isArray(posts) ? posts : []).find(p => p && p.id === id);
+
         if(!post){
           app.innerHTML = `
             <div class="error">
@@ -179,6 +172,7 @@
           `;
           return;
         }
+
         app.innerHTML = render(post);
       }catch(err){
         app.innerHTML = `
@@ -186,7 +180,7 @@
             <b>Load failed</b>
             <div class="muted">${escapeHtml(err.message || err)}</div>
             <div class="muted" style="margin-top:8px;">
-              重点检查：<code>assets/data/posts.json</code> 文件名是否正确（不是 .jason），以及是否已部署生效（Ctrl+F5）。
+              重点检查：<code>assets/data/posts.json</code> 文件名是否正确，以及是否已部署生效（Ctrl+F5）。
             </div>
           </div>
         `;
