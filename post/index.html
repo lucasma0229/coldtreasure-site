@@ -4,48 +4,79 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>ColdTreasure | Post</title>
+
+  <!-- ✅ 与全站一致：吃同一份主样式（topbar/nav 等都靠它） -->
+  <link rel="stylesheet" href="/assets/css/style.css?v=20" />
+
+  <!-- ✅ 文章页自身的排版（不再写 header 的样式，避免覆盖全站 topbar） -->
   <style>
     :root { --w: 980px; --muted:#777; --line:#eee; }
-    body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans SC", Arial; background:#fff; color:#111; }
-    header { border-bottom:1px solid var(--line); padding:14px 18px; position:sticky; top:0; background:#fff; z-index:10; }
-    header .wrap { max-width: var(--w); margin:0 auto; display:flex; align-items:center; justify-content:space-between; gap:12px; }
-    header a { color:#111; text-decoration:none; font-weight:600; }
-    header small { color:var(--muted); font-weight:500; }
-    main { max-width: var(--w); margin: 24px auto 64px; padding: 0 18px; }
-    .meta { color:var(--muted); font-size:14px; margin: 8px 0 18px; display:flex; flex-wrap:wrap; gap:10px; }
-    h1 { font-size: 30px; line-height:1.2; margin: 0 0 8px; letter-spacing: .2px;}
-    .hero { width:100%; border-radius:14px; overflow:hidden; background:#f6f6f6; border:1px solid var(--line); }
-    .hero img { width:100%; height:auto; display:block; }
-    .summary { font-size:16px; line-height:1.7; margin: 16px 0 6px; color:#222; }
-    .content { margin-top: 18px; font-size:16px; line-height:1.85; }
-    .content h2 { font-size:18px; margin: 22px 0 10px; }
-    .content p { margin: 12px 0; }
-    .content ul { margin: 10px 0 14px 18px; }
-    .gallery { margin-top: 26px; }
-    .gallery h2 { font-size:18px; margin: 0 0 10px; }
-    .grid { display:grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
-    .grid img { width:100%; height:auto; border-radius:12px; border:1px solid var(--line); background:#f6f6f6; }
-    .card { margin-top: 22px; border:1px solid var(--line); border-radius:14px; padding: 14px; }
-    .card a { color:#111; }
-    .error { padding: 14px; border:1px solid #ffd0d0; background:#fff5f5; border-radius:14px; }
-    .muted { color:var(--muted); }
-    @media (max-width: 720px){ .grid{ grid-template-columns: 1fr; } h1{ font-size:26px; } }
+
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans SC", Arial;
+      background:#fff;
+      color:#111;
+    }
+
+    /* ✅ 给文章内容留出呼吸感：不要去动 topbar */
+    main{ max-width: var(--w); margin: 24px auto 64px; padding: 0 18px; }
+
+    .meta{ color:var(--muted); font-size:14px; margin: 8px 0 18px; display:flex; flex-wrap:wrap; gap:10px; }
+    h1{ font-size:30px; line-height:1.2; margin:0 0 8px; letter-spacing:.2px; }
+
+    .hero{ width:100%; border-radius:14px; overflow:hidden; background:#f6f6f6; border:1px solid var(--line); }
+    .hero img{ width:100%; height:auto; display:block; }
+
+    .summary{ font-size:16px; line-height:1.7; margin: 16px 0 6px; color:#222; }
+
+    .content{ margin-top:18px; font-size:16px; line-height:1.85; }
+    .content h2{ font-size:18px; margin: 22px 0 10px; }
+    .content p{ margin: 12px 0; }
+    .content ul{ margin: 10px 0 14px 18px; }
+
+    .gallery{ margin-top:26px; }
+    .gallery h2{ font-size:18px; margin:0 0 10px; }
+    .grid{ display:grid; grid-template-columns: repeat(2, 1fr); gap:10px; }
+    .grid img{ width:100%; height:auto; border-radius:12px; border:1px solid var(--line); background:#f6f6f6; }
+
+    .card{ margin-top:22px; border:1px solid var(--line); border-radius:14px; padding:14px; }
+    .card a{ color:#111; }
+
+    .error{ padding:14px; border:1px solid #ffd0d0; background:#fff5f5; border-radius:14px; }
+    .muted{ color:var(--muted); }
+
+    @media (max-width: 720px){
+      .grid{ grid-template-columns: 1fr; }
+      h1{ font-size:26px; }
+    }
   </style>
 </head>
+
 <body>
-  <header>
-    <div class="wrap">
-      <div>
-        <a href="/">ColdTreasure</a>
-        <small id="crumb" class="muted"></small>
-      </div>
-      <a href="/news/" class="muted" style="font-weight:600;">News</a>
-    </div>
-  </header>
+  <!-- ✅ 统一导航：直接引用模块（与首页 /news/ 完全一致） -->
+  <div data-include="/modules/header/header.html"></div>
 
   <main id="app">
     <div class="muted">Loading…</div>
   </main>
+
+  <script>
+    // ✅ 通用 include loader（如果你全站已经有，就算重复也没事；但为了 post 页独立可用，这里保留）
+    (async function includeHTML(){
+      const nodes = document.querySelectorAll("[data-include]");
+      await Promise.all(Array.from(nodes).map(async (el) => {
+        const url = el.getAttribute("data-include");
+        if(!url) return;
+        try{
+          const res = await fetch(url, { cache: "no-store" });
+          el.outerHTML = await res.text();
+        }catch(e){
+          console.warn("Include failed:", url, e);
+        }
+      }));
+    })();
+  </script>
 
   <script>
     function escapeHtml(str){
@@ -87,7 +118,6 @@
       if(brand) metaParts.push(escapeHtml(brand));
       if(post.date) metaParts.push(escapeHtml(post.date));
       if(tags.length) metaParts.push(tags.map(t => `#${escapeHtml(t)}`).join(" "));
-      document.getElementById("crumb").textContent = post.id ? ` / ${post.id}` : "";
 
       const heroHtml = post.hero ? `
         <div class="hero">
@@ -130,6 +160,7 @@
     (async function main(){
       const app = document.getElementById("app");
       const id = getId();
+
       if(!id){
         app.innerHTML = `<div class="error"><b>Missing id</b><div class="muted">URL 需要带参数：<code>?id=xxx</code></div></div>`;
         return;
