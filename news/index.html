@@ -6,7 +6,12 @@
   <title>ColdTreasure | News</title>
 
   <!-- 全站样式 -->
-  <link rel="stylesheet" href="/assets/css/main.css?v=1" />
+  <link rel="stylesheet" href="/assets/css/main.css?v=203" />
+
+  <!-- ✅ 统一：在脚本前声明页面类型 -->
+  <script>window.CT_PAGE = "news";</script>
+  <script src="/assets/js/include.v3.js?v=2" defer></script>
+  <script src="/assets/js/app.js?v=203" defer></script>
 
   <!-- News 页专属布局 -->
   <style>
@@ -212,9 +217,6 @@
     <div data-include="/modules/footer/footer.html"></div>
   </main>
 
-  <!-- include：建议先加载（先注入 header/footer，再执行页面脚本更稳） -->
-  <script src="/assets/js/include.v3.js"></script>
-
   <script>
     function escapeHtml(str){
       return String(str ?? "")
@@ -239,8 +241,6 @@
       const date = post.date || post.release_date || "";
       const brand = Array.isArray(post.brand) ? post.brand.join(" / ") : (post.brand || "");
 
-      // ✅ 改动点 1：优先使用 thumb（你裁切工具导出的封面）
-      // 其他字段作为兜底，避免旧文章没有 thumb 时空白
       const hero = post.thumb || post.hero || post.cover || post.image || "";
 
       const brandHtml = brand ? `<span class="pill">${escapeHtml(brand)}</span>` : "";
@@ -248,7 +248,6 @@
 
       const href = `/post/?id=${encodeURIComponent(id)}`;
 
-      // ✅ 改动点 2：轻量 cache bust（用 date 作为版本号，确保你改了封面/日期后列表一定拉新图）
       const v = encodeURIComponent((date || "1").toString());
 
       return `
@@ -266,9 +265,17 @@
       `;
     }
 
+    // ✅ 等模块注入完成后再渲染（避免 header/footer 未注入造成跳动）
     (async function main(){
       const app = document.getElementById("app");
       const statusEl = document.getElementById("pageStatus");
+
+      await new Promise((resolve) => {
+        let done = false;
+        const finish = () => { if(done) return; done = true; resolve(); };
+        document.addEventListener("modules:loaded", finish, { once: true });
+        setTimeout(finish, 1200);
+      });
 
       try{
         const list = await loadPosts();
@@ -279,7 +286,6 @@
           return;
         }
 
-        // date 倒序
         const sorted = [...list].sort((a,b)=>{
           const da = (a.date || "").toString();
           const db = (b.date || "").toString();
