@@ -1,5 +1,5 @@
 (function () {
-  const page = String(window.CT_PAGE || "").toLowerCase();
+  const page = String(window.CT_PAGE || "").trim().toLowerCase();
 
   const map = {
     home: "page-home",
