@@ -1,1 +1,31 @@
+/* ===================================================
+   Layout Layer
+   Header / Footer / Container
+   =================================================== */
 
+.page{
+  max-width:1200px;
+  margin:0 auto;
+  padding:0 24px;
+}
+
+/* Header */
+.site-header{
+  width:100%;
+}
+
+/* Footer */
+.site-footer{
+  width:100%;
+  text-align:center;
+  font-size:13px;
+  font-weight:400;
+  letter-spacing:0.14em;
+  line-height:1.15;
+  color:#A3A3A3;
+  opacity:.9;
+  margin-top:96px;
+  padding:0 16px 1.5em;
+  background:transparent;
+  border:none;
+}
