@@ -1,12 +1,17 @@
 <section class="hero hero--carousel" aria-label="Featured">
-  <div class="ct-carousel" data-carousel>
+  <div class="ct-carousel" data-ct-carousel>
     <div class="ct-carousel__viewport">
-      <div class="ct-carousel__track" data-track>
+      <div class="ct-carousel__track" data-ct-track>
         <!-- Slide 1 -->
-        <article class="ct-carousel__slide is-active">
+        <article class="ct-carousel__slide">
           <a class="ct-carousel__media" href="/news/">
             <img src="/assets/img/hero/coldtreasure-hero-1.jpg" alt="">
           </a>
+          <div class="ct-carousel__caption">
+            <div class="ct-carousel__kicker">FEATURED</div>
+            <h2 class="ct-carousel__title">Seasonal Performance Lineup</h2>
+            <p class="ct-carousel__desc">Selected highlights, curated.</p>
+          </div>
         </article>
 
         <!-- Slide 2 -->
@@ -14,13 +19,18 @@
           <a class="ct-carousel__media" href="/news/">
             <img src="/assets/img/hero/coldtreasure-hero-2.jpg" alt="">
           </a>
+          <div class="ct-carousel__caption">
+            <div class="ct-carousel__kicker">FEATURED</div>
+            <h2 class="ct-carousel__title">Court Rotation — Warm Tones</h2>
+            <p class="ct-carousel__desc">Shoes on floor, real context.</p>
+          </div>
         </article>
       </div>
     </div>
 
-    <button class="ct-carousel__nav ct-carousel__nav--prev" aria-label="Previous"></button>
-    <button class="ct-carousel__nav ct-carousel__nav--next" aria-label="Next"></button>
+    <button class="ct-carousel__nav ct-carousel__nav--prev" type="button" aria-label="Previous"></button>
+    <button class="ct-carousel__nav ct-carousel__nav--next" type="button" aria-label="Next"></button>
 
-    <div class="ct-carousel__dots" aria-label="Carousel pagination"></div>
+    <div class="ct-carousel__dots" role="tablist" aria-label="Hero pagination"></div>
   </div>
 </section>
