@@ -1,1 +1,41 @@
+/* ===================================================
+   Base System
+   全站基础，不允许写页面结构
+   =================================================== */
 
+:root{
+  --bg:#ffffff;
+  --ink:#121212;
+  --muted:rgba(18,18,18,.62);
+  --hair:rgba(18,18,18,.14);
+  --radius:14px;
+
+  --ease:cubic-bezier(.2,.8,.2,1);
+  --t-fast:140ms;
+  --t-mid:180ms;
+}
+
+/* Reset */
+*,
+*::before,
+*::after{
+  box-sizing:border-box;
+}
+
+html,body{
+  height:100%;
+}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--ink);
+  font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial,"PingFang SC","Noto Sans CJK SC";
+}
+
+/* 图片默认保持等比（不参与布局控制） */
+img{
+  max-width:100%;
+  height:auto;
+  display:block;
+}
