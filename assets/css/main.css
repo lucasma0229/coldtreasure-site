@@ -1,9 +1,16 @@
-/* ColdTreasure CSS entry (safe migration) */
+/* ===================================================
+   ColdTreasure CSS Entry
+   A + D Architecture
+   ---------------------------------------------------
+   加载顺序：
+   1. 旧 style.css（迁移兜底）
+   2. 新架构覆盖层
+   =================================================== */
 
-/* 迁移期兜底：先加载旧样式，保证不崩站 */
+/* ① 迁移期兜底（确保不崩站） */
 @import url("./style.css");
 
-/* 新架构：后加载，用来覆盖旧样式（逐步接管） */
+/* ② 新架构层（逐步接管） */
 @import url("./base.css");
 @import url("./layout.css");
 @import url("./home.css");
