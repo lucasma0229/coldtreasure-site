@@ -1,1 +1,10 @@
+/* ColdTreasure CSS entry (safe migration) */
+@import url("./base.css");
+@import url("./layout.css");
+@import url("./home.css");
+@import url("./news.css");
+@import url("./post.css");
 
+/* 临时兜底：迁移期仍加载旧样式（确保不崩站）
+   等你迁移完，再删掉这一行即可 */
+@import url("./style.css");
