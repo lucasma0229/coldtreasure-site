@@ -168,9 +168,11 @@
       const heroFocus = normalizeFocus(post.heroFocus);
       const heroStyle = heroFocus ? ` style="--hero-focus:${escapeHtml(heroFocus)}"` : "";
 
-      const heroHtml = post.hero ? `
+      const heroSrc = post.thumb || post.cover || post.hero || "";
+      const heroHtml = heroSrc ? `
         <div class="hero"${heroStyle}>
-          <img src="${escapeHtml(post.hero)}" alt="${escapeHtml(post.title)}" loading="eager" />
+        <div class="hero"${heroStyle}>
+          <img src="${escapeHtml(heroSrc)}" alt="${escapeHtml(post.title)}" loading="eager" />
         </div>
       ` : "";
 
