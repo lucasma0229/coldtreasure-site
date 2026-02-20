@@ -10,13 +10,19 @@
       try {
         const res = await fetch(url, { cache: "no-store" });
         if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
-        el.innerHTML = await res.text();
+        const html = await res.text();
+
+        // ✅ 关键：用 outerHTML 替换占位节点，避免“套壳”导致结构/样式漂移
+        el.outerHTML = html;
       } catch (err) {
         console.error(err);
-        el.innerHTML =
+
+        // 失败时也用 outerHTML，避免留下 data-include 壳反复注入
+        el.outerHTML =
           `<pre style="padding:12px;border:1px solid #ddd;white-space:pre-wrap;">include error: ${url}</pre>`;
       } finally {
-        el.setAttribute("data-included", "1");
+        // 注意：el 已经被 outerHTML 替换，不能再 setAttribute
+        // 这里不再标记 data-included，下一轮 query 会找不到旧节点，自然停止
       }
     }
     return nodes.length;
