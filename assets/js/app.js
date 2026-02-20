@@ -1,3 +1,11 @@
+/* ===================================================
+   ColdTreasure app.js (Full Replace)
+   - Keeps existing list rendering logic
+   - Rebuilds HOME carousel init (no DOM overwrite)
+   - Fixes esc() scope issue for homeNews loader
+   =================================================== */
+
+/* 1) Page identity -> body class */
 (function () {
   const page = String(window.CT_PAGE || "").trim().toLowerCase();
 
@@ -15,9 +23,10 @@
 })();
 
 (async function () {
-  const CT_PAGE = (window.CT_PAGE || "").toLowerCase();
+  const CT_PAGE = String(window.CT_PAGE || "").trim().toLowerCase();
   const $ = (sel) => document.querySelector(sel);
 
+  /* ---------- utils ---------- */
   function esc(s = "") {
     return String(s).replace(/[&<>"']/g, (m) => ({
       "&": "&amp;",
@@ -70,6 +79,7 @@
     return json;
   }
 
+  /* ---------- list rendering (news / record / archive etc.) ---------- */
   function renderList(posts) {
     const listEl = $("#list");
     const emptyEl = $("#listEmpty");
@@ -118,127 +128,14 @@
     }).join("");
   }
 
-  // ✅ Hero carousel (HOME)
-  function initHeroCarousel() {
-    const hero = document.querySelector(".hero");
-    if (!hero) return;
-
-    // 允许你的 hero 容器里放一个 <img> 或者空容器都行
-    // 优先使用 data-hero-images，其次用默认两张图
-    const attr = hero.getAttribute("data-hero-images");
-    const images = (attr ? attr.split(",") : [
-      "/assets/img/hero/coldtreasure-hero-1.jpg",
-      "/assets/img/hero/coldtreasure-hero-2.jpg",
-    ]).map(s => s.trim()).filter(Boolean);
-
-    if (images.length <= 1) return;
-
-    // 建一个最小结构（不依赖你现有 HTML）
-    hero.classList.add("hero--carousel");
-    hero.innerHTML = `
-      <div class="hero-track"></div>
-      <button class="hero-nav hero-prev" aria-label="Previous">‹</button>
-      <button class="hero-nav hero-next" aria-label="Next">›</button>
-      <div class="hero-dots" aria-label="Carousel pagination"></div>
-    `;
-
-    const track = hero.querySelector(".hero-track");
-    const dots = hero.querySelector(".hero-dots");
-    const prevBtn = hero.querySelector(".hero-prev");
-    const nextBtn = hero.querySelector(".hero-next");
-
-    track.innerHTML = images.map((src, i) => `
-      <div class="hero-slide" data-i="${i}">
-        <img src="${esc(src)}" alt="" loading="${i === 0 ? "eager" : "lazy"}">
-      </div>
-    `).join("");
-
-    dots.innerHTML = images.map((_, i) =>
-      `<button class="hero-dot" data-i="${i}" aria-label="Go to slide ${i + 1}"></button>`
-    ).join("");
-
-    let idx = 0;
-    let timer = null;
-
-    const setActive = (n) => {
-      idx = (n + images.length) % images.length;
-      track.style.transform = `translateX(${-idx * 100}%)`;
-      dots.querySelectorAll(".hero-dot").forEach((b, i) => {
-        if (i === idx) b.classList.add("is-active");
-        else b.classList.remove("is-active");
-      });
-    };
-
-    const start = () => {
-      stop();
-      timer = setInterval(() => setActive(idx + 1), 4500);
-    };
-
-    const stop = () => {
-      if (timer) clearInterval(timer);
-      timer = null;
-    };
-
-    prevBtn.addEventListener("click", () => { setActive(idx - 1); start(); });
-    nextBtn.addEventListener("click", () => { setActive(idx + 1); start(); });
-
-    dots.addEventListener("click", (e) => {
-      const b = e.target.closest(".hero-dot");
-      if (!b) return;
-      const n = parseInt(b.getAttribute("data-i"), 10);
-      if (Number.isFinite(n)) { setActive(n); start(); }
-    });
-
-    hero.addEventListener("mouseenter", stop);
-    hero.addEventListener("mouseleave", start);
-
-    // reduced motion：不自动轮播
-    if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      setActive(0);
-      return;
-    }
-
-    setActive(0);
-    start();
-  }
-
-  // ✅ 关键：等模块注入完成后再开始（避免 “找不到元素”）
-  await waitForModulesLoaded();
-
-  // 初始化 hero 轮播（只要首页有 .hero 就会启动）
-  initHeroCarousel();
-
-  let posts = [];
-  try {
-    posts = await loadPosts();
-  } catch (e) {
-    console.error("[ColdTreasure] failed to load posts.json:", e);
-
-    const listEl = $("#list");
-    if (listEl) {
-      listEl.innerHTML = `<div class="empty">posts.json 读取失败：请打开控制台查看报错（F12 → Console）</div>`;
-    }
-    return;
-  }
-
-  // 列表渲染（首页没有 #list 的话会自动跳过）
-  renderList(posts);
-})();
-
-/* ===============================
-HOME — Latest 3 posts loader
-=============================== */
-document.addEventListener("modules:loaded", async () => {
-  const homeNews = document.getElementById("homeNews");
-  if (!homeNews) return;
-
-  try {
-    const res = await fetch("/assets/data/posts.json?v=" + Date.now());
-    const posts = await res.json();
+  /* ---------- HOME: Latest 3 posts cards (#homeNews) ---------- */
+  function renderHomeLatest(posts) {
+    const homeNews = document.getElementById("homeNews");
+    if (!homeNews) return;
 
     const latest = posts
       .slice()
-      .sort((a, b) => new Date(b.date) - new Date(a.date))
+      .sort((a, b) => parseDateKey(b.date) - parseDateKey(a.date))
       .slice(0, 3);
 
     homeNews.innerHTML = latest.map(p => `
@@ -252,8 +149,165 @@ document.addEventListener("modules:loaded", async () => {
         </div>
       </a>
     `).join("");
-
-  } catch (e) {
-    console.error("home news load fail", e);
   }
-});
+
+  /* ---------- HOME: Carousel init (NEW structure) ---------- */
+  function initHomeCarousel() {
+    if (CT_PAGE !== "home") return;
+
+    // Prefer new rebuilt carousel structure
+    const root = document.querySelector("[data-ct-carousel]");
+    if (root) {
+      // prevent double init (include can re-run)
+      if (root.dataset.inited === "1") return;
+      root.dataset.inited = "1";
+
+      const track = root.querySelector("[data-ct-track]");
+      if (!track) return;
+
+      const slides = Array.from(track.querySelectorAll(".ct-carousel__slide"));
+      const prev = root.querySelector(".ct-carousel__nav--prev");
+      const next = root.querySelector(".ct-carousel__nav--next");
+      const dotsWrap = root.querySelector(".ct-carousel__dots");
+
+      const n = slides.length;
+      if (n <= 1) return;
+
+      let i = 0;
+
+      // Build dots (clean rebuild each init)
+      const dots = [];
+      if (dotsWrap) {
+        dotsWrap.innerHTML = "";
+        for (let k = 0; k < n; k++) {
+          const b = document.createElement("button");
+          b.type = "button";
+          b.className = "ct-carousel__dot" + (k === 0 ? " is-active" : "");
+          b.setAttribute("aria-label", `Slide ${k + 1}`);
+          b.addEventListener("click", () => go(k));
+          dotsWrap.appendChild(b);
+          dots.push(b);
+        }
+      }
+
+      function render() {
+        track.style.transform = `translateX(${-i * 100}%)`;
+        dots.forEach((d, idx) => d.classList.toggle("is-active", idx === i));
+      }
+
+      function go(idx) {
+        i = (idx + n) % n;
+        render();
+      }
+
+      prev && prev.addEventListener("click", () => { go(i - 1); restart(); });
+      next && next.addEventListener("click", () => { go(i + 1); restart(); });
+
+      // Autoplay (quiet)
+      let timer = null;
+      function stop() {
+        if (timer) clearInterval(timer);
+        timer = null;
+      }
+      function start() {
+        stop();
+        // reduced motion：不自动轮播
+        if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+        timer = setInterval(() => go(i + 1), 6500);
+      }
+      function restart() { stop(); start(); }
+
+      root.addEventListener("mouseenter", stop);
+      root.addEventListener("mouseleave", start);
+
+      // Minimal swipe
+      let x0 = null;
+      root.addEventListener("touchstart", (e) => {
+        x0 = e.touches?.[0]?.clientX ?? null;
+      }, { passive: true });
+
+      root.addEventListener("touchend", (e) => {
+        const x1 = e.changedTouches?.[0]?.clientX ?? null;
+        if (x0 == null || x1 == null) return;
+        const dx = x1 - x0;
+        if (Math.abs(dx) < 40) return;
+        go(i + (dx < 0 ? 1 : -1));
+        restart();
+        x0 = null;
+      }, { passive: true });
+
+      render();
+      start();
+      return;
+    }
+
+    // Fallback: legacy hero-stage carousel if exists (keeps your older pages safe)
+    const legacyRoot = document.querySelector("[data-hero]");
+    if (!legacyRoot) return;
+    if (legacyRoot.dataset.inited === "1") return;
+    legacyRoot.dataset.inited = "1";
+
+    const slides = Array.from(legacyRoot.querySelectorAll(".hero-slide"));
+    const dots = Array.from(legacyRoot.querySelectorAll(".hero-dot"));
+    const prev = legacyRoot.querySelector(".hero-arrow.is-prev");
+    const next = legacyRoot.querySelector(".hero-arrow.is-next");
+
+    let i = slides.findIndex(s => s.classList.contains("is-active"));
+    if (i < 0) i = 0;
+
+    function render(n) {
+      slides.forEach((s, idx) => s.classList.toggle("is-active", idx === n));
+      dots.forEach((d, idx) => d.classList.toggle("is-active", idx === n));
+      i = n;
+    }
+
+    function go(step) {
+      const n = (i + step + slides.length) % slides.length;
+      render(n);
+    }
+
+    prev && prev.addEventListener("click", () => go(-1));
+    next && next.addEventListener("click", () => go(1));
+    dots.forEach((d, idx) => d.addEventListener("click", () => render(idx)));
+
+    let timer = null;
+    function stop() { if (timer) clearInterval(timer); timer = null; }
+    function start() {
+      stop();
+      if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+      timer = setInterval(() => go(1), 6500);
+    }
+
+    legacyRoot.addEventListener("mouseenter", stop);
+    legacyRoot.addEventListener("mouseleave", start);
+
+    render(i);
+    start();
+  }
+
+  /* ---------- boot ---------- */
+  await waitForModulesLoaded();
+
+  // HOME carousel (new + legacy safe)
+  initHomeCarousel();
+
+  // Load posts once, then render what exists on this page
+  let posts = [];
+  try {
+    posts = await loadPosts();
+  } catch (e) {
+    console.error("[ColdTreasure] failed to load posts.json:", e);
+
+    const listEl = $("#list");
+    if (listEl) {
+      listEl.innerHTML = `<div class="empty">posts.json 读取失败：请打开控制台查看报错（F12 → Console）</div>`;
+    }
+    return;
+  }
+
+  // News list / record list / archive list (auto-skip if #list absent)
+  renderList(posts);
+
+  // Home latest cards (auto-skip if #homeNews absent)
+  renderHomeLatest(posts);
+})();
