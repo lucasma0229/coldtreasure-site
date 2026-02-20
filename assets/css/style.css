@@ -510,3 +510,51 @@ Footer — ColdTreasure (Kith-ish)
   background:rgba(255,255,255,.35); border:0; padding:0; cursor:pointer;
 }
 .hero.hero--carousel .hero-dot.is-active{ background:rgba(255,255,255,.9); }
+
+/* =========================================
+   POST HERO — 与 News 封面一致：强制 3:2 + 自动裁切
+   说明：
+   - 只作用于文章首图容器（常见命名：.post-hero/.post-cover/.article-hero）
+   - 同时提供一个“兜底选择器”，避免模板类名不同导致失效
+========================================= */
+
+/* 1) 首图容器：统一 3:2 */
+.post-hero,
+.post-cover,
+.article-hero,
+.post .post-hero,
+.post .post-cover,
+.post .article-hero{
+  width:100%;
+  max-width:760px;
+  margin:28px auto 22px;
+  aspect-ratio:3 / 2;       /* ★核心：统一 3:2 */
+  overflow:hidden;
+  border-radius:12px;
+  background:rgba(0,0,0,.03);
+}
+
+/* 2) 首图图片：自动裁切（覆盖你全局 img height:auto） */
+.post-hero > img,
+.post-cover > img,
+.article-hero > img,
+.post-hero img,
+.post-cover img,
+.article-hero img{
+  width:100%;
+  height:100% !important;   /* ★关键：压过全局 height:auto */
+  object-fit:cover;
+  object-position:center;
+  display:block;
+}
+
+/* 3) 兜底：如果你的文章首图不是以上类名，而是“文章头部第一张大图”
+   - 尽量收敛影响面：只在 .post 页面里生效（如果模板没有 .post 也不影响）
+*/
+.post main img.post-hero-img,
+.post main .hero img{
+  width:100%;
+  height:100% !important;
+  object-fit:cover;
+  object-position:center;
+}
