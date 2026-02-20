@@ -1,3 +1,19 @@
+(function () {
+  const page = String(window.CT_PAGE || "").toLowerCase();
+
+  const map = {
+    home: "page-home",
+    news: "page-news",
+    post: "page-post",
+    record: "page-record",
+    archive: "page-archive",
+    guide: "page-guide",
+    feature: "page-feature",
+  };
+
+  document.body.classList.add(map[page] || "page-unknown");
+})();
+
 (async function () {
   const CT_PAGE = (window.CT_PAGE || "").toLowerCase();
   const $ = (sel) => document.querySelector(sel);
