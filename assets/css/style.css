@@ -471,11 +471,6 @@ Footer — ColdTreasure (Kith-ish)
   }
 }
 
-@media (max-width: 620px){
-  .nav{ gap:14px; font-size:11px; }
-  .news-grid{ grid-template-columns:1fr; }
-  .card-media img{ height:190px; }
-
   .slide-media img{ height:min(56vh, 420px); }
   .slide-title{ font-size:22px; }
 
