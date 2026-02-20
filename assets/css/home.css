@@ -1,50 +1,53 @@
-body.page-home{ outline: 6px solid red; }
 /* ===================================================
-   Home Page Layer
-   只影响首页
+   HOME — Carousel (Kith x Archive, isolated)
+   Only affects .page-home
    =================================================== */
 
-/* 轮播必须铺满 */
-.page-home .hero.hero--carousel .hero-media{
-  width:100%;
-  height:100%;
-  overflow:hidden;
-}
-
-.page-home .hero.hero--carousel img{
-  width:100%;
-  height:100%;
-  object-fit:cover;
-  object-position:center;
-  display:block;
-}
-
-/* ===================================================
-   Home Page Layer (A + D)
-   Fix: Carousel stage height + true cover-fill
-   =================================================== */
-
-/* 1) 给轮播“舞台”一个明确高度：按 1920x620 比例 */
 .page-home .hero.hero--carousel{
-  /* 1920 / 620 ≈ 3.097 */
+  /* 舞台比例（按你常用 1920×620） */
   aspect-ratio: 1920 / 620;
   width: 100%;
-  background: #000;   /* 兜底背景 */
 }
 
-/* 2) 把高度链条补齐：track/slide/media 全部 100% */
-.page-home .hero.hero--carousel .hero-track,
-.page-home .hero.hero--carousel .hero-slide,
-.page-home .hero.hero--carousel .hero-media{
+/* 容器 */
+.page-home .ct-carousel{
+  position: relative;
+  width: 100%;
   height: 100%;
-}
-
-/* 3) 图片真正 cover */
-.page-home .hero.hero--carousel .hero-media{
+  background: #000;
+  border-radius: var(--radius, 14px);
   overflow: hidden;
 }
 
-.page-home .hero.hero--carousel img{
+/* 轨道 */
+.page-home .ct-carousel__viewport{
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.page-home .ct-carousel__track{
+  position: absolute;
+  inset: 0;
+  display: flex;
+  transform: translateX(0%);
+  transition: transform 560ms var(--ease, cubic-bezier(.2,.8,.2,1));
+  will-change: transform;
+}
+
+.page-home .ct-carousel__slide{
+  position: relative;
+  flex: 0 0 100%;
+  height: 100%;
+}
+
+.page-home .ct-carousel__media{
+  position: absolute;
+  inset: 0;
+  display: block;
+}
+
+.page-home .ct-carousel__media img{
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -52,7 +55,111 @@ body.page-home{ outline: 6px solid red; }
   display: block;
 }
 
-/* 4)（可选）如果你觉得 still 有“边”，轻微放大 2% 消除视觉边缘 */
-.page-home .hero.hero--carousel img{
-  transform: scale(1.02);
+/* 文案（克制，档案馆感） */
+.page-home .ct-carousel__caption{
+  position: absolute;
+  left: 18px;
+  bottom: 16px;
+  max-width: min(520px, 70%);
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(0,0,0,.28);
+  backdrop-filter: blur(10px);
+}
+
+.page-home .ct-carousel__kicker{
+  font-size: 11px;
+  letter-spacing: .18em;
+  opacity: .85;
+  margin-bottom: 8px;
+}
+
+.page-home .ct-carousel__title{
+  font-size: 22px;
+  line-height: 1.12;
+  margin: 0 0 8px;
+  letter-spacing: .02em;
+}
+
+.page-home .ct-carousel__desc{
+  margin: 0;
+  font-size: 13px;
+  opacity: .86;
+  line-height: 1.35;
+}
+
+/* 导航（更隐形，像 Kith） */
+.page-home .ct-carousel__nav{
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 14px;
+  background: rgba(255,255,255,.10);
+  backdrop-filter: blur(8px);
+  cursor: pointer;
+}
+
+.page-home .ct-carousel__nav--prev{ left: 14px; }
+.page-home .ct-carousel__nav--next{ right: 14px; }
+
+.page-home .ct-carousel__nav::before{
+  content: "";
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 10px;
+  height: 10px;
+  border-top: 2px solid rgba(255,255,255,.85);
+  border-right: 2px solid rgba(255,255,255,.85);
+  transform: rotate(225deg);
+}
+
+.page-home .ct-carousel__nav--next::before{
+  transform: rotate(45deg);
+}
+
+.page-home .ct-carousel__nav:hover{
+  background: rgba(255,255,255,.16);
+}
+
+/* dots（低存在感） */
+.page-home .ct-carousel__dots{
+  position: absolute;
+  left: 50%;
+  bottom: 12px;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 999px;
+  background: rgba(0,0,0,.22);
+  backdrop-filter: blur(8px);
+}
+
+.page-home .ct-carousel__dot{
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  border: 0;
+  background: rgba(255,255,255,.38);
+  cursor: pointer;
+}
+
+.page-home .ct-carousel__dot.is-active{
+  background: rgba(255,255,255,.88);
+}
+
+/* 移动端：文案更紧凑 */
+@media (max-width: 720px){
+  .page-home .ct-carousel__caption{
+    left: 12px;
+    bottom: 12px;
+    max-width: 82%;
+    padding: 10px 12px;
+  }
+  .page-home .ct-carousel__title{ font-size: 18px; }
+  .page-home .ct-carousel__desc{ font-size: 12px; }
 }
