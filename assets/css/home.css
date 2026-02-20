@@ -1,1 +1,19 @@
+/* =========================
+   HOME (page-home)
+   ========================= */
 
+/* ✅ Home carousel cover-fill fix */
+.page-home .hero.hero--carousel .hero-media{
+  display:block;
+  width:100%;
+  height:100%;
+  overflow:hidden;
+}
+
+.page-home .hero.hero--carousel img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  object-position:center;
+  display:block;
+}
