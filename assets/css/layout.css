@@ -1,19 +1,30 @@
 /* ===================================================
    Layout Layer
    Header / Footer / Container
+   (Kith-style nav: overlay -> solid on scroll)
    =================================================== */
 
 :root{
+  /* JS 会实时写入更准确的值；这里给一个兜底 */
   --navH: 72px;
+
+  /* 导航的左右留白（可统一全站） */
+  --navPadX: 24px;
+  --navPadY: 18px;
 }
 
-/* 默认：给正文让出导航高度（非首页顶部透明时需要） */
+/* 默认：避免 fixed header 压住正文（非首页 / 已滚动态） */
 body{
   padding-top: var(--navH);
 }
 
-/* 首页顶部透明态：允许 hero 顶到最上方 */
+/* 首页顶部 overlay：允许 hero 顶到最上方（header 叠在 hero 上） */
+/* 兼容你老方案的类名 */
 html.ct-topbar-transparent body{
+  padding-top: 0;
+}
+/* 兼容你现在 header.html JS 的类名 */
+html.ct-nav-overlay body{
   padding-top: 0;
 }
 
@@ -24,38 +35,34 @@ html.ct-topbar-transparent body{
 }
 
 /* ===================================================
-   Topbar (Header) — Kith-like behavior
-   1) Top state: transparent (NO white bar), white text
-   2) Scroll state: solid pure white bar, dark text
+   Topbar (Header)  —— 你的 header 模块用的是 .topbar
    =================================================== */
 
 .topbar{
-  position:fixed;
-  top:0;
-  left:0;
-  right:0;
-  z-index:1000;
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 1000;
 
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 
-  padding:18px 24px;
+  padding: var(--navPadY) var(--navPadX);
 
-  /* 默认：纯白实底（不是半透明，不毛玻璃） */
-  background:#ffffff;
-  color:#121212;
-  border-bottom:1px solid rgba(18,18,18,.10);
+  /* 默认当作“实底导航”处理（非首页/滚动后） */
+  background: #ffffff;
+  color: #121212;
 
-  /* Kith 的“干净”：不使用 blur */
-  backdrop-filter:none;
-  box-shadow:none;
+  border-bottom: 1px solid rgba(18,18,18,.10);
+
+  /* 关键：不要做半透明毛玻璃，Kith 的观感是“白底出现/消失” */
+  backdrop-filter: none;
+  box-shadow: none;
 
   transition:
     background .18s var(--ease, ease),
     color .18s var(--ease, ease),
-    border-color .18s var(--ease, ease),
-    box-shadow .18s var(--ease, ease);
+    border-color .18s var(--ease, ease);
 }
 
 /* 品牌区 */
@@ -99,31 +106,55 @@ html.ct-topbar-transparent body{
   opacity:.90;
   transition: opacity .18s var(--ease, ease);
 }
-
 .nav a:hover{ opacity:1; }
 .nav a.is-active{ opacity:1; }
 
-/* ============ 顶部透明态（Kith：白条消失，只剩白字） ============ */
-.topbar.is-transparent{
-  background:transparent;
-  color:#ffffff;
-  border-bottom-color:transparent;
-  box-shadow:none;
-  backdrop-filter:none;
+/* ===================================================
+   Kith-style states (由 header.html JS 切换 html class)
+   =================================================== */
+
+/* 1) 首页初始：overlay（白底消失，文字变白） */
+html.ct-nav-overlay .topbar,
+html.ct-topbar-transparent .topbar{
+  background: transparent;
+  color: #ffffff;
+  border-bottom-color: transparent;
 }
 
-/* ============ 下滑实底态（Kith：明确的白色导航区域） ============ */
-.topbar.is-solid{
-  background:#ffffff;
-  color:#121212;
-  border-bottom-color:rgba(18,18,18,.10);
-  box-shadow: 0 10px 24px rgba(0,0,0,.06);
-  backdrop-filter:none;
+/* overlay 状态下，为了保证可读性：
+   轻微文字阴影（非常克制，避免“半透明导航”的感觉） */
+html.ct-nav-overlay .brand-name,
+html.ct-nav-overlay .brand-slogan,
+html.ct-nav-overlay .nav a,
+html.ct-topbar-transparent .brand-name,
+html.ct-topbar-transparent .brand-slogan,
+html.ct-topbar-transparent .nav a{
+  text-shadow: 0 1px 10px rgba(0,0,0,.28);
 }
 
-/* 小屏微调 */
+/* 2) 首页滚动后：solid（纯白实底 + 黑字） */
+html.ct-nav-solid .topbar{
+  background: #ffffff;
+  color: #121212;
+  border-bottom-color: rgba(18,18,18,.10);
+}
+
+/* solid 状态下不需要阴影 */
+html.ct-nav-solid .brand-name,
+html.ct-nav-solid .brand-slogan,
+html.ct-nav-solid .nav a{
+  text-shadow: none;
+}
+
+/* ===================================================
+   小屏微调
+   =================================================== */
+
 @media (max-width: 720px){
-  .topbar{ padding:14px 16px; }
+  :root{
+    --navPadX: 16px;
+    --navPadY: 14px;
+  }
   .nav{ gap:16px; }
   .brand-name{ font-size:12px; }
   .brand-slogan{ font-size:9px; }
