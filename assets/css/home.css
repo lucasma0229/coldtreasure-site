@@ -521,15 +521,12 @@ header,
   inset:0;
   opacity:0;
   pointer-events:none;
-  transform:scale(1.02);
-  transition:opacity 380ms var(--ease, cubic-bezier(.2,.8,.2,1)),
-             transform 520ms var(--ease, cubic-bezier(.2,.8,.2,1));
+  transition:opacity 320ms var(--ease, cubic-bezier(.2,.8,.2,1));
 }
 
 .ct-hero__slide.is-active{
   opacity:1;
   pointer-events:auto;
-  transform:scale(1);
 }
 
 .ct-hero__media{
