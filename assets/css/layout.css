@@ -1,30 +1,20 @@
 /* ===================================================
    Layout Layer
    Header / Footer / Container
-   (Kith-style nav: overlay -> solid on scroll)
    =================================================== */
 
 :root{
-  /* JS 会实时写入更准确的值；这里给一个兜底 */
+  /* JS 会写入真实值；这里兜底 */
   --navH: 72px;
-
-  /* 导航的左右留白（可统一全站） */
-  --navPadX: 24px;
-  --navPadY: 18px;
 }
 
-/* 默认：避免 fixed header 压住正文（非首页 / 已滚动态） */
+/* 默认：给正文让出 fixed header 的高度 */
 body{
   padding-top: var(--navH);
 }
 
-/* 首页顶部 overlay：允许 hero 顶到最上方（header 叠在 hero 上） */
-/* 兼容你老方案的类名 */
-html.ct-topbar-transparent body{
-  padding-top: 0;
-}
-/* 兼容你现在 header.html JS 的类名 */
-html.ct-nav-overlay body{
+/* 首页 overlay：让 hero 顶到最上方（header 覆盖在 hero 上） */
+html.ct-nav--overlay body{
   padding-top: 0;
 }
 
@@ -35,34 +25,38 @@ html.ct-nav-overlay body{
 }
 
 /* ===================================================
-   Topbar (Header)  —— 你的 header 模块用的是 .topbar
+   Topbar (Header) — Kith-like behavior
+   States are driven by <html> classes:
+   - html.ct-nav--overlay : transparent + white text
+   - html.ct-nav--solid   : white bar + dark text
    =================================================== */
 
 .topbar{
-  position: fixed;
-  top: 0; left: 0; right: 0;
-  z-index: 1000;
+  position:fixed;
+  top:0;
+  left:0;
+  right:0;
+  z-index:1000;
 
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
 
-  padding: var(--navPadY) var(--navPadX);
+  padding:18px 24px;
 
-  /* 默认当作“实底导航”处理（非首页/滚动后） */
-  background: #ffffff;
-  color: #121212;
-
-  border-bottom: 1px solid rgba(18,18,18,.10);
-
-  /* 关键：不要做半透明毛玻璃，Kith 的观感是“白底出现/消失” */
-  backdrop-filter: none;
-  box-shadow: none;
+  /* 先给一个“可过渡的基础”，具体状态由 html class 决定 */
+  background: rgba(255,255,255,.92);
+  color:#121212;
+  border-bottom:1px solid rgba(18,18,18,.10);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 
   transition:
     background .18s var(--ease, ease),
     color .18s var(--ease, ease),
-    border-color .18s var(--ease, ease);
+    border-color .18s var(--ease, ease),
+    box-shadow .18s var(--ease, ease),
+    backdrop-filter .18s var(--ease, ease);
 }
 
 /* 品牌区 */
@@ -87,8 +81,8 @@ html.ct-nav-overlay body{
   font-size:10px;
   font-weight:400;
   letter-spacing:.20em;
-  opacity:.72;
   line-height:1.1;
+  opacity:.72;
 }
 
 /* 右侧导航 */
@@ -106,55 +100,44 @@ html.ct-nav-overlay body{
   opacity:.90;
   transition: opacity .18s var(--ease, ease);
 }
+
 .nav a:hover{ opacity:1; }
 .nav a.is-active{ opacity:1; }
 
-/* ===================================================
-   Kith-style states (由 header.html JS 切换 html class)
-   =================================================== */
-
-/* 1) 首页初始：overlay（白底消失，文字变白） */
-html.ct-nav-overlay .topbar,
-html.ct-topbar-transparent .topbar{
-  background: transparent;
-  color: #ffffff;
-  border-bottom-color: transparent;
-}
-
-/* overlay 状态下，为了保证可读性：
-   轻微文字阴影（非常克制，避免“半透明导航”的感觉） */
-html.ct-nav-overlay .brand-name,
-html.ct-nav-overlay .brand-slogan,
-html.ct-nav-overlay .nav a,
-html.ct-topbar-transparent .brand-name,
-html.ct-topbar-transparent .brand-slogan,
-html.ct-topbar-transparent .nav a{
-  text-shadow: 0 1px 10px rgba(0,0,0,.28);
-}
-
-/* 2) 首页滚动后：solid（纯白实底 + 黑字） */
-html.ct-nav-solid .topbar{
+/* =========================
+   State: SOLID (scroll down / non-home)
+   重点：这是“明显的导航栏区域”，不要半透明感
+   ========================= */
+html.ct-nav--solid .topbar{
   background: #ffffff;
-  color: #121212;
+  color:#121212;
   border-bottom-color: rgba(18,18,18,.10);
+  box-shadow: 0 10px 24px rgba(0,0,0,.06);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
-/* solid 状态下不需要阴影 */
-html.ct-nav-solid .brand-name,
-html.ct-nav-solid .brand-slogan,
-html.ct-nav-solid .nav a{
-  text-shadow: none;
+/* =========================
+   State: OVERLAY (home top)
+   重点：白底消失，但文字/Logo/UI 变白（Kith 关键）
+   ========================= */
+html.ct-nav--overlay .topbar{
+  background: transparent;
+  color:#ffffff;
+  border-bottom-color: transparent;
+  box-shadow:none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
-/* ===================================================
-   小屏微调
-   =================================================== */
+/* overlay 时：slogan 更清晰一点（别太淡） */
+html.ct-nav--overlay .brand-slogan{
+  opacity:.86;
+}
 
+/* 小屏微调 */
 @media (max-width: 720px){
-  :root{
-    --navPadX: 16px;
-    --navPadY: 14px;
-  }
+  .topbar{ padding:14px 16px; }
   .nav{ gap:16px; }
   .brand-name{ font-size:12px; }
   .brand-slogan{ font-size:9px; }
