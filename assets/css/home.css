@@ -304,3 +304,34 @@
     display:none;
   }
 }
+
+/* ===========================
+   HOME / Hero Review Mode
+   目标：轮播先验收 => 顶到浏览器四边，无白边，无 header 干扰
+   =========================== */
+
+/* 1) 清浏览器默认边距（最常见白边来源） */
+body.page-home{
+  margin: 0 !important;
+  padding: 0 !important;
+  background:#000; /* 避免边缘露白 */
+}
+
+/* 2) 轮播验收阶段：强制隐藏 header（你截图那条白色就是它） */
+body.page-home header.site-header,
+body.page-home .site-header,
+body.page-home [role="banner"],
+body.page-home .site-topbar{
+  display: none !important;
+}
+
+/* 3) 如果外层 .page 给了左右 padding，把首页的 padding 清掉 */
+body.page-home .page{
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+/* 4) 确保 hero 本身无额外外边距 */
+body.page-home .ct-hero{
+  margin-top: 0 !important;
+}
