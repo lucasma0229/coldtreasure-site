@@ -3,18 +3,139 @@
    Header / Footer / Container
    =================================================== */
 
+:root{
+  /* JS 会实时写入更准确的值；这里给一个兜底 */
+  --navH: 72px;
+}
+
+/* 避免 fixed header 压住正文：默认给 body 顶部留出导航高度 */
+body{
+  padding-top: var(--navH);
+}
+
+/* 首页顶部透明态：允许 hero 顶到最上方（header 覆盖在 hero 上） */
+html.ct-topbar-transparent body{
+  padding-top: 0;
+}
+
 .page{
   max-width:1200px;
   margin:0 auto;
   padding:0 24px;
 }
 
-/* Header */
-.site-header{
-  width:100%;
+/* ===================================================
+   Topbar (Header)
+   =================================================== */
+
+/* 你的 header 模块用的是 .topbar，不是 .site-header */
+.topbar{
+  position:fixed;
+  top:0;
+  left:0;
+  right:0;
+  z-index:1000;
+
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+
+  /* 宽度用全屏，左右留白用 padding 控制 */
+  padding:18px 24px;
+
+  /* 默认当作“实底导航”处理（非首页/滚动后） */
+  background: rgba(255,255,255,.92);
+  color:#121212;
+
+  border-bottom:1px solid rgba(18,18,18,.10);
+  backdrop-filter: blur(10px);
+
+  transition:
+    background .18s var(--ease, ease),
+    color .18s var(--ease, ease),
+    border-color .18s var(--ease, ease),
+    box-shadow .18s var(--ease, ease);
 }
 
-/* Footer —— 统一为第4张长图风格 */
+/* 品牌区 */
+.brand-lockup{
+  display:flex;
+  align-items:center;
+  text-decoration:none;
+  color:inherit;
+}
+
+.brand-text{ display:block; }
+.brand-name{
+  font-size:13px;
+  font-weight:600;
+  letter-spacing:.16em;
+  line-height:1.05;
+}
+
+.brand-slogan{
+  margin-top:4px;
+  font-size:10px;
+  font-weight:400;
+  letter-spacing:.20em;
+  opacity:.72;
+  line-height:1.1;
+}
+
+/* 右侧导航 */
+.nav{
+  display:flex;
+  gap:22px;
+  align-items:center;
+}
+
+.nav a{
+  text-decoration:none;
+  color:inherit;
+  font-size:12px;
+  letter-spacing:.14em;
+  opacity:.90;
+  transition: opacity .18s var(--ease, ease);
+}
+
+.nav a:hover{ opacity:1; }
+
+.nav a.is-active{
+  opacity:1;
+}
+
+/* 首页顶部透明态（白字） */
+.topbar.is-transparent{
+  background: transparent;
+  color:#ffffff;
+  border-bottom-color: transparent;
+  box-shadow:none;
+  backdrop-filter: none;
+}
+
+/* 滚动后实底态（黑字） */
+.topbar.is-solid{
+  background: rgba(255,255,255,.92);
+  color:#121212;
+  border-bottom-color: rgba(18,18,18,.10);
+  box-shadow: 0 10px 24px rgba(0,0,0,.06);
+  backdrop-filter: blur(10px);
+}
+
+/* 小屏微调 */
+@media (max-width: 720px){
+  .topbar{
+    padding:14px 16px;
+  }
+  .nav{ gap:16px; }
+  .brand-name{ font-size:12px; }
+  .brand-slogan{ font-size:9px; }
+}
+
+/* ===================================================
+   Footer —— 统一为第4张长图风格
+   =================================================== */
+
 .site-footer{
   width:100%;
   text-align:center;
