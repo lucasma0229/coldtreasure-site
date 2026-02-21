@@ -1,62 +1,47 @@
 /* ===================================================
-   HOME — Kith-like Hero (3:2 full-bleed) + Entry Strip
-   Works with:
-   - /modules/home/carousel.html (ct-hero markup + dots)
+   HOME (Rebuild Step 1)
+   Goal: Hero carousel first (3:2, full-bleed, no white border)
    =================================================== */
 
-
-/* ===================================================
-   0) REVIEW MODE: Hide Header on Home (temporary)
-   - Only affects homepage (requires body/page wrapper has .page-home)
-   - Remove this block after hero review is approved
-   =================================================== */
-.page-home .site-header,
-.page-home header.site-header,
-.page-home [role="banner"]{
-  display:none !important;
-  visibility:hidden !important;
-  opacity:0 !important;
+/* 0) Page reset (home only) */
+body.page-home{
+  margin:0;
+  background:#000; /* 防止任何空隙露出白底 */
 }
 
-
-/* ===================================================
-   1) Top gap fix (Home only)
-   - Ensures hero touches the very top edge
-   =================================================== */
-.page-home main,
-.page-home .page,
-.page-home .home-hero{
-  margin-top:0 !important;
-  padding-top:0 !important;
+/* shell main 不要制造额外 padding/margin */
+.page-home-main{
+  margin:0;
+  padding:0;
 }
 
-
 /* ===================================================
-   2) Hero: Full-bleed 3:2 carousel
+   1) CT Hero (full-bleed, 3:2)
    =================================================== */
 .ct-hero{
   width:100vw;
   margin-left:calc(50% - 50vw);
   margin-right:calc(50% - 50vw);
+  background:#000;
 }
 
+/* 3:2 舞台 */
 .ct-hero__stage{
   position:relative;
   width:100%;
   aspect-ratio:3 / 2;
   overflow:hidden;
-  background:#0b0b0b;
+  background:#000;
 }
 
-/* Slides: fade only (no scale) to avoid “soft” rendering */
+/* slides (由 modules/home/carousel.html 提供 .ct-hero__slide 结构) */
 .ct-hero__slide{
   position:absolute;
   inset:0;
   opacity:0;
   pointer-events:none;
-  transition:opacity 320ms var(--ease, cubic-bezier(.2,.8,.2,1));
+  transition:opacity 320ms cubic-bezier(.2,.8,.2,1);
 }
-
 .ct-hero__slide.is-active{
   opacity:1;
   pointer-events:auto;
@@ -67,7 +52,6 @@
   inset:0;
   display:block;
 }
-
 .ct-hero__media img{
   width:100%;
   height:100%;
@@ -76,20 +60,18 @@
   object-position:center;
 }
 
-/* Subtle shade for caption readability */
+/* subtle shade for caption readability (very light) */
 .ct-hero__shade{
   position:absolute;
   inset:0;
   pointer-events:none;
-  background:linear-gradient(
-    to top,
-    rgba(0,0,0,.62) 0%,
-    rgba(0,0,0,.28) 26%,
-    rgba(0,0,0,0) 58%
-  );
+  background:linear-gradient(to top,
+    rgba(0,0,0,.55) 0%,
+    rgba(0,0,0,.22) 26%,
+    rgba(0,0,0,0) 58%);
 }
 
-/* Caption: bottom-left, white */
+/* caption: bottom-left, white */
 .ct-hero__caption{
   position:absolute;
   left:clamp(18px, 3vw, 44px);
@@ -103,9 +85,9 @@
   font-size:12px;
   letter-spacing:.18em;
   text-transform:uppercase;
-  opacity:.88;
+  opacity:.92;
   margin:0 0 10px;
-  text-shadow:0 10px 24px rgba(0,0,0,.28);
+  text-shadow:0 10px 26px rgba(0,0,0,.35);
 }
 
 .ct-hero__title{
@@ -114,224 +96,129 @@
   line-height:1.05;
   letter-spacing:-.01em;
   font-weight:600;
-  text-shadow:0 12px 28px rgba(0,0,0,.32);
+  text-shadow:0 12px 28px rgba(0,0,0,.38);
 }
 
 .ct-hero__desc{
   margin:0;
   font-size:clamp(13px, 1.25vw, 16px);
   line-height:1.35;
-  opacity:.90;
-  text-shadow:0 12px 28px rgba(0,0,0,.30);
+  opacity:.9;
+  text-shadow:0 12px 28px rgba(0,0,0,.36);
 }
 
-
-/* ===================================================
-   3) Minimal arrows (only chevrons)
-   =================================================== */
+/* arrows: ultra light, only chevrons */
 .ct-hero__nav{
   position:absolute;
   top:50%;
   transform:translateY(-50%);
   z-index:3;
-
   width:34px;
   height:34px;
   border:none;
-  border-radius:0;
   background:transparent;
-
   color:#fff;
   cursor:pointer;
   display:flex;
   align-items:center;
   justify-content:center;
-
-  opacity:.26;
-  transition:opacity 180ms var(--ease, cubic-bezier(.2,.8,.2,1)),
-             transform 180ms var(--ease, cubic-bezier(.2,.8,.2,1));
+  opacity:.18;
+  transition:opacity 180ms cubic-bezier(.2,.8,.2,1);
 }
-
+.ct-hero__nav:hover{ opacity:.55; }
 .ct-hero__nav span{
   font-size:22px;
   line-height:1;
   transform:translateY(-1px);
 }
-
-.ct-hero__nav:hover{ opacity:.70; }
-.ct-hero__nav:active{
-  opacity:.88;
-  transform:translateY(-50%) scale(.98);
-}
-
 .ct-hero__nav--prev{ left:12px; }
 .ct-hero__nav--next{ right:12px; }
 
-
-/* ===================================================
-   4) Pagination dots
-   - requires: <div class="ct-hero__dots"></div> in carousel.html
-   =================================================== */
+/* dots: always visible (low presence) */
 .ct-hero__dots{
   position:absolute;
   left:50%;
   bottom:14px;
   transform:translateX(-50%);
   z-index:4;
-
   display:flex;
   gap:10px;
   align-items:center;
   justify-content:center;
-
-  opacity:.40;
-  transition:opacity 180ms var(--ease, cubic-bezier(.2,.8,.2,1));
 }
-
-.ct-hero__stage:hover .ct-hero__dots{
-  opacity:.78;
-}
-
 .ct-hero__dot{
   width:6px;
   height:6px;
   border-radius:999px;
   border:none;
-  background:rgba(255,255,255,.35);
+  background:rgba(255,255,255,.28);
   cursor:pointer;
   padding:0;
 }
-
 .ct-hero__dot.is-active{
-  background:rgba(255,255,255,.92);
+  background:rgba(255,255,255,.9);
 }
-
 
 /* ===================================================
-   5) Entry Strip (5入口) — Final version (grid + separators)
-   - Put it inside Hero area visually (overlay near bottom)
+   2) Entry strip below hero (Kith-like spacing + dividers)
    =================================================== */
-.page-home .entry-strip{
-  position:absolute;
-  left:50%;
-  transform:translateX(-50%);
-  bottom:16px;
-  z-index:50;
-  width:min(1200px, calc(100% - 48px));
-  margin:0 !important;
+.entry-strip--below{
+  padding: 22px 0 10px;
+  background:#fff; /* 下面内容是白底体系，先保持一致 */
 }
 
-.page-home .entry-strip,
-.page-home .entry-strip *{
-  box-shadow:none !important;
+.entry-strip__inner{
+  max-width:1200px;
+  margin:0 auto;
+  padding: 0 24px;
+
+  display:grid;
+  grid-template-columns:repeat(5, 1fr);
+  gap:0;
+  border-top:1px solid rgba(18,18,18,.10);
+  border-bottom:1px solid rgba(18,18,18,.10);
 }
 
-.page-home .entry-strip__inner{
-  display:grid !important;
-  grid-template-columns:repeat(5, 1fr) !important;
-  gap:0 !important;
-
-  background:rgba(0,0,0,.22) !important;
-  backdrop-filter:blur(10px);
-  border:1px solid rgba(255,255,255,.10);
-  border-radius:14px;
-  overflow:hidden;
-
-  padding:0 !important;
-}
-
-.page-home .entry-item{
-  display:block;
-  text-align:center;
-  padding:14px 10px 12px;
-
-  color:rgba(255,255,255,.92) !important;
+.entry-item{
   text-decoration:none;
+  color:#121212;
+  padding: 18px 10px 16px;
+  text-align:center;
 
-  border-right:1px solid rgba(255,255,255,.10);
-  background:transparent !important;
+  border-right:1px solid rgba(18,18,18,.10);
 }
+.entry-item:last-child{ border-right:0; }
 
-.page-home .entry-item:last-child{ border-right:0; }
-
-.page-home .entry-title{ display:block; }
-
-.page-home .entry-en{
-  font-size:12px;
-  letter-spacing:.14em;
-  opacity:.95;
-}
-
-.page-home .entry-cn{
-  margin-top:6px;
-  font-size:12px;
-  letter-spacing:.10em;
-  opacity:.92;
-  font-weight:500;
-}
-
-.page-home .entry-desc{
-  margin-top:6px;
+.entry-en{
   font-size:11px;
-  opacity:.72;
+  letter-spacing:.18em;
+  opacity:.75;
+}
+.entry-cn{
+  margin-top:6px;
+  font-size:13px;
+  letter-spacing:.10em;
+  font-weight:600;
+  opacity:.92;
 }
 
-.page-home .entry-item:hover{
-  background:rgba(255,255,255,.06) !important;
-}
-
-
-/* ===================================================
-   6) Responsive
-   =================================================== */
+/* mobile */
 @media (max-width: 720px){
-  /* caption spacing */
   .ct-hero__caption{
     max-width:calc(100% - 36px);
   }
-
-  /* entry strip becomes 3 columns; hide desc */
-  .page-home .entry-strip{
-    bottom:12px;
-    width:calc(100% - 24px);
+  .entry-strip__inner{
+    grid-template-columns:repeat(3, 1fr);
+    row-gap:0;
   }
-
-  .page-home .entry-strip__inner{
-    grid-template-columns:repeat(3, 1fr) !important;
-  }
-
-  .page-home .entry-desc{
-    display:none;
+  .entry-item:nth-child(3){
+    border-right:0;
   }
 }
 
-/* ===========================
-   HOME / Hero Review Mode
-   目标：轮播先验收 => 顶到浏览器四边，无白边，无 header 干扰
-   =========================== */
-
-/* 1) 清浏览器默认边距（最常见白边来源） */
-body.page-home{
-  margin: 0 !important;
-  padding: 0 !important;
-  background:#000; /* 避免边缘露白 */
-}
-
-/* 2) 轮播验收阶段：强制隐藏 header（你截图那条白色就是它） */
-body.page-home header.site-header,
-body.page-home .site-header,
-body.page-home [role="banner"],
-body.page-home .site-topbar{
-  display: none !important;
-}
-
-/* 3) 如果外层 .page 给了左右 padding，把首页的 padding 清掉 */
-body.page-home .page{
-  padding-left: 0 !important;
-  padding-right: 0 !important;
-}
-
-/* 4) 确保 hero 本身无额外外边距 */
-body.page-home .ct-hero{
-  margin-top: 0 !important;
+/* ===================================================
+   3) Safety: stop any leftover "page padding" from affecting hero
+   =================================================== */
+.page-home .page{
+  /* 只影响下面内容容器，不要去碰 hero */
 }
