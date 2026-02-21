@@ -1,65 +1,55 @@
-<main class="page">
-  <!-- Home Hero -->
-  <section class="home-hero home-hero--bleed" aria-label="Featured">
-    <div class="home-hero__wrap">
+<main class="page-home-main">
+  <!-- Hero：必须在 .page 容器外，保证真正 full-bleed、无白边 -->
+  <section class="ct-hero" aria-label="Featured">
+    <div class="ct-hero__stage" data-ct-hero data-ct-hero-autoplay="0">
       <!-- Carousel -->
-      <div class="home-hero__carousel" data-include="/modules/home/carousel.html"></div>
-
-      <!-- 5-entry strip (INLINE, no include dependency) -->
-      <div class="home-hero__entry">
-        <section class="entry-strip" aria-label="Primary sections">
-          <div class="entry-strip__inner">
-            <a class="entry-item" href="/news/">
-              <div class="entry-title">
-                <div class="entry-en">NEWS</div>
-                <div class="entry-cn">快讯</div>
-              </div>
-              <div class="entry-desc">Daily drops</div>
-            </a>
-
-            <a class="entry-item" href="/record/">
-              <div class="entry-title">
-                <div class="entry-en">RECORD</div>
-                <div class="entry-cn">精选</div>
-              </div>
-              <div class="entry-desc">Timeline notes</div>
-            </a>
-
-            <a class="entry-item" href="/archive/">
-              <div class="entry-title">
-                <div class="entry-en">ARCHIVE</div>
-                <div class="entry-cn">档案室</div>
-              </div>
-              <div class="entry-desc">Curated</div>
-            </a>
-
-            <a class="entry-item" href="/guide/">
-              <div class="entry-title">
-                <div class="entry-en">GUIDE</div>
-                <div class="entry-cn">指南</div>
-              </div>
-              <div class="entry-desc">Buying tips</div>
-            </a>
-
-            <a class="entry-item" href="/feature/">
-              <div class="entry-title">
-                <div class="entry-en">FEATURE</div>
-                <div class="entry-cn">专题</div>
-              </div>
-              <div class="entry-desc">In depth</div>
-            </a>
-          </div>
-        </section>
-      </div>
-
-      <!-- News anchor -->
-      <a class="home-hero__cue" href="#home-news" aria-label="Scroll to News"></a>
+      <div data-include="/modules/home/carousel.html"></div>
     </div>
   </section>
 
-  <!-- Below fold -->
-  <div id="home-news" data-include="/modules/home/news.html"></div>
+  <!-- 5 大入口：放在轮播下方，留出一点呼吸 -->
+  <section class="entry-strip entry-strip--below" aria-label="Primary sections">
+    <div class="entry-strip__inner">
+      <a class="entry-item" href="/news/">
+        <div class="entry-title">
+          <div class="entry-en">NEWS</div>
+          <div class="entry-cn">快讯</div>
+        </div>
+      </a>
 
-  <!-- Footer -->
-  <div data-include="/modules/footer/footer.html"></div>
+      <a class="entry-item" href="/record/">
+        <div class="entry-title">
+          <div class="entry-en">RECORD</div>
+          <div class="entry-cn">精选</div>
+        </div>
+      </a>
+
+      <a class="entry-item" href="/archive/">
+        <div class="entry-title">
+          <div class="entry-en">ARCHIVE</div>
+          <div class="entry-cn">档案室</div>
+        </div>
+      </a>
+
+      <a class="entry-item" href="/guide/">
+        <div class="entry-title">
+          <div class="entry-en">GUIDE</div>
+          <div class="entry-cn">球鞋指南</div>
+        </div>
+      </a>
+
+      <a class="entry-item" href="/feature/">
+        <div class="entry-title">
+          <div class="entry-en">FEATURE</div>
+          <div class="entry-cn">专题</div>
+        </div>
+      </a>
+    </div>
+  </section>
+
+  <!-- Below fold：内容回到 .page 容器（有左右留白更高级） -->
+  <div class="page">
+    <div id="home-news" data-include="/modules/home/news.html"></div>
+    <div data-include="/modules/footer/footer.html"></div>
+  </div>
 </main>
