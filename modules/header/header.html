@@ -16,76 +16,45 @@
 <script>
 (function(){
   const path = (location.pathname || "/").toLowerCase();
-  const topbar = document.querySelector("[data-topbar]");
-  if (!topbar) return;
 
-  // -----------------------------
-  // Active nav highlight (keep your logic)
-  // -----------------------------
+  // ========== Nav active（你原本的逻辑） ==========
   document.querySelectorAll(".nav a").forEach(a => {
     const href = (a.getAttribute("href") || "").toLowerCase();
-
-    // News：/news/ + 文章页 /post/ 都算 News 体系
     const isNews = (href === "/news/") && (path.startsWith("/news") || path.startsWith("/post"));
-
-    // 其他栏目：按各自路径前缀匹配
     const isSection = (href !== "/news/") && href !== "/" && path.startsWith(href);
-
     if (isNews || isSection) a.classList.add("is-active");
   });
 
-  // -----------------------------
-  // Transparent header on Home only
-  // - At top: transparent + white text (expects CSS to style via .is-transparent)
-  // - On scroll: solid + dark text (expects CSS to style via .is-solid)
-  // Non-home pages: default solid
-  // -----------------------------
-  const isHome = (window.CT_PAGE === "home") || (path === "/") || (path === "/index.html");
+  // ========== Kith-style Header state ==========
+  const topbar = document.querySelector("[data-topbar]");
+  if (!topbar) return;
 
-  // expose nav height as global rhythm unit
-  function syncNavH(){
-    const h = Math.round(topbar.getBoundingClientRect().height || 0);
-    if (h > 0) document.documentElement.style.setProperty("--navH", h + "px");
-    return h;
-  }
+  const isHome = (window.CT_PAGE || "").toLowerCase() === "home" || path === "/" || path === "/index.html";
 
-  let navH = syncNavH();
-  window.addEventListener("resize", () => { navH = syncNavH(); }, { passive:true });
+  // 规则：
+  // - 首页：初始 overlay（透明 + 白字），下滑后变成白底 bar + 深色字
+  // - 非首页：默认就是白底 bar（深色字）
+  function applyState() {
+    const y = window.scrollY || document.documentElement.scrollTop || 0;
 
-  // helper: apply state classes
-  function setState(isTop){
-    // Only home uses transparent-at-top behavior
-    if (!isHome){
-      topbar.classList.remove("is-transparent");
-      topbar.classList.add("is-solid");
-      document.documentElement.classList.remove("ct-topbar-transparent");
+    if (!isHome) {
+      document.documentElement.classList.remove("ct-nav--overlay");
+      document.documentElement.classList.add("ct-nav--solid");
       return;
     }
 
-    if (isTop){
-      topbar.classList.add("is-transparent");
-      topbar.classList.remove("is-solid");
-      document.documentElement.classList.add("ct-topbar-transparent");
-    }else{
-      topbar.classList.remove("is-transparent");
-      topbar.classList.add("is-solid");
-      document.documentElement.classList.remove("ct-topbar-transparent");
+    if (y <= 8) {
+      document.documentElement.classList.add("ct-nav--overlay");
+      document.documentElement.classList.remove("ct-nav--solid");
+    } else {
+      document.documentElement.classList.remove("ct-nav--overlay");
+      document.documentElement.classList.add("ct-nav--solid");
     }
   }
 
-  // initial state
-  setState(window.scrollY <= Math.max(24, Math.floor(navH * 0.6)));
+  applyState();
+  window.addEventListener("scroll", applyState, { passive: true });
+  window.addEventListener("resize", applyState);
 
-  // rAF throttled scroll
-  let ticking = false;
-  window.addEventListener("scroll", () => {
-    if (ticking) return;
-    ticking = true;
-    requestAnimationFrame(() => {
-      const threshold = Math.max(24, Math.floor(navH * 0.8)); // use --navH as rhythm unit
-      setState(window.scrollY <= threshold);
-      ticking = false;
-    });
-  }, { passive:true });
 })();
 </script>
