@@ -1,12 +1,56 @@
 <main class="page">
-  <!-- Home Hero (still inside .page so include loader can see nested includes) -->
+  <!-- Home Hero -->
   <section class="home-hero home-hero--bleed" aria-label="Featured">
     <div class="home-hero__wrap">
       <!-- Carousel -->
       <div class="home-hero__carousel" data-include="/modules/home/carousel.html"></div>
 
-      <!-- 5-entry strip (overlay) -->
-      <div class="home-hero__entry" data-include="/modules/home/entry.html"></div>
+      <!-- 5-entry strip (INLINE, no include dependency) -->
+      <div class="home-hero__entry">
+        <section class="entry-strip" aria-label="Primary sections">
+          <div class="entry-strip__inner">
+            <a class="entry-item" href="/news/">
+              <div class="entry-title">
+                <div class="entry-en">NEWS</div>
+                <div class="entry-cn">快讯</div>
+              </div>
+              <div class="entry-desc">Daily drops</div>
+            </a>
+
+            <a class="entry-item" href="/record/">
+              <div class="entry-title">
+                <div class="entry-en">RECORD</div>
+                <div class="entry-cn">精选</div>
+              </div>
+              <div class="entry-desc">Timeline notes</div>
+            </a>
+
+            <a class="entry-item" href="/archive/">
+              <div class="entry-title">
+                <div class="entry-en">ARCHIVE</div>
+                <div class="entry-cn">档案室</div>
+              </div>
+              <div class="entry-desc">Curated</div>
+            </a>
+
+            <a class="entry-item" href="/guide/">
+              <div class="entry-title">
+                <div class="entry-en">GUIDE</div>
+                <div class="entry-cn">指南</div>
+              </div>
+              <div class="entry-desc">Buying tips</div>
+            </a>
+
+            <a class="entry-item" href="/feature/">
+              <div class="entry-title">
+                <div class="entry-en">FEATURE</div>
+                <div class="entry-cn">专题</div>
+              </div>
+              <div class="entry-desc">In depth</div>
+            </a>
+          </div>
+        </section>
+      </div>
 
       <!-- News anchor -->
       <a class="home-hero__cue" href="#home-news" aria-label="Scroll to News"></a>
