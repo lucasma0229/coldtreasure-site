@@ -4,25 +4,15 @@
    =================================================== */
 
 :root{
-  /* JS 会实时写入更准确的值；这里给一个兜底 */
   --navH: 72px;
-
-  /* Header 视觉参数（统一管理，方便你之后微调） */
-  --nav-pad-x: 24px;
-  --nav-pad-y: 18px;
-
-  --nav-ink: #121212;
-  --nav-bg: #ffffff;              /* Kith：滚动后就是明确的白条 */
-  --nav-border: rgba(18,18,18,.10);
-  --nav-shadow: 0 10px 24px rgba(0,0,0,.06);
 }
 
-/* 避免 fixed header 压住正文：默认给 body 顶部留出导航高度 */
+/* 默认：给正文让出导航高度（非首页顶部透明时需要） */
 body{
   padding-top: var(--navH);
 }
 
-/* 首页顶部透明态：允许 hero 顶到最上方（header 覆盖在 hero 上） */
+/* 首页顶部透明态：允许 hero 顶到最上方 */
 html.ct-topbar-transparent body{
   padding-top: 0;
 }
@@ -34,32 +24,32 @@ html.ct-topbar-transparent body{
 }
 
 /* ===================================================
-   Topbar (Header)  —— Kith-style
+   Topbar (Header) — Kith-like behavior
+   1) Top state: transparent (NO white bar), white text
+   2) Scroll state: solid pure white bar, dark text
    =================================================== */
 
-/* 你的 header 模块用的是 .topbar */
 .topbar{
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 1000;
+  position:fixed;
+  top:0;
+  left:0;
+  right:0;
+  z-index:1000;
 
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
 
-  /* 宽度用全屏，左右留白用 padding 控制 */
-  padding: var(--nav-pad-y) var(--nav-pad-x);
+  padding:18px 24px;
 
-  /* 默认：实底（用于非首页 / 首页滚动后） */
-  background: var(--nav-bg);
-  color: var(--nav-ink);
-  border-bottom: 1px solid var(--nav-border);
-  box-shadow: none;
+  /* 默认：纯白实底（不是半透明，不毛玻璃） */
+  background:#ffffff;
+  color:#121212;
+  border-bottom:1px solid rgba(18,18,18,.10);
 
-  /* Kith 不做磨砂半透明：这里明确取消 blur */
-  backdrop-filter: none;
+  /* Kith 的“干净”：不使用 blur */
+  backdrop-filter:none;
+  box-shadow:none;
 
   transition:
     background .18s var(--ease, ease),
@@ -111,50 +101,29 @@ html.ct-topbar-transparent body{
 }
 
 .nav a:hover{ opacity:1; }
+.nav a.is-active{ opacity:1; }
 
-.nav a.is-active{
-  opacity:1;
-}
-
-/* -------------------------------
-   Kith 核心：首页首屏“白条消失”
-   但 Logo/文字/UI 变白，覆盖在 hero 上
--------------------------------- */
-
-/* 你现有的全局钩子：html.ct-topbar-transparent */
-html.ct-topbar-transparent .topbar{
-  background: transparent;
-  color: #ffffff;
-  border-bottom-color: transparent;
-  box-shadow: none;
-}
-
-/* 如果你 JS 还会加 .is-transparent，也兼容（不冲突） */
+/* ============ 顶部透明态（Kith：白条消失，只剩白字） ============ */
 .topbar.is-transparent{
-  background: transparent;
+  background:transparent;
   color:#ffffff;
-  border-bottom-color: transparent;
+  border-bottom-color:transparent;
   box-shadow:none;
+  backdrop-filter:none;
 }
 
-/* 首页滚动后/非首页：出现明确白色导航条（不是半透明，不磨砂） */
+/* ============ 下滑实底态（Kith：明确的白色导航区域） ============ */
 .topbar.is-solid{
-  background: var(--nav-bg);
-  color: var(--nav-ink);
-  border-bottom-color: var(--nav-border);
-  box-shadow: var(--nav-shadow);
+  background:#ffffff;
+  color:#121212;
+  border-bottom-color:rgba(18,18,18,.10);
+  box-shadow: 0 10px 24px rgba(0,0,0,.06);
+  backdrop-filter:none;
 }
-
-/* 如果你希望滚动后更“硬朗像 Kith”，可以把阴影再降一点：
-   --nav-shadow: 0 8px 18px rgba(0,0,0,.05);
-*/
 
 /* 小屏微调 */
 @media (max-width: 720px){
-  :root{
-    --nav-pad-x: 16px;
-    --nav-pad-y: 14px;
-  }
+  .topbar{ padding:14px 16px; }
   .nav{ gap:16px; }
   .brand-name{ font-size:12px; }
   .brand-slogan{ font-size:9px; }
@@ -168,20 +137,16 @@ html.ct-topbar-transparent .topbar{
   width:100%;
   text-align:center;
 
-  /* 字体系统（更高级、更干净） */
   font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, "PingFang SC", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
 
-  /* 字体观感（按参考图） */
   font-size:12px;
   font-weight:400;
   letter-spacing:0.14em;
   line-height:1.2;
 
-  /* 颜色与灰度 */
   color:#A3A3A3;
   opacity:.9;
 
-  /* 位置保持完全不动 */
   margin-top:96px;
   padding:0 16px 1.5em;
 
@@ -189,7 +154,6 @@ html.ct-topbar-transparent .topbar{
   border:none;
 }
 
-/* 防止 inner 被其他CSS干扰 */
 .site-footer__inner{
   font:inherit;
   color:inherit;
