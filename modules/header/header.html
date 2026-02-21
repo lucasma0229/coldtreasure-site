@@ -1,4 +1,4 @@
-<header class="topbar">
+<header class="topbar" data-topbar>
   <a class="brand-lockup" href="/" aria-label="ColdTreasure Home">
     <div class="brand-text">
       <div class="brand-name">COLD TREASURE</div>
@@ -16,7 +16,12 @@
 <script>
 (function(){
   const path = (location.pathname || "/").toLowerCase();
+  const topbar = document.querySelector("[data-topbar]");
+  if (!topbar) return;
 
+  // -----------------------------
+  // Active nav highlight (keep your logic)
+  // -----------------------------
   document.querySelectorAll(".nav a").forEach(a => {
     const href = (a.getAttribute("href") || "").toLowerCase();
 
@@ -28,5 +33,59 @@
 
     if (isNews || isSection) a.classList.add("is-active");
   });
+
+  // -----------------------------
+  // Transparent header on Home only
+  // - At top: transparent + white text (expects CSS to style via .is-transparent)
+  // - On scroll: solid + dark text (expects CSS to style via .is-solid)
+  // Non-home pages: default solid
+  // -----------------------------
+  const isHome = (window.CT_PAGE === "home") || (path === "/") || (path === "/index.html");
+
+  // expose nav height as global rhythm unit
+  function syncNavH(){
+    const h = Math.round(topbar.getBoundingClientRect().height || 0);
+    if (h > 0) document.documentElement.style.setProperty("--navH", h + "px");
+    return h;
+  }
+
+  let navH = syncNavH();
+  window.addEventListener("resize", () => { navH = syncNavH(); }, { passive:true });
+
+  // helper: apply state classes
+  function setState(isTop){
+    // Only home uses transparent-at-top behavior
+    if (!isHome){
+      topbar.classList.remove("is-transparent");
+      topbar.classList.add("is-solid");
+      document.documentElement.classList.remove("ct-topbar-transparent");
+      return;
+    }
+
+    if (isTop){
+      topbar.classList.add("is-transparent");
+      topbar.classList.remove("is-solid");
+      document.documentElement.classList.add("ct-topbar-transparent");
+    }else{
+      topbar.classList.remove("is-transparent");
+      topbar.classList.add("is-solid");
+      document.documentElement.classList.remove("ct-topbar-transparent");
+    }
+  }
+
+  // initial state
+  setState(window.scrollY <= Math.max(24, Math.floor(navH * 0.6)));
+
+  // rAF throttled scroll
+  let ticking = false;
+  window.addEventListener("scroll", () => {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(() => {
+      const threshold = Math.max(24, Math.floor(navH * 0.8)); // use --navH as rhythm unit
+      setState(window.scrollY <= threshold);
+      ticking = false;
+    });
+  }, { passive:true });
 })();
 </script>
