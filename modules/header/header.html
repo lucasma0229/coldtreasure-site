@@ -17,7 +17,7 @@
 (function(){
   const path = (location.pathname || "/").toLowerCase();
 
-  // ========== Nav active（你原本的逻辑） ==========
+  // ========== Nav active ==========
   document.querySelectorAll(".nav a").forEach(a => {
     const href = (a.getAttribute("href") || "").toLowerCase();
     const isNews = (href === "/news/") && (path.startsWith("/news") || path.startsWith("/post"));
@@ -29,12 +29,18 @@
   const topbar = document.querySelector("[data-topbar]");
   if (!topbar) return;
 
-  const isHome = (window.CT_PAGE || "").toLowerCase() === "home" || path === "/" || path === "/index.html";
+  const isHome =
+    (String(window.CT_PAGE || "").toLowerCase() === "home") ||
+    path === "/" || path === "/index.html";
 
-  // 规则：
-  // - 首页：初始 overlay（透明 + 白字），下滑后变成白底 bar + 深色字
-  // - 非首页：默认就是白底 bar（深色字）
+  function syncNavH(){
+    const h = Math.round(topbar.getBoundingClientRect().height || 72);
+    document.documentElement.style.setProperty("--navH", h + "px");
+  }
+
   function applyState() {
+    syncNavH();
+
     const y = window.scrollY || document.documentElement.scrollTop || 0;
 
     if (!isHome) {
@@ -43,6 +49,7 @@
       return;
     }
 
+    // 首页：顶部 overlay（白字，白底消失）；下滑一点点就 solid（白底出现）
     if (y <= 8) {
       document.documentElement.classList.add("ct-nav--overlay");
       document.documentElement.classList.remove("ct-nav--solid");
@@ -55,6 +62,5 @@
   applyState();
   window.addEventListener("scroll", applyState, { passive: true });
   window.addEventListener("resize", applyState);
-
 })();
 </script>
