@@ -488,13 +488,11 @@ header.site-header{
   visibility:hidden !important;
 }
 
-/* ===== 临时关闭首页 Header（用于轮播验收）===== */
-/* 用 body 上的 .page-home 限定：只影响首页 */
-.page-home header,
-.page-home .site-header,
-.page-home .header,
-.page-home [role="banner"]{
+/* ===== 临时关闭 Header（用于轮播验收）===== */
+/* 不依赖 page-home：直接按元素结构隐藏 */
+header.site-header,
+.site-header,
+header,
+[role="banner"]{
   display:none !important;
-  visibility:hidden !important;
-  opacity:0 !important;
 }
