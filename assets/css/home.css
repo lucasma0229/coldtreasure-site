@@ -478,3 +478,8 @@
   }
   .page-home .entry-desc{ display:none; }
 }
+
+/* ===== 临时关闭首页导航栏（重建轮播用）===== */
+.site-header{
+  display:none !important;
+}
