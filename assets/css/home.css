@@ -1,32 +1,59 @@
 /* ===================================================
-   HOME (Rebuild Step 1)
-   Goal: Hero carousel first (3:2, full-bleed, no white border)
+   HOME (Rebuild Step 1) — CLEAN
+   Goal:
+   - Hero carousel first (3:2, full-bleed, NO white border)
+   - Page stays normal (white below fold)
+   - Header hidden ONLY on home (temporary)
    =================================================== */
 
-/* 0) Page reset (home only) */
+/* ---------------------------------------------------
+   0) Home-only base reset
+   --------------------------------------------------- */
 body.page-home{
   margin:0;
-  background:#000; /* 防止任何空隙露出白底 */
+  background:#fff; /* ✅ 不要全站变黑，只让 Hero 自己黑 */
 }
 
-/* shell main 不要制造额外 padding/margin */
-.page-home-main{
-  margin:0;
-  padding:0;
+/* ✅ 临时：隐藏首页导航栏（重建轮播阶段）
+   注意：只限 .page-home，别影响其他页面 */
+.page-home header.site-header,
+.page-home .site-header,
+.page-home [role="banner"]{
+  display:none !important;
 }
 
-/* ===================================================
-   1) CT Hero (full-bleed, 3:2)
-   =================================================== */
-.ct-hero{
+/* ---------------------------------------------------
+   1) Kill the white border (home only)
+   - main.page 默认有 max-width + padding，会导致 Hero 边缘露白
+   - 首页重建阶段：先让 main.page 全宽无 padding
+   - 下面内容我们再单独用 container 拉回 1200
+   --------------------------------------------------- */
+.page-home main.page{
+  max-width:none !important;
+  padding:0 !important;
+  margin:0 !important;
+}
+
+/* ---------------------------------------------------
+   2) CT Hero (full-bleed, 3:2)
+   Structure expected:
+   <section class="ct-hero">
+     <div class="ct-hero__stage" data-ct-hero>
+       .ct-hero__slide ...
+       .ct-hero__nav ...
+       .ct-hero__dots ...
+     </div>
+   </section>
+   --------------------------------------------------- */
+.page-home .ct-hero{
   width:100vw;
   margin-left:calc(50% - 50vw);
   margin-right:calc(50% - 50vw);
-  background:#000;
+  background:#000; /* ✅ 只 Hero 黑 */
 }
 
 /* 3:2 舞台 */
-.ct-hero__stage{
+.page-home .ct-hero__stage{
   position:relative;
   width:100%;
   aspect-ratio:3 / 2;
@@ -34,25 +61,25 @@ body.page-home{
   background:#000;
 }
 
-/* slides (由 modules/home/carousel.html 提供 .ct-hero__slide 结构) */
-.ct-hero__slide{
+/* slides */
+.page-home .ct-hero__slide{
   position:absolute;
   inset:0;
   opacity:0;
   pointer-events:none;
   transition:opacity 320ms cubic-bezier(.2,.8,.2,1);
 }
-.ct-hero__slide.is-active{
+.page-home .ct-hero__slide.is-active{
   opacity:1;
   pointer-events:auto;
 }
 
-.ct-hero__media{
+.page-home .ct-hero__media{
   position:absolute;
   inset:0;
   display:block;
 }
-.ct-hero__media img{
+.page-home .ct-hero__media img{
   width:100%;
   height:100%;
   display:block;
@@ -60,8 +87,8 @@ body.page-home{
   object-position:center;
 }
 
-/* subtle shade for caption readability (very light) */
-.ct-hero__shade{
+/* subtle shade for caption readability */
+.page-home .ct-hero__shade{
   position:absolute;
   inset:0;
   pointer-events:none;
@@ -71,8 +98,8 @@ body.page-home{
     rgba(0,0,0,0) 58%);
 }
 
-/* caption: bottom-left, white */
-.ct-hero__caption{
+/* caption bottom-left */
+.page-home .ct-hero__caption{
   position:absolute;
   left:clamp(18px, 3vw, 44px);
   bottom:clamp(18px, 3vw, 44px);
@@ -81,7 +108,7 @@ body.page-home{
   z-index:2;
 }
 
-.ct-hero__kicker{
+.page-home .ct-hero__kicker{
   font-size:12px;
   letter-spacing:.18em;
   text-transform:uppercase;
@@ -90,7 +117,7 @@ body.page-home{
   text-shadow:0 10px 26px rgba(0,0,0,.35);
 }
 
-.ct-hero__title{
+.page-home .ct-hero__title{
   margin:0 0 8px;
   font-size:clamp(30px, 3.2vw, 52px);
   line-height:1.05;
@@ -99,7 +126,7 @@ body.page-home{
   text-shadow:0 12px 28px rgba(0,0,0,.38);
 }
 
-.ct-hero__desc{
+.page-home .ct-hero__desc{
   margin:0;
   font-size:clamp(13px, 1.25vw, 16px);
   line-height:1.35;
@@ -107,8 +134,8 @@ body.page-home{
   text-shadow:0 12px 28px rgba(0,0,0,.36);
 }
 
-/* arrows: ultra light, only chevrons */
-.ct-hero__nav{
+/* arrows: ultra light */
+.page-home .ct-hero__nav{
   position:absolute;
   top:50%;
   transform:translateY(-50%);
@@ -125,17 +152,17 @@ body.page-home{
   opacity:.18;
   transition:opacity 180ms cubic-bezier(.2,.8,.2,1);
 }
-.ct-hero__nav:hover{ opacity:.55; }
-.ct-hero__nav span{
+.page-home .ct-hero__nav:hover{ opacity:.55; }
+.page-home .ct-hero__nav span{
   font-size:22px;
   line-height:1;
   transform:translateY(-1px);
 }
-.ct-hero__nav--prev{ left:12px; }
-.ct-hero__nav--next{ right:12px; }
+.page-home .ct-hero__nav--prev{ left:12px; }
+.page-home .ct-hero__nav--next{ right:12px; }
 
-/* dots: always visible (low presence) */
-.ct-hero__dots{
+/* dots: always visible but subtle */
+.page-home .ct-hero__dots{
   position:absolute;
   left:50%;
   bottom:14px;
@@ -146,7 +173,7 @@ body.page-home{
   align-items:center;
   justify-content:center;
 }
-.ct-hero__dot{
+.page-home .ct-hero__dot{
   width:6px;
   height:6px;
   border-radius:999px;
@@ -155,23 +182,29 @@ body.page-home{
   cursor:pointer;
   padding:0;
 }
-.ct-hero__dot.is-active{
+.page-home .ct-hero__dot.is-active{
   background:rgba(255,255,255,.9);
 }
 
-/* ===================================================
-   2) Entry strip below hero (Kith-like spacing + dividers)
-   =================================================== */
-.entry-strip--below{
+/* ---------------------------------------------------
+   3) Entry strip BELOW hero (spacing + dividers)
+   IMPORTANT: 需要 HTML 给 entry-strip 加 class="entry-strip entry-strip--below"
+   --------------------------------------------------- */
+.page-home .entry-strip--below{
   padding: 22px 0 10px;
-  background:#fff; /* 下面内容是白底体系，先保持一致 */
+  background:#fff;
 }
 
-.entry-strip__inner{
+/* ✅ 把下面内容拉回 1200 容器 */
+.page-home .entry-strip--below .entry-strip__inner,
+.page-home #home-news,
+.page-home .site-footer{
   max-width:1200px;
   margin:0 auto;
-  padding: 0 24px;
+  padding:0 24px;
+}
 
+.page-home .entry-strip--below .entry-strip__inner{
   display:grid;
   grid-template-columns:repeat(5, 1fr);
   gap:0;
@@ -179,22 +212,21 @@ body.page-home{
   border-bottom:1px solid rgba(18,18,18,.10);
 }
 
-.entry-item{
+.page-home .entry-strip--below .entry-item{
   text-decoration:none;
   color:#121212;
   padding: 18px 10px 16px;
   text-align:center;
-
   border-right:1px solid rgba(18,18,18,.10);
 }
-.entry-item:last-child{ border-right:0; }
+.page-home .entry-strip--below .entry-item:last-child{ border-right:0; }
 
-.entry-en{
+.page-home .entry-strip--below .entry-en{
   font-size:11px;
   letter-spacing:.18em;
   opacity:.75;
 }
-.entry-cn{
+.page-home .entry-strip--below .entry-cn{
   margin-top:6px;
   font-size:13px;
   letter-spacing:.10em;
@@ -204,21 +236,13 @@ body.page-home{
 
 /* mobile */
 @media (max-width: 720px){
-  .ct-hero__caption{
+  .page-home .ct-hero__caption{
     max-width:calc(100% - 36px);
   }
-  .entry-strip__inner{
+  .page-home .entry-strip--below .entry-strip__inner{
     grid-template-columns:repeat(3, 1fr);
-    row-gap:0;
   }
-  .entry-item:nth-child(3){
+  .page-home .entry-strip--below .entry-item:nth-child(3){
     border-right:0;
   }
-}
-
-/* ===================================================
-   3) Safety: stop any leftover "page padding" from affecting hero
-   =================================================== */
-.page-home .page{
-  /* 只影响下面内容容器，不要去碰 hero */
 }
