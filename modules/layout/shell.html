@@ -1,12 +1,21 @@
-<main class="page">
-  <section class="home-hero">
-    <div class="hero-grid">
-      <div data-include="/modules/home/carousel.html"></div>
-      <div data-include="/modules/home/entry.html"></div>
-    </div>
-  </section>
+<!-- Home Hero (Full-bleed shell) -->
+<section class="home-hero home-hero--bleed" aria-label="Featured">
+  <div class="home-hero__wrap">
+    <!-- Carousel (image layer + caption layer live inside this module) -->
+    <div class="home-hero__carousel" data-include="/modules/home/carousel.html"></div>
 
-  <div data-include="/modules/home/news.html"></div>
-<!-- Footer -->
-<div data-include="/modules/footer/footer.html"></div>
-</main>
+    <!-- 5-entry strip (independent overlay layer, not affected by hero image changes) -->
+    <div class="home-hero__entry" data-include="/modules/home/entry.html"></div>
+
+    <!-- Optional: scroll cue (we can wire this to smooth scroll later) -->
+    <a class="home-hero__cue" href="#home-news" aria-label="Scroll to News"></a>
+  </div>
+</section>
+
+<!-- Below fold content stays in the regular page width system -->
+<div class="page">
+  <div id="home-news" data-include="/modules/home/news.html"></div>
+
+  <!-- Footer -->
+  <div data-include="/modules/footer/footer.html"></div>
+</div>
