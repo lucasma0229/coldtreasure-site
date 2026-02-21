@@ -655,3 +655,31 @@ header,
 .page-home .ct-hero{
   margin-top:0 !important;
 }
+
+/* ===== pagination dots ===== */
+.ct-hero__dots{
+  position:absolute;
+  left:50%;
+  bottom:14px;
+  transform:translateX(-50%);
+  z-index:4;
+
+  display:flex;
+  gap:10px;
+  align-items:center;
+  justify-content:center;
+}
+
+.ct-hero__dot{
+  width:6px;
+  height:6px;
+  border-radius:999px;
+  border:none;
+  background:rgba(255,255,255,.35);
+  cursor:pointer;
+  padding:0;
+}
+
+.ct-hero__dot.is-active{
+  background:rgba(255,255,255,.9);
+}
