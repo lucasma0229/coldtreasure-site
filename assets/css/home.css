@@ -1,507 +1,39 @@
 /* ===================================================
-   HOME — Hero (2:1 assets, 85vh stage, full-bleed)
+   HOME — Kith-like Hero (3:2 full-bleed) + Entry Strip
    Works with:
-   - /modules/layout/shell.html (home-hero--bleed structure)
-   - /modules/home/carousel.html (ct-carousel__shade added)
-   - /modules/home/entry.html (entry-strip overlay)
+   - /modules/home/carousel.html (ct-hero markup + dots)
    =================================================== */
 
-/* ---------------------------------------------------
-   1) Full-bleed hero shell (break out of .page width)
-   --------------------------------------------------- */
-.home-hero--bleed{
-  width:100vw;
-  margin-left:calc(50% - 50vw);
-  margin-right:calc(50% - 50vw);
-}
-
-.home-hero__wrap{
-  position:relative;
-  width:100%;
-  height:85vh;                /* ✅ 你选的 B：85vh */
-  min-height:560px;           /* 防止桌面太矮 */
-  max-height:920px;           /* 防止超大屏太“空” */
-  overflow:hidden;
-  background:#000;
-}
-
-/* 让 carousel / entry / cue 都在同一个舞台层级里 */
-.home-hero__carousel,
-.home-hero__entry,
-.home-hero__cue{
-  position:absolute;
-  left:0;
-  right:0;
-}
-
-.home-hero__carousel{
-  top:0;
-  bottom:0;
-}
-
-/* “滚动提示”先做极淡（功能后面可由 JS 增强） */
-.home-hero__cue{
-  bottom: calc(var(--navH) * 0.55);
-  left: 50%;
-  right: auto;
-  transform: translateX(-50%);
-  width: 32px;
-  height: 32px;
-  border-radius: 999px;
-  opacity: .0;               /* 默认不抢戏：需要时再开 */
-  pointer-events: none;      /* 你确认要启用时我再改成可点 */
-}
-
-/* ---------------------------------------------------
-   2) Carousel stage (no fixed aspect-ratio; fill 85vh)
-   --------------------------------------------------- */
-.hero.hero--carousel{
-  width:100%;
-  height:100%;
-}
-
-/* 容器 */
-.ct-carousel{
-  position:relative;
-  width:100%;
-  height:100%;
-  overflow:hidden;
-
-  /* Kith-like full-bleed：默认不做圆角 */
-  border-radius: 0;
-  background:#000;
-}
-
-/* viewport/track */
-.ct-carousel__viewport{
-  position:absolute;
-  inset:0;
-  overflow:hidden;
-}
-
-.ct-carousel__track{
-  position:absolute;
-  inset:0;
-  display:flex;
-  transform: translateX(0%);
-  transition: transform 560ms var(--ease, cubic-bezier(.2,.8,.2,1));
-  will-change: transform;
-}
-
-.ct-carousel__slide{
-  position:relative;
-  flex:0 0 100%;
-  height:100%;
-}
-
-.ct-carousel__media{
-  position:absolute;
-  inset:0;
-  display:block;
-}
-
-.ct-carousel__media img{
-  width:100%;
-  height:100%;
-  object-fit:cover;
-  object-position:center;
-  display:block;
-}
-
-/* ---------------------------------------------------
-   3) Lowest-impact shade for white caption readability
-   - You asked: keep it as subtle as possible.
-   - We keep gradient very light & only bottom area.
-   --------------------------------------------------- */
-.ct-carousel__shade{
-  position:absolute;
-  inset:0;
-  pointer-events:none;
-  z-index:2;
-
-  /* 极淡：尽量靠 text-shadow，而不是加深遮罩 */
-  background: linear-gradient(
-    to top,
-    rgba(0,0,0,.22) 0%,
-    rgba(0,0,0,.12) 26%,
-    rgba(0,0,0,0) 60%
-  );
-}
-
-/* ---------------------------------------------------
-   4) Caption (white, clean, minimal)
-   --------------------------------------------------- */
-.ct-carousel__caption{
-  position:absolute;
-  left: clamp(18px, 3vw, 34px);
-  bottom: calc(var(--navH) * 0.95); /* ✅ 用导航高度当节奏单位 */
-  z-index:3;
-
-  max-width: min(560px, 76%);
-  color:#fff;
-
-  /* 不用厚重黑底；保持“空气感” */
-  padding: 0;
-}
-
-/* kicker */
-.ct-carousel__kicker{
-  font-size: 11px;
-  letter-spacing: .22em;
-  opacity: .90;
-  margin-bottom: 10px;
-
-  /* 读感增强（比加深渐层更不显眼） */
-  text-shadow: 0 8px 22px rgba(0,0,0,.32);
-}
-
-.ct-carousel__title{
-  margin:0 0 10px;
-  font-size: clamp(22px, 2.2vw, 30px);
-  line-height: 1.08;
-  letter-spacing: .01em;
-  font-weight: 600;
-
-  text-shadow: 0 10px 26px rgba(0,0,0,.36);
-}
-
-.ct-carousel__desc{
-  margin:0;
-  font-size: 13px;
-  line-height: 1.45;
-  opacity: .92;
-
-  text-shadow: 0 10px 26px rgba(0,0,0,.34);
-}
-
-/* ---------------------------------------------------
-   5) Nav arrows + dots (low presence; show on hover)
-   --------------------------------------------------- */
-.ct-carousel__nav{
-  position:absolute;
-  top:50%;
-  transform: translateY(-50%);
-  width:44px;
-  height:44px;
-  border:0;
-  border-radius:999px;
-  cursor:pointer;
-  z-index:4;
-
-  background: rgba(255,255,255,.00);
-  backdrop-filter: blur(8px);
-
-  opacity:.14;
-  transition: opacity .18s var(--ease, ease), background .18s var(--ease, ease);
-}
-
-.ct-carousel__nav--prev{ left: 14px; }
-.ct-carousel__nav--next{ right: 14px; }
-
-.ct-carousel:hover .ct-carousel__nav{
-  opacity:.52;
-}
-
-.ct-carousel__nav:hover{
-  background: rgba(255,255,255,.18);
-}
-
-/* 箭头符号（白色、极细） */
-.ct-carousel__nav::before{
-  content:"";
-  position:absolute;
-  inset:0;
-  margin:auto;
-  width:10px;
-  height:10px;
-  border-top:2px solid rgba(255,255,255,.88);
-  border-right:2px solid rgba(255,255,255,.88);
-  transform: rotate(225deg);
-}
-
-.ct-carousel__nav--next::before{
-  transform: rotate(45deg);
-}
-
-/* dots：默认极淡，hover 才明显 */
-.ct-carousel__dots{
-  position:absolute;
-  left:50%;
-  bottom: calc(var(--navH) * 0.45);
-  transform: translateX(-50%);
-  display:flex;
-  gap:8px;
-  padding:8px 10px;
-  border-radius:999px;
-  z-index:4;
-
-  background: rgba(0,0,0,.10);
-  backdrop-filter: blur(8px);
-
-  opacity:.20;
-  transition: opacity .18s var(--ease, ease), background .18s var(--ease, ease);
-}
-
-.ct-carousel:hover .ct-carousel__dots{
-  opacity:.65;
-  background: rgba(0,0,0,.16);
-}
-
-.ct-carousel__dot{
-  width:6px;
-  height:6px;
-  border-radius:999px;
-  border:0;
-  cursor:pointer;
-  background: rgba(255,255,255,.34);
-}
-
-.ct-carousel__dot.is-active{
-  background: rgba(255,255,255,.92);
-}
-
-/* ---------------------------------------------------
-   6) Entry strip overlay (stable, hero-independent)
-   - Your requirement: hero updates must not affect entry.
-   - We give it a very light glass layer.
-   --------------------------------------------------- */
-.home-hero__entry{
-  bottom: 0;
-  z-index:5;
-  padding: 0 clamp(14px, 3vw, 28px) calc(var(--navH) * 0.55);
-}
-
-.entry-strip{
-  width:100%;
-}
-
-.entry-strip__inner{
-  width:100%;
-  max-width: 1100px;
-  margin: 0 auto;
-
-  display:flex;
-  justify-content:center;
-  gap: clamp(14px, 3.2vw, 34px);
-
-  padding: 14px 18px;
-  border-radius: 999px;
-
-  /* 独立浮层：极轻，不抢画面 */
-  background: rgba(0,0,0,.18);
-  backdrop-filter: blur(10px);
-}
-
-.entry-item{
-  display:block;
-  text-decoration:none;
-  color:#fff;
-  text-align:center;
-
-  opacity:.92;
-  transition: opacity .18s var(--ease, ease), transform .18s var(--ease, ease);
-}
-
-.entry-item:hover{
-  opacity:1;
-  transform: translateY(-1px);
-}
-
-.entry-title{
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  gap:6px;
-}
-
-.entry-en{
-  font-size:10px;
-  letter-spacing:.26em;
-  opacity:.92;
-}
-
-.entry-cn{
-  font-size:12px;
-  letter-spacing:.10em;
-  font-weight:500;
-  opacity:1;
-}
-
-.entry-desc{
-  margin-top:8px;
-  font-size:10px;
-  letter-spacing:.18em;
-  opacity:.78;
-}
-
-/* ---------------------------------------------------
-   7) Responsive refinements
-   --------------------------------------------------- */
-@media (max-width: 900px){
-  .home-hero__wrap{
-    min-height: 520px;
-  }
-  .entry-strip__inner{
-    gap: 18px;
-    padding: 12px 14px;
-  }
-}
-
-@media (max-width: 720px){
-  .home-hero__wrap{
-    height: 82vh;
-    min-height: 480px;
-  }
-
-  .ct-carousel__caption{
-    bottom: calc(var(--navH) * 0.85);
-    max-width: 86%;
-  }
-
-  .ct-carousel__title{
-    font-size: 20px;
-  }
-
-  .ct-carousel__desc{
-    font-size: 12px;
-  }
-
-  /* 移动端：隐藏第三行功能摘要，保持干净 */
-  .entry-desc{
-    display:none;
-  }
-
-  /* 入口条更紧凑 */
-  .entry-strip__inner{
-    border-radius: 18px;
-    flex-wrap: wrap;
-    gap: 14px 18px;
-    padding: 12px 12px;
-  }
-
-  .entry-item{
-    flex: 0 0 calc(33.33% - 12px);
-  }
-}
-
-@media (max-width: 430px){
-  .entry-item{
-    flex: 0 0 calc(50% - 10px);
-  }
-}
 
 /* ===================================================
-   HOME — Entry Strip (Hero integrated, override old)
-   Only affects .page-home
+   0) REVIEW MODE: Hide Header on Home (temporary)
+   - Only affects homepage (requires body/page wrapper has .page-home)
+   - Remove this block after hero review is approved
    =================================================== */
-
-/* 入口作为 Hero 的一部分：固定在 Hero 底部 */
-.page-home .entry-strip{
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  bottom: 16px;
-  z-index: 50;
-  width: min(1200px, calc(100% - 48px));
-  margin: 0 !important;
-}
-
-/* 覆盖旧的渐层/黑块：完全重置背景与滤镜 */
-.page-home .entry-strip,
-.page-home .entry-strip *{
-  box-shadow: none !important;
-}
-
-.page-home .entry-strip__inner{
-  display: grid !important;
-  grid-template-columns: repeat(5, 1fr) !important;
-  gap: 0 !important;
-
-  /* Kith-ish：低存在感磨砂 */
-  background: rgba(0,0,0,.22) !important;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255,255,255,.10);
-  border-radius: 14px;
-  overflow: hidden;
-
-  padding: 0 !important;
-}
-
-/* 每个入口 */
-.page-home .entry-item{
-  display: block;
-  text-align: center;
-  padding: 14px 10px 12px;
-
-  color: rgba(255,255,255,.92) !important;
-  text-decoration: none;
-
-  border-right: 1px solid rgba(255,255,255,.10);
-  background: transparent !important;
-}
-.page-home .entry-item:last-child{ border-right: 0; }
-
-.page-home .entry-title{ display:block; }
-
-.page-home .entry-en{
-  font-size: 12px;
-  letter-spacing: .14em;
-  opacity: .95;
-}
-
-.page-home .entry-cn{
-  margin-top: 6px;
-  font-size: 12px;
-  letter-spacing: .10em;
-  opacity: .92;
-}
-
-.page-home .entry-desc{
-  margin-top: 6px;
-  font-size: 11px;
-  opacity: .72;
-}
-
-/* hover：轻微提亮即可 */
-.page-home .entry-item:hover{
-  background: rgba(255,255,255,.06) !important;
-}
-
-/* 移动端：3列 + 隐藏第三行（功能） */
-@media (max-width: 720px){
-  .page-home .entry-strip{
-    bottom: 12px;
-    width: calc(100% - 24px);
-  }
-  .page-home .entry-strip__inner{
-    grid-template-columns: repeat(3, 1fr) !important;
-  }
-  .page-home .entry-desc{ display:none; }
-}
-
-/* ===== 临时关闭首页导航栏（重建轮播用）===== */
-/* 强制关闭 header */
-.site-header,
-header.site-header{
+.page-home .site-header,
+.page-home header.site-header,
+.page-home [role="banner"]{
   display:none !important;
-  opacity:0 !important;
   visibility:hidden !important;
+  opacity:0 !important;
 }
 
-/* ===== 临时关闭 Header（用于轮播验收）===== */
-/* 不依赖 page-home：直接按元素结构隐藏 */
-header.site-header,
-.site-header,
-header,
-[role="banner"]{
-  display:none !important;
-}
 
 /* ===================================================
-   Kith-like Hero Carousel (Home only)
-   3:2 full-bleed + bottom-left white caption
+   1) Top gap fix (Home only)
+   - Ensures hero touches the very top edge
    =================================================== */
+.page-home main,
+.page-home .page,
+.page-home .home-hero{
+  margin-top:0 !important;
+  padding-top:0 !important;
+}
 
+
+/* ===================================================
+   2) Hero: Full-bleed 3:2 carousel
+   =================================================== */
 .ct-hero{
   width:100vw;
   margin-left:calc(50% - 50vw);
@@ -516,6 +48,7 @@ header,
   background:#0b0b0b;
 }
 
+/* Slides: fade only (no scale) to avoid “soft” rendering */
 .ct-hero__slide{
   position:absolute;
   inset:0;
@@ -543,18 +76,20 @@ header,
   object-position:center;
 }
 
-/* subtle readability shade like Kith */
+/* Subtle shade for caption readability */
 .ct-hero__shade{
   position:absolute;
   inset:0;
-  background:linear-gradient(to top,
-    rgba(0,0,0,.68) 0%,
-    rgba(0,0,0,.32) 26%,
-    rgba(0,0,0,0) 58%);
   pointer-events:none;
+  background:linear-gradient(
+    to top,
+    rgba(0,0,0,.62) 0%,
+    rgba(0,0,0,.28) 26%,
+    rgba(0,0,0,0) 58%
+  );
 }
 
-/* caption: bottom-left */
+/* Caption: bottom-left, white */
 .ct-hero__caption{
   position:absolute;
   left:clamp(18px, 3vw, 44px);
@@ -568,8 +103,9 @@ header,
   font-size:12px;
   letter-spacing:.18em;
   text-transform:uppercase;
-  opacity:.9;
+  opacity:.88;
   margin:0 0 10px;
+  text-shadow:0 10px 24px rgba(0,0,0,.28);
 }
 
 .ct-hero__title{
@@ -578,16 +114,21 @@ header,
   line-height:1.05;
   letter-spacing:-.01em;
   font-weight:600;
+  text-shadow:0 12px 28px rgba(0,0,0,.32);
 }
 
 .ct-hero__desc{
   margin:0;
   font-size:clamp(13px, 1.25vw, 16px);
   line-height:1.35;
-  opacity:.9;
+  opacity:.90;
+  text-shadow:0 12px 28px rgba(0,0,0,.30);
 }
 
-/* ===== arrows: minimal (only chevrons) ===== */
+
+/* ===================================================
+   3) Minimal arrows (only chevrons)
+   =================================================== */
 .ct-hero__nav{
   position:absolute;
   top:50%;
@@ -606,7 +147,7 @@ header,
   align-items:center;
   justify-content:center;
 
-  opacity:.32;
+  opacity:.26;
   transition:opacity 180ms var(--ease, cubic-bezier(.2,.8,.2,1)),
              transform 180ms var(--ease, cubic-bezier(.2,.8,.2,1));
 }
@@ -617,136 +158,149 @@ header,
   transform:translateY(-1px);
 }
 
-.ct-hero__nav:hover{ opacity:.75; }
+.ct-hero__nav:hover{ opacity:.70; }
 .ct-hero__nav:active{
-  opacity:.9;
+  opacity:.88;
   transform:translateY(-50%) scale(.98);
 }
 
 .ct-hero__nav--prev{ left:12px; }
 .ct-hero__nav--next{ right:12px; }
 
-/* mobile: keep caption readable */
-@media (max-width:720px){
-  .ct-hero__nav{
-    width:40px;
-    height:40px;
-  }
-  .ct-hero__nav span{ font-size:24px; }
-  .ct-hero__caption{
-    max-width:calc(100% - 36px);
-  }
+
+/* ===================================================
+   4) Pagination dots
+   - requires: <div class="ct-hero__dots"></div> in carousel.html
+   =================================================== */
+.ct-hero__dots{
+  position:absolute;
+  left:50%;
+  bottom:14px;
+  transform:translateX(-50%);
+  z-index:4;
+
+  display:flex;
+  gap:10px;
+  align-items:center;
+  justify-content:center;
+
+  opacity:.40;
+  transition:opacity 180ms var(--ease, cubic-bezier(.2,.8,.2,1));
 }
 
-/* ===== FIX: Hero 顶到最上沿（用于轮播验收阶段）===== */
-.page-home,
-.page-home body{
+.ct-hero__stage:hover .ct-hero__dots{
+  opacity:.78;
+}
+
+.ct-hero__dot{
+  width:6px;
+  height:6px;
+  border-radius:999px;
+  border:none;
+  background:rgba(255,255,255,.35);
+  cursor:pointer;
+  padding:0;
+}
+
+.ct-hero__dot.is-active{
+  background:rgba(255,255,255,.92);
+}
+
+
+/* ===================================================
+   5) Entry Strip (5入口) — Final version (grid + separators)
+   - Put it inside Hero area visually (overlay near bottom)
+   =================================================== */
+.page-home .entry-strip{
+  position:absolute;
+  left:50%;
+  transform:translateX(-50%);
+  bottom:16px;
+  z-index:50;
+  width:min(1200px, calc(100% - 48px));
   margin:0 !important;
 }
 
-.page-home main,
-.page-home .page,
-.page-home .home-hero{
-  margin-top:0 !important;
-  padding-top:0 !important;
+.page-home .entry-strip,
+.page-home .entry-strip *{
+  box-shadow:none !important;
 }
 
-/* Hero 自己也不留上边距 */
-.page-home .ct-hero{
-  margin-top:0 !important;
+.page-home .entry-strip__inner{
+  display:grid !important;
+  grid-template-columns:repeat(5, 1fr) !important;
+  gap:0 !important;
+
+  background:rgba(0,0,0,.22) !important;
+  backdrop-filter:blur(10px);
+  border:1px solid rgba(255,255,255,.10);
+  border-radius:14px;
+  overflow:hidden;
+
+  padding:0 !important;
 }
 
-/* ===== pagination dots ===== */
-.ct-hero__dots{
-  position:absolute;
-  left:50%;
-  bottom:14px;
-  transform:translateX(-50%);
-  z-index:4;
+.page-home .entry-item{
+  display:block;
+  text-align:center;
+  padding:14px 10px 12px;
 
-  display:flex;
-  gap:10px;
-  align-items:center;
-  justify-content:center;
+  color:rgba(255,255,255,.92) !important;
+  text-decoration:none;
+
+  border-right:1px solid rgba(255,255,255,.10);
+  background:transparent !important;
 }
 
-.ct-hero__dot{
-  width:6px;
-  height:6px;
-  border-radius:999px;
-  border:none;
-  background:rgba(255,255,255,.35);
-  cursor:pointer;
-  padding:0;
+.page-home .entry-item:last-child{ border-right:0; }
+
+.page-home .entry-title{ display:block; }
+
+.page-home .entry-en{
+  font-size:12px;
+  letter-spacing:.14em;
+  opacity:.95;
 }
 
-.ct-hero__dot.is-active{
-  background:rgba(255,255,255,.9);
+.page-home .entry-cn{
+  margin-top:6px;
+  font-size:12px;
+  letter-spacing:.10em;
+  opacity:.92;
+  font-weight:500;
 }
+
+.page-home .entry-desc{
+  margin-top:6px;
+  font-size:11px;
+  opacity:.72;
+}
+
+.page-home .entry-item:hover{
+  background:rgba(255,255,255,.06) !important;
+}
+
 
 /* ===================================================
-   CT Hero Hotfix Pack (for review)
-   Fix: top gap / blur / minimal arrows / dots
+   6) Responsive
    =================================================== */
+@media (max-width: 720px){
+  /* caption spacing */
+  .ct-hero__caption{
+    max-width:calc(100% - 36px);
+  }
 
-/* 1) 顶部空隙：把 Hero 顶到最上沿（尽量只影响首页） */
-.page-home main,
-.page-home .page,
-.page-home .home-hero{
-  margin-top:0 !important;
-  padding-top:0 !important;
-}
-.page-home .ct-hero{
-  margin-top:0 !important;
-}
+  /* entry strip becomes 3 columns; hide desc */
+  .page-home .entry-strip{
+    bottom:12px;
+    width:calc(100% - 24px);
+  }
 
-/* 2) 清晰度：去掉 slide 的 scale 动画（有些浏览器会轻微糊） */
-.ct-hero__slide{
-  transform:none !important;
-  transition:opacity 320ms var(--ease, cubic-bezier(.2,.8,.2,1)) !important;
-}
-.ct-hero__slide.is-active{
-  transform:none !important;
-}
+  .page-home .entry-strip__inner{
+    grid-template-columns:repeat(3, 1fr) !important;
+  }
 
-/* 3) 左右按钮进一步淡化：只保留小箭头 */
-.ct-hero__nav{
-  width:34px !important;
-  height:34px !important;
-  border-radius:0 !important;
-  background:transparent !important;
-  backdrop-filter:none !important;
-
-  opacity:.32 !important;
-  transition:opacity 180ms var(--ease, cubic-bezier(.2,.8,.2,1)),
-             transform 180ms var(--ease, cubic-bezier(.2,.8,.2,1)) !important;
-}
-.ct-hero__nav:hover{ opacity:.75 !important; }
-.ct-hero__nav span{
-  font-size:22px !important;
-}
-
-/* 4) 分页点（需要 carousel.html 里有 <div class="ct-hero__dots"></div> ） */
-.ct-hero__dots{
-  position:absolute;
-  left:50%;
-  bottom:14px;
-  transform:translateX(-50%);
-  z-index:4;
-  display:flex;
-  gap:10px;
-  align-items:center;
-  justify-content:center;
-}
-.ct-hero__dot{
-  width:6px;
-  height:6px;
-  border-radius:999px;
-  border:none;
-  background:rgba(255,255,255,.35);
-  cursor:pointer;
-  padding:0;
-}
-.ct-hero__dot.is-active{
-  background:rgba(255,255,255,.9);
+  .page-home .entry-desc{
+    display:none;
+  }
 }
