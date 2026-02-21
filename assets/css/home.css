@@ -683,3 +683,70 @@ header,
 .ct-hero__dot.is-active{
   background:rgba(255,255,255,.9);
 }
+
+/* ===================================================
+   CT Hero Hotfix Pack (for review)
+   Fix: top gap / blur / minimal arrows / dots
+   =================================================== */
+
+/* 1) 顶部空隙：把 Hero 顶到最上沿（尽量只影响首页） */
+.page-home main,
+.page-home .page,
+.page-home .home-hero{
+  margin-top:0 !important;
+  padding-top:0 !important;
+}
+.page-home .ct-hero{
+  margin-top:0 !important;
+}
+
+/* 2) 清晰度：去掉 slide 的 scale 动画（有些浏览器会轻微糊） */
+.ct-hero__slide{
+  transform:none !important;
+  transition:opacity 320ms var(--ease, cubic-bezier(.2,.8,.2,1)) !important;
+}
+.ct-hero__slide.is-active{
+  transform:none !important;
+}
+
+/* 3) 左右按钮进一步淡化：只保留小箭头 */
+.ct-hero__nav{
+  width:34px !important;
+  height:34px !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  backdrop-filter:none !important;
+
+  opacity:.32 !important;
+  transition:opacity 180ms var(--ease, cubic-bezier(.2,.8,.2,1)),
+             transform 180ms var(--ease, cubic-bezier(.2,.8,.2,1)) !important;
+}
+.ct-hero__nav:hover{ opacity:.75 !important; }
+.ct-hero__nav span{
+  font-size:22px !important;
+}
+
+/* 4) 分页点（需要 carousel.html 里有 <div class="ct-hero__dots"></div> ） */
+.ct-hero__dots{
+  position:absolute;
+  left:50%;
+  bottom:14px;
+  transform:translateX(-50%);
+  z-index:4;
+  display:flex;
+  gap:10px;
+  align-items:center;
+  justify-content:center;
+}
+.ct-hero__dot{
+  width:6px;
+  height:6px;
+  border-radius:999px;
+  border:none;
+  background:rgba(255,255,255,.35);
+  cursor:pointer;
+  padding:0;
+}
+.ct-hero__dot.is-active{
+  background:rgba(255,255,255,.9);
+}
