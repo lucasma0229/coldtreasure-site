@@ -639,3 +639,21 @@ header,
     max-width:calc(100% - 36px);
   }
 }
+
+/* ===== FIX: Hero 顶到最上沿（用于轮播验收阶段）===== */
+.page-home,
+.page-home body{
+  margin:0 !important;
+}
+
+.page-home main,
+.page-home .page,
+.page-home .home-hero{
+  margin-top:0 !important;
+  padding-top:0 !important;
+}
+
+/* Hero 自己也不留上边距 */
+.page-home .ct-hero{
+  margin-top:0 !important;
+}
