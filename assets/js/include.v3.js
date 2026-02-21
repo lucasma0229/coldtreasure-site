@@ -35,28 +35,49 @@
     const root = document.querySelector("[data-ct-hero]");
     if (!root) return;
 
+    // 防止重复绑定（未来如果某些页面重复 dispatch modules:loaded）
+    if (root.__ctHeroBound) return;
+    root.__ctHeroBound = true;
+
     const slides = Array.from(root.querySelectorAll(".ct-hero__slide"));
     const prevBtn = root.querySelector(".ct-hero__nav--prev");
     const nextBtn = root.querySelector(".ct-hero__nav--next");
+    const dotsWrap = root.querySelector(".ct-hero__dots");
+
     if (!slides.length || !prevBtn || !nextBtn) return;
 
     let i = slides.findIndex(s => s.classList.contains("is-active"));
     if (i < 0) i = 0;
 
-    function show(n) {
-      slides[i]?.classList.remove("is-active");
-      i = (n + slides.length) % slides.length;
-      slides[i].classList.add("is-active");
+    // build dots (optional: only if container exists)
+    let dots = [];
+    if (dotsWrap) {
+      dotsWrap.innerHTML = "";
+      dots = slides.map((_, idx) => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "ct-hero__dot" + (idx === i ? " is-active" : "");
+        b.setAttribute("aria-label", `Go to slide ${idx + 1}`);
+        b.addEventListener("click", () => show(idx));
+        dotsWrap.appendChild(b);
+        return b;
+      });
     }
 
-    // 防止重复绑定（如果你未来某些页面重复 dispatch modules:loaded）
-    if (root.__ctHeroBound) return;
-    root.__ctHeroBound = true;
+    function sync() {
+      slides.forEach((s, idx) => s.classList.toggle("is-active", idx === i));
+      if (dots.length) dots.forEach((d, idx) => d.classList.toggle("is-active", idx === i));
+    }
+
+    function show(n) {
+      i = (n + slides.length) % slides.length;
+      sync();
+    }
 
     prevBtn.addEventListener("click", () => show(i - 1));
     nextBtn.addEventListener("click", () => show(i + 1));
 
-    // 键盘左右键（可留可删）
+    // keyboard support (optional)
     window.addEventListener(
       "keydown",
       (e) => {
@@ -65,6 +86,9 @@
       },
       { passive: true }
     );
+
+    // ensure state
+    sync();
   }
 
   // 递归注入：最多跑 10 轮，直到没有新的 data-include
