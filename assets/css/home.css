@@ -389,3 +389,92 @@
     flex: 0 0 calc(50% - 10px);
   }
 }
+
+/* ===================================================
+   HOME — Entry Strip (Hero integrated, override old)
+   Only affects .page-home
+   =================================================== */
+
+/* 入口作为 Hero 的一部分：固定在 Hero 底部 */
+.page-home .entry-strip{
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 16px;
+  z-index: 50;
+  width: min(1200px, calc(100% - 48px));
+  margin: 0 !important;
+}
+
+/* 覆盖旧的渐层/黑块：完全重置背景与滤镜 */
+.page-home .entry-strip,
+.page-home .entry-strip *{
+  box-shadow: none !important;
+}
+
+.page-home .entry-strip__inner{
+  display: grid !important;
+  grid-template-columns: repeat(5, 1fr) !important;
+  gap: 0 !important;
+
+  /* Kith-ish：低存在感磨砂 */
+  background: rgba(0,0,0,.22) !important;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: 14px;
+  overflow: hidden;
+
+  padding: 0 !important;
+}
+
+/* 每个入口 */
+.page-home .entry-item{
+  display: block;
+  text-align: center;
+  padding: 14px 10px 12px;
+
+  color: rgba(255,255,255,.92) !important;
+  text-decoration: none;
+
+  border-right: 1px solid rgba(255,255,255,.10);
+  background: transparent !important;
+}
+.page-home .entry-item:last-child{ border-right: 0; }
+
+.page-home .entry-title{ display:block; }
+
+.page-home .entry-en{
+  font-size: 12px;
+  letter-spacing: .14em;
+  opacity: .95;
+}
+
+.page-home .entry-cn{
+  margin-top: 6px;
+  font-size: 12px;
+  letter-spacing: .10em;
+  opacity: .92;
+}
+
+.page-home .entry-desc{
+  margin-top: 6px;
+  font-size: 11px;
+  opacity: .72;
+}
+
+/* hover：轻微提亮即可 */
+.page-home .entry-item:hover{
+  background: rgba(255,255,255,.06) !important;
+}
+
+/* 移动端：3列 + 隐藏第三行（功能） */
+@media (max-width: 720px){
+  .page-home .entry-strip{
+    bottom: 12px;
+    width: calc(100% - 24px);
+  }
+  .page-home .entry-strip__inner{
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+  .page-home .entry-desc{ display:none; }
+}
