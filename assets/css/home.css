@@ -480,6 +480,10 @@
 }
 
 /* ===== 临时关闭首页导航栏（重建轮播用）===== */
-.site-header{
+/* 强制关闭 header */
+.site-header,
+header.site-header{
   display:none !important;
+  opacity:0 !important;
+  visibility:hidden !important;
 }
