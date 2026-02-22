@@ -173,3 +173,64 @@ html.ct-nav--overlay .brand-slogan{
   color:inherit;
   letter-spacing:inherit;
 }
+
+/* ===================================================
+   CT Topbar (Kith-like)
+   Controlled by: html.ct-nav--overlay / html.ct-nav--solid
+   =================================================== */
+
+.topbar{
+  position: sticky;
+  top: 0;
+  z-index: 2000;
+
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 18px;
+
+  padding: 18px 24px;
+  transition: background-color 180ms var(--ease, cubic-bezier(.2,.8,.2,1)),
+              color 180ms var(--ease, cubic-bezier(.2,.8,.2,1)),
+              border-color 180ms var(--ease, cubic-bezier(.2,.8,.2,1));
+}
+
+/* 品牌 */
+.brand-lockup{ text-decoration:none; color:inherit; }
+.brand-name{
+  font-size: 12px;
+  letter-spacing: .18em;
+}
+.brand-slogan{
+  margin-top: 6px;
+  font-size: 10px;
+  letter-spacing: .18em;
+  opacity: .72;
+}
+
+/* 导航 */
+.nav{ display:flex; gap: 18px; }
+.nav a{
+  text-decoration:none;
+  color:inherit;
+  font-size: 12px;
+  letter-spacing: .10em;
+  opacity: .78;
+}
+.nav a:hover{ opacity: 1; }
+.nav a.is-active{ opacity: 1; }
+
+/* overlay：透明 + 白字（首页顶端） */
+html.ct-nav--overlay .topbar{
+  background: transparent;
+  border-bottom: 1px solid transparent;
+  color: rgba(255,255,255,.92);
+}
+
+/* solid：白底黑字（下滑后 / 非首页默认） */
+html.ct-nav--solid .topbar{
+  background: rgba(255,255,255,.96);
+  border-bottom: 1px solid rgba(18,18,18,.10);
+  color: rgba(18,18,18,.92);
+  backdrop-filter: blur(10px);
+}
