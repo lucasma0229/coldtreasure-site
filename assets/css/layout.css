@@ -1,8 +1,19 @@
 /* ===================================================
-   Layout Layer
-   Header / Footer / Container
+   LAYOUT (Topbar / Page container)
    =================================================== */
 
+:root{
+  --navH: 72px;
+}
+
+/* Global base */
+html,body{ height:100%; }
+body{
+  margin:0;
+  background:#fff;
+}
+
+/* Page container (content width) */
 .page{
   max-width:1200px;
   margin:0 auto;
@@ -10,87 +21,97 @@
 }
 
 /* ===================================================
-   Topbar (Kith-like)
-   - Home: overlay (transparent + white)
-   - Scroll: solid (white bg + black)
+   Topbar (Kith-style overlay/solid)
    =================================================== */
 
 .topbar{
   position:fixed;
   top:0; left:0; right:0;
-  z-index:999;
+  z-index:1000;
+
+  height:var(--navH);
   display:flex;
   align-items:center;
   justify-content:space-between;
 
-  padding:18px 24px;
+  padding:0 28px;
+  box-sizing:border-box;
+
+  background:transparent;
+  border-bottom:1px solid rgba(255,255,255,.08);
+
   transition:
-    background 220ms cubic-bezier(.2,.8,.2,1),
-    color 220ms cubic-bezier(.2,.8,.2,1),
-    border-color 220ms cubic-bezier(.2,.8,.2,1);
+    background 180ms cubic-bezier(.2,.8,.2,1),
+    border-color 180ms cubic-bezier(.2,.8,.2,1),
+    color 180ms cubic-bezier(.2,.8,.2,1);
 }
 
-.topbar a{ text-decoration:none; }
-
+/* Brand */
+.brand-lockup{
+  text-decoration:none;
+  color:inherit;
+  display:flex;
+  align-items:center;
+}
 .brand-name{
-  font-size:13px;
-  letter-spacing:.18em;
+  font-size:12px;
+  letter-spacing:.22em;
   font-weight:600;
 }
 .brand-slogan{
-  margin-top:6px;
-  font-size:11px;
-  letter-spacing:.14em;
-  opacity:.7;
+  margin-top:4px;
+  font-size:10px;
+  letter-spacing:.18em;
+  opacity:.65;
 }
 
+/* Nav links */
+.nav{
+  display:flex;
+  gap:20px;
+  align-items:center;
+}
 .nav a{
-  font-size:12px;
+  text-decoration:none;
+  color:inherit;
+  font-size:11px;
   letter-spacing:.18em;
-  margin-left:18px;
+  text-transform:uppercase;
   opacity:.85;
 }
+.nav a:hover{ opacity:1; }
 .nav a.is-active{ opacity:1; }
 
-/* Home overlay (透明 + 白字) */
+/* ===================================================
+   State: overlay (home top) -> white text
+   controlled by your header script toggling:
+   html.ct-nav--overlay / html.ct-nav--solid
+   =================================================== */
+
 html.ct-nav--overlay .topbar{
   background:transparent;
-  border-bottom:1px solid rgba(255,255,255,0);
   color:#fff;
+  border-color:rgba(255,255,255,.08);
 }
-html.ct-nav--overlay .topbar a{ color:#fff; }
+html.ct-nav--overlay .brand-slogan{ opacity:.72; }
+html.ct-nav--overlay .nav a{ opacity:.88; }
 
-/* Solid (白底 + 黑字) */
+/* Solid: white bg + black text */
 html.ct-nav--solid .topbar{
-  background:#fff;
-  border-bottom:1px solid rgba(18,18,18,.10);
+  background:rgba(255,255,255,.98);
   color:#121212;
-}
-html.ct-nav--solid .topbar a{ color:#121212; }
-
-/* 只有 solid 才给 body 腾出固定导航的高度 */
-html.ct-nav--solid body{
-  padding-top: var(--navH, 72px);
-}
-html.ct-nav--overlay body{
-  padding-top: 0;
+  border-color:rgba(18,18,18,.10);
+  backdrop-filter:saturate(180%) blur(10px);
 }
 
 /* ===================================================
-   Footer
+   Prevent content being hidden under fixed topbar
+   - Non-home pages add padding-top
+   - Home stays flush (hero goes under overlay)
    =================================================== */
-
-.site-footer{
-  width:100%;
-  text-align:center;
-  font-size:13px;
-  font-weight:400;
-  letter-spacing:0.14em;
-  line-height:1.15;
-  color:#A3A3A3;
-  opacity:.9;
-  margin-top:96px;
-  padding:0 16px 1.5em;
-  background:transparent;
-  border:none;
+body:not(.page-home){
+  padding-top:var(--navH);
+}
+body.page-home{
+  padding-top:0;
 }
