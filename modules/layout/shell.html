@@ -1,30 +1,21 @@
 <main class="page-home-main">
-
-  <!-- =========================
-       HERO（full-bleed 3:2）
-       必须在 .page 外面
-  ========================== -->
+  <!-- Hero：必须在 .page 容器外，保证真正 full-bleed、无白边 -->
   <section class="ct-hero" aria-label="Featured">
     <div class="ct-hero__stage" data-ct-hero data-ct-hero-autoplay="0">
-
       <!-- Carousel -->
       <div data-include="/modules/home/carousel.html"></div>
-
     </div>
   </section>
 
-
-  <!-- =========================
-       5大入口（轮播下方）
-  ========================== -->
+  <!-- 5 大入口：放在轮播下方，留出一点呼吸 -->
   <section class="entry-strip entry-strip--below" aria-label="Primary sections">
     <div class="entry-strip__inner">
-
       <a class="entry-item" href="/news/">
         <div class="entry-title">
           <div class="entry-en">NEWS</div>
           <div class="entry-cn">快讯</div>
         </div>
+        <div class="entry-desc">Daily drops</div>
       </a>
 
       <a class="entry-item" href="/record/">
@@ -32,6 +23,7 @@
           <div class="entry-en">RECORD</div>
           <div class="entry-cn">精选</div>
         </div>
+        <div class="entry-desc">Timeline notes</div>
       </a>
 
       <a class="entry-item" href="/archive/">
@@ -39,6 +31,7 @@
           <div class="entry-en">ARCHIVE</div>
           <div class="entry-cn">档案室</div>
         </div>
+        <div class="entry-desc">Curated</div>
       </a>
 
       <a class="entry-item" href="/guide/">
@@ -46,6 +39,7 @@
           <div class="entry-en">GUIDE</div>
           <div class="entry-cn">球鞋指南</div>
         </div>
+        <div class="entry-desc">Buying tips</div>
       </a>
 
       <a class="entry-item" href="/feature/">
@@ -53,19 +47,14 @@
           <div class="entry-en">FEATURE</div>
           <div class="entry-cn">专题</div>
         </div>
+        <div class="entry-desc">In depth</div>
       </a>
-
     </div>
   </section>
 
-
-  <!-- =========================
-       Below fold 内容区
-       回归居中容器
-  ========================== -->
-  <section class="page">
+  <!-- Below fold：内容回到 .page 容器（有左右留白更高级） -->
+  <div class="page">
     <div id="home-news" data-include="/modules/home/news.html"></div>
     <div data-include="/modules/footer/footer.html"></div>
-  </section>
-
+  </div>
 </main>
