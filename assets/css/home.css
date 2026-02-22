@@ -246,3 +246,30 @@ body.page-home{
 .page-home .page{
   background:#fff; /* ✅ 避免下面区域变黑 */
 }
+
+/* ===================================================
+   HOME fixes
+   =================================================== */
+
+/* 1) Cancel any hover-dim on hero images */
+.ct-hero:hover .ct-hero__media img,
+.ct-hero__slide:hover .ct-hero__media img{
+  filter: none !important;
+  opacity: 1 !important;
+}
+
+/* 2) Entry typography spacing (EN / CN / DESC) */
+.entry-en{ margin:0; }
+.entry-cn{ margin:6px 0 0; }
+
+.entry-desc{
+  margin:8px 0 0;
+  font-size:10px;
+  letter-spacing:.14em;
+  opacity:.55;
+}
+
+/* only show desc on desktop */
+@media (max-width: 900px){
+  .entry-desc{ display:none; }
+}
