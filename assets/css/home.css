@@ -275,3 +275,30 @@ html, body{
 
 /* 避免 100vw 触发横向滚动条造成“看起来有白边/缝” */
 body{ overflow-x:hidden; }
+
+/* ===== HOME: kill top white gap ===== */
+.page-home,
+.page-home body{
+  margin:0 !important;
+  padding:0 !important;
+  background:#000 !important;
+}
+
+/* 彻底清掉任何“为导航预留的顶部占位” */
+.page-home main,
+.page-home .page-home-main,
+.page-home .page{
+  margin-top:0 !important;
+  padding-top:0 !important;
+}
+
+/* 如果 topbar 仍然在文档流里，会把内容顶下去：改为 overlay */
+.page-home .topbar{
+  position:fixed !important;
+  top:0; left:0; right:0;
+  z-index:9999;
+  background:transparent;
+}
+
+/* 兜底：防止 100vw 造成横向滚动引发视觉“白缝” */
+.page-home body{ overflow-x:hidden; }
