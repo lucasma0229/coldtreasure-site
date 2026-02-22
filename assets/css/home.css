@@ -246,3 +246,32 @@ body.page-home{
     border-right:0;
   }
 }
+
+/* ===== FIX: 顶部白边（地址栏下面那条）===== */
+html, body{
+  margin:0 !important;
+  padding:0 !important;
+  background:#000 !important; /* 避免任何空隙露白 */
+}
+
+/* 首页：确保主容器不制造顶部空隙 */
+.page-home-main{
+  margin:0 !important;
+  padding:0 !important;
+}
+
+/* 如果 topbar 仍在文档流里，会把 hero 顶下去：让它 overlay */
+.page-home .topbar{
+  position:fixed !important;
+  top:0; left:0; right:0;
+  z-index:9999;
+  background:transparent;
+}
+
+/* 首页 hero 本身不能有 margin-top */
+.page-home .ct-hero{
+  margin-top:0 !important;
+}
+
+/* 避免 100vw 触发横向滚动条造成“看起来有白边/缝” */
+body{ overflow-x:hidden; }
