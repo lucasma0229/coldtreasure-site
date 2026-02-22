@@ -1,24 +1,28 @@
 // /assets/js/header.js
 (function () {
-  const path = (location.pathname || "/").toLowerCase();
+  const $ = (sel, root = document) => root.querySelector(sel);
 
   function markActiveNav() {
-    document.querySelectorAll(".nav a").forEach(a => {
+    const path = (location.pathname || "/").toLowerCase();
+    document.querySelectorAll(".nav a").forEach((a) => {
       const href = (a.getAttribute("href") || "").toLowerCase();
-      const isNews = (href === "/news/") && (path.startsWith("/news") || path.startsWith("/post"));
-      const isSection = (href !== "/news/") && href !== "/" && path.startsWith(href);
+      const isNews =
+        href === "/news/" && (path.startsWith("/news") || path.startsWith("/post"));
+      const isSection = href !== "/news/" && href !== "/" && path.startsWith(href);
       if (isNews || isSection) a.classList.add("is-active");
     });
   }
 
-  function init() {
-    const topbar = document.querySelector("[data-topbar]");
-    if (!topbar) return;
+  function initTopbar(topbar) {
+    if (!topbar || topbar.__ct_inited) return;
+    topbar.__ct_inited = true;
 
+    const path = (location.pathname || "/").toLowerCase();
     const isHome =
       (String(window.CT_PAGE || "").toLowerCase() === "home") ||
       document.body.classList.contains("page-home") ||
-      path === "/" || path === "/index.html";
+      path === "/" ||
+      path === "/index.html";
 
     function syncNavH() {
       const h = Math.round(topbar.getBoundingClientRect().height || 72);
@@ -44,21 +48,35 @@
       }
     }
 
-    markActiveNav();
     applyState();
     window.addEventListener("scroll", applyState, { passive: true });
     window.addEventListener("resize", applyState);
   }
 
-  // 关键：等 include 把 header 注入后再 init
-  // 这里用一个很轻的轮询兜底（不会卡）
+  function bootIfReady() {
+    markActiveNav();
+    const topbar = $("[data-topbar]");
+    if (topbar) initTopbar(topbar);
+    return !!topbar;
+  }
+
+  // 1) DOMReady 先试一次
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", bootIfReady);
+  } else {
+    bootIfReady();
+  }
+
+  // 2) 监听异步注入：header 被 include 进来时再 init
+  const mo = new MutationObserver(() => {
+    if (bootIfReady()) mo.disconnect();
+  });
+  mo.observe(document.documentElement, { childList: true, subtree: true });
+
+  // 3) 兜底：万一 observer 被挡，轮询一小段时间
   let tries = 0;
-  const timer = setInterval(() => {
+  const t = setInterval(() => {
     tries++;
-    if (document.querySelector("[data-topbar]")) {
-      clearInterval(timer);
-      init();
-    }
-    if (tries > 50) clearInterval(timer); // ~5s 兜底停止
+    if (bootIfReady() || tries > 40) clearInterval(t); // ~4s
   }, 100);
 })();
