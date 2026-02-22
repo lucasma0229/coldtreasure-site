@@ -115,3 +115,47 @@ body:not(.page-home){
 body.page-home{
   padding-top:0;
 }
+
+/* ===================================================
+   Topbar (Header) — Kith-like overlay/solid
+   Driven by <html> classes: ct-nav--overlay / ct-nav--solid
+   =================================================== */
+
+:root{ --navH: 72px; }
+
+/* fixed header baseline */
+.topbar{
+  position:fixed;
+  top:0; left:0; right:0;
+  z-index:1000;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:18px 24px;
+  transition: background 180ms cubic-bezier(.2,.8,.2,1),
+              color 180ms cubic-bezier(.2,.8,.2,1),
+              border-color 180ms cubic-bezier(.2,.8,.2,1);
+}
+
+/* default: give body space for fixed header */
+body{ padding-top: var(--navH); }
+
+/* HOME @ top: overlay (transparent, white text/icons) */
+html.ct-nav--overlay body{ padding-top: 0; } /* 关键：顶端不让位，hero 才能触顶 */
+html.ct-nav--overlay .topbar{
+  background: transparent;
+  border-bottom: 1px solid rgba(255,255,255,.0);
+  color:#fff;
+}
+html.ct-nav--overlay .topbar a{ color:#fff; opacity:.92; }
+html.ct-nav--overlay .topbar a:hover{ opacity:1; }
+
+/* scrolled: solid (white bar, dark text) */
+html.ct-nav--solid body{ padding-top: var(--navH); }
+html.ct-nav--solid .topbar{
+  background:#fff;
+  border-bottom: 1px solid rgba(18,18,18,.10);
+  color:#121212;
+}
+html.ct-nav--solid .topbar a{ color:#121212; opacity:.82; }
+html.ct-nav--solid .topbar a:hover{ opacity:1; }
