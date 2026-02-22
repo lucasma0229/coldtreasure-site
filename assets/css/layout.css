@@ -3,6 +3,7 @@
    =================================================== */
 
 :root{
+  /* JS 会动态写入真实高度；这里兜底 */
   --navH: 72px;
 }
 
@@ -22,23 +23,24 @@ body{
 
 /* ===================================================
    Topbar (Kith-style overlay/solid)
+   Driven by <html> classes: ct-nav--overlay / ct-nav--solid
    =================================================== */
 
 .topbar{
   position:fixed;
   top:0; left:0; right:0;
-  z-index:1000;
+  z-index:5000; /* 确保压过 hero */
 
-  height:var(--navH);
   display:flex;
   align-items:center;
   justify-content:space-between;
 
-  padding:0 28px;
+  padding:18px 24px;
   box-sizing:border-box;
 
   background:transparent;
-  border-bottom:1px solid rgba(255,255,255,.08);
+  color:#121212;
+  border-bottom:1px solid rgba(18,18,18,.10);
 
   transition:
     background 180ms cubic-bezier(.2,.8,.2,1),
@@ -83,11 +85,22 @@ body{
 .nav a.is-active{ opacity:1; }
 
 /* ===================================================
-   State: overlay (home top) -> white text
-   controlled by your header script toggling:
-   html.ct-nav--overlay / html.ct-nav--solid
+   Body offset for fixed header
+   - 默认：所有页面都让位（避免内容被压住）
+   - 首页顶部：overlay 时不让位（hero 触顶）
+   =================================================== */
+body{
+  padding-top: var(--navH);
+}
+html.ct-nav--overlay body.page-home{
+  padding-top: 0;
+}
+
+/* ===================================================
+   States
    =================================================== */
 
+/* Overlay: 首页顶部透明 + 白字 */
 html.ct-nav--overlay .topbar{
   background:transparent;
   color:#fff;
@@ -96,66 +109,10 @@ html.ct-nav--overlay .topbar{
 html.ct-nav--overlay .brand-slogan{ opacity:.72; }
 html.ct-nav--overlay .nav a{ opacity:.88; }
 
-/* Solid: white bg + black text */
+/* Solid: 白底黑字 */
 html.ct-nav--solid .topbar{
   background:rgba(255,255,255,.98);
   color:#121212;
   border-color:rgba(18,18,18,.10);
   backdrop-filter:saturate(180%) blur(10px);
 }
-
-/* ===================================================
-   Prevent content being hidden under fixed topbar
-   - Non-home pages add padding-top
-   - Home stays flush (hero goes under overlay)
-   =================================================== */
-body:not(.page-home){
-  padding-top:var(--navH);
-}
-body.page-home{
-  padding-top:0;
-}
-
-/* ===================================================
-   Topbar (Header) — Kith-like overlay/solid
-   Driven by <html> classes: ct-nav--overlay / ct-nav--solid
-   =================================================== */
-
-:root{ --navH: 72px; }
-
-/* fixed header baseline */
-.topbar{
-  position:fixed;
-  top:0; left:0; right:0;
-  z-index:1000;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  padding:18px 24px;
-  transition: background 180ms cubic-bezier(.2,.8,.2,1),
-              color 180ms cubic-bezier(.2,.8,.2,1),
-              border-color 180ms cubic-bezier(.2,.8,.2,1);
-}
-
-/* default: give body space for fixed header */
-body{ padding-top: var(--navH); }
-
-/* HOME @ top: overlay (transparent, white text/icons) */
-html.ct-nav--overlay body{ padding-top: 0; } /* 关键：顶端不让位，hero 才能触顶 */
-html.ct-nav--overlay .topbar{
-  background: transparent;
-  border-bottom: 1px solid rgba(255,255,255,.0);
-  color:#fff;
-}
-html.ct-nav--overlay .topbar a{ color:#fff; opacity:.92; }
-html.ct-nav--overlay .topbar a:hover{ opacity:1; }
-
-/* scrolled: solid (white bar, dark text) */
-html.ct-nav--solid body{ padding-top: var(--navH); }
-html.ct-nav--solid .topbar{
-  background:#fff;
-  border-bottom: 1px solid rgba(18,18,18,.10);
-  color:#121212;
-}
-html.ct-nav--solid .topbar a{ color:#121212; opacity:.82; }
-html.ct-nav--solid .topbar a:hover{ opacity:1; }
