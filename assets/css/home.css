@@ -1,16 +1,15 @@
 /* ===================================================
-   HOME (Rebuild Step 1)
-   Goal: Hero carousel first (3:2, full-bleed, no white border)
+   HOME (Rebuild)
+   Hero first (3:2, full-bleed) + Entry strip below
    =================================================== */
 
-/* 0) Page reset (home only) */
-html,body{ margin:0; padding:0; }
+/* 0) Home base reset (do NOT make whole page black) */
 body.page-home{
   margin:0;
-  background:#fff; /* ✅ 下面内容回到白底体系 */
+  background:#fff; /* ✅ 关键：只让 Hero 黑，不让整页黑 */
 }
 
-/* shell main 不要制造额外 padding/margin */
+/* Home main wrapper */
 .page-home-main{
   margin:0;
   padding:0;
@@ -20,23 +19,25 @@ body.page-home{
 /* ===================================================
    1) CT Hero (full-bleed, 3:2)
    =================================================== */
+
+/* Full-bleed hero container */
 .ct-hero{
   width:100vw;
   margin-left:calc(50% - 50vw);
   margin-right:calc(50% - 50vw);
-  background:#000; /* ✅ 黑底只限 hero */
+  background:#000;
 }
 
-/* 3:2 舞台 */
+/* 3:2 stage */
 .ct-hero__stage{
   position:relative;
   width:100%;
   aspect-ratio:3 / 2;
   overflow:hidden;
-  background:#000; /* ✅ 黑底只限 hero */
+  background:#000;
 }
 
-/* slides (由 modules/home/carousel.html 提供 .ct-hero__slide 结构) */
+/* Slides */
 .ct-hero__slide{
   position:absolute;
   inset:0;
@@ -54,15 +55,23 @@ body.page-home{
   inset:0;
   display:block;
 }
+
+/* ✅ 取消 hover 变暗：无论哪里写了 hover/filter，这里强制覆盖掉 */
 .ct-hero__media img{
   width:100%;
   height:100%;
   display:block;
   object-fit:cover;
   object-position:center;
+  filter:none !important;
+  opacity:1 !important;
+}
+.ct-hero__media:hover img{
+  filter:none !important;
+  opacity:1 !important;
 }
 
-/* subtle shade for caption readability (very light) */
+/* subtle shade for caption readability */
 .ct-hero__shade{
   position:absolute;
   inset:0;
@@ -109,7 +118,7 @@ body.page-home{
   text-shadow:0 12px 28px rgba(0,0,0,.36);
 }
 
-/* arrows: ultra light, only chevrons */
+/* arrows */
 .ct-hero__nav{
   position:absolute;
   top:50%;
@@ -136,7 +145,7 @@ body.page-home{
 .ct-hero__nav--prev{ left:12px; }
 .ct-hero__nav--next{ right:12px; }
 
-/* dots: always visible (low presence) */
+/* dots */
 .ct-hero__dots{
   position:absolute;
   left:50%;
@@ -162,9 +171,9 @@ body.page-home{
 }
 
 /* ===================================================
-   2) Entry strip below hero (Kith-like spacing + dividers)
-   + Desktop desc line
+   2) Entry strip below hero (Kith-like)
    =================================================== */
+
 .entry-strip--below{
   padding: 22px 0 10px;
   background:#fff;
@@ -178,6 +187,7 @@ body.page-home{
   display:grid;
   grid-template-columns:repeat(5, 1fr);
   gap:0;
+
   border-top:1px solid rgba(18,18,18,.10);
   border-bottom:1px solid rgba(18,18,18,.10);
   background:#fff;
@@ -190,14 +200,15 @@ body.page-home{
   text-align:center;
 
   border-right:1px solid rgba(18,18,18,.10);
-  background:#fff;
 }
 .entry-item:last-child{ border-right:0; }
 
+/* ✅ 你说“间距不整齐”：这里统一每一行的 margin/line-height */
 .entry-en{
   font-size:11px;
   letter-spacing:.18em;
   opacity:.75;
+  line-height:1.15;
 }
 .entry-cn{
   margin-top:6px;
@@ -205,35 +216,33 @@ body.page-home{
   letter-spacing:.10em;
   font-weight:600;
   opacity:.92;
+  line-height:1.2;
 }
 
-/* ✅ 第4点：desc 小于英文入口 */
+/* ✅ 第三行英文摘要（桌面端显示，字体更小） */
 .entry-desc{
-  margin-top:6px;
+  margin-top:10px;
   font-size:10px;
-  letter-spacing:.14em;
+  letter-spacing:.12em;
   opacity:.55;
+  line-height:1.15;
 }
 
-/* mobile */
+/* mobile: 3 cols & hide desc */
 @media (max-width: 720px){
-  .ct-hero__caption{
-    max-width:calc(100% - 36px);
-  }
+  .ct-hero__caption{ max-width:calc(100% - 36px); }
+
   .entry-strip__inner{
     grid-template-columns:repeat(3, 1fr);
-    row-gap:0;
   }
-  .entry-item:nth-child(3){
-    border-right:0;
-  }
-  .entry-desc{ display:none; } /* ✅ 手机隐藏 desc */
+  .entry-item:nth-child(3){ border-right:0; }
+
+  .entry-desc{ display:none; }
 }
 
 /* ===================================================
-   3) Safety: stop any leftover "page padding" from affecting hero
+   3) Below fold container back to “white & premium”
    =================================================== */
 .page-home .page{
-  /* 只影响下面内容容器，不要去碰 hero */
-  background:#fff;
+  background:#fff; /* ✅ 避免下面区域变黑 */
 }
