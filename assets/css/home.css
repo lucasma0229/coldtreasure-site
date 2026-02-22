@@ -1,85 +1,60 @@
 /* ===================================================
-   HOME (Rebuild Step 1) — CLEAN
-   Goal:
-   - Hero carousel first (3:2, full-bleed, NO white border)
-   - Page stays normal (white below fold)
-   - Header hidden ONLY on home (temporary)
+   HOME (Rebuild Step 1)
+   Goal: Hero carousel first (3:2, full-bleed, no white border)
    =================================================== */
 
-/* ---------------------------------------------------
-   0) Home-only base reset
-   --------------------------------------------------- */
+/* 0) Page reset (home only) */
+html,body{ margin:0; padding:0; }
 body.page-home{
   margin:0;
-  background:#fff; /* ✅ 不要全站变黑，只让 Hero 自己黑 */
+  background:#fff; /* ✅ 下面内容回到白底体系 */
 }
 
-/* ✅ 临时：隐藏首页导航栏（重建轮播阶段）
-   注意：只限 .page-home，别影响其他页面 */
-.page-home header.site-header,
-.page-home .site-header,
-.page-home [role="banner"]{
-  display:none !important;
+/* shell main 不要制造额外 padding/margin */
+.page-home-main{
+  margin:0;
+  padding:0;
+  background:#fff;
 }
 
-/* ---------------------------------------------------
-   1) Kill the white border (home only)
-   - main.page 默认有 max-width + padding，会导致 Hero 边缘露白
-   - 首页重建阶段：先让 main.page 全宽无 padding
-   - 下面内容我们再单独用 container 拉回 1200
-   --------------------------------------------------- */
-.page-home main.page{
-  max-width:none !important;
-  padding:0 !important;
-  margin:0 !important;
-}
-
-/* ---------------------------------------------------
-   2) CT Hero (full-bleed, 3:2)
-   Structure expected:
-   <section class="ct-hero">
-     <div class="ct-hero__stage" data-ct-hero>
-       .ct-hero__slide ...
-       .ct-hero__nav ...
-       .ct-hero__dots ...
-     </div>
-   </section>
-   --------------------------------------------------- */
-.page-home .ct-hero{
+/* ===================================================
+   1) CT Hero (full-bleed, 3:2)
+   =================================================== */
+.ct-hero{
   width:100vw;
   margin-left:calc(50% - 50vw);
   margin-right:calc(50% - 50vw);
-  background:#000; /* ✅ 只 Hero 黑 */
+  background:#000; /* ✅ 黑底只限 hero */
 }
 
 /* 3:2 舞台 */
-.page-home .ct-hero__stage{
+.ct-hero__stage{
   position:relative;
   width:100%;
   aspect-ratio:3 / 2;
   overflow:hidden;
-  background:#000;
+  background:#000; /* ✅ 黑底只限 hero */
 }
 
-/* slides */
-.page-home .ct-hero__slide{
+/* slides (由 modules/home/carousel.html 提供 .ct-hero__slide 结构) */
+.ct-hero__slide{
   position:absolute;
   inset:0;
   opacity:0;
   pointer-events:none;
   transition:opacity 320ms cubic-bezier(.2,.8,.2,1);
 }
-.page-home .ct-hero__slide.is-active{
+.ct-hero__slide.is-active{
   opacity:1;
   pointer-events:auto;
 }
 
-.page-home .ct-hero__media{
+.ct-hero__media{
   position:absolute;
   inset:0;
   display:block;
 }
-.page-home .ct-hero__media img{
+.ct-hero__media img{
   width:100%;
   height:100%;
   display:block;
@@ -87,8 +62,8 @@ body.page-home{
   object-position:center;
 }
 
-/* subtle shade for caption readability */
-.page-home .ct-hero__shade{
+/* subtle shade for caption readability (very light) */
+.ct-hero__shade{
   position:absolute;
   inset:0;
   pointer-events:none;
@@ -98,8 +73,8 @@ body.page-home{
     rgba(0,0,0,0) 58%);
 }
 
-/* caption bottom-left */
-.page-home .ct-hero__caption{
+/* caption: bottom-left, white */
+.ct-hero__caption{
   position:absolute;
   left:clamp(18px, 3vw, 44px);
   bottom:clamp(18px, 3vw, 44px);
@@ -108,7 +83,7 @@ body.page-home{
   z-index:2;
 }
 
-.page-home .ct-hero__kicker{
+.ct-hero__kicker{
   font-size:12px;
   letter-spacing:.18em;
   text-transform:uppercase;
@@ -117,7 +92,7 @@ body.page-home{
   text-shadow:0 10px 26px rgba(0,0,0,.35);
 }
 
-.page-home .ct-hero__title{
+.ct-hero__title{
   margin:0 0 8px;
   font-size:clamp(30px, 3.2vw, 52px);
   line-height:1.05;
@@ -126,7 +101,7 @@ body.page-home{
   text-shadow:0 12px 28px rgba(0,0,0,.38);
 }
 
-.page-home .ct-hero__desc{
+.ct-hero__desc{
   margin:0;
   font-size:clamp(13px, 1.25vw, 16px);
   line-height:1.35;
@@ -134,8 +109,8 @@ body.page-home{
   text-shadow:0 12px 28px rgba(0,0,0,.36);
 }
 
-/* arrows: ultra light */
-.page-home .ct-hero__nav{
+/* arrows: ultra light, only chevrons */
+.ct-hero__nav{
   position:absolute;
   top:50%;
   transform:translateY(-50%);
@@ -152,17 +127,17 @@ body.page-home{
   opacity:.18;
   transition:opacity 180ms cubic-bezier(.2,.8,.2,1);
 }
-.page-home .ct-hero__nav:hover{ opacity:.55; }
-.page-home .ct-hero__nav span{
+.ct-hero__nav:hover{ opacity:.55; }
+.ct-hero__nav span{
   font-size:22px;
   line-height:1;
   transform:translateY(-1px);
 }
-.page-home .ct-hero__nav--prev{ left:12px; }
-.page-home .ct-hero__nav--next{ right:12px; }
+.ct-hero__nav--prev{ left:12px; }
+.ct-hero__nav--next{ right:12px; }
 
-/* dots: always visible but subtle */
-.page-home .ct-hero__dots{
+/* dots: always visible (low presence) */
+.ct-hero__dots{
   position:absolute;
   left:50%;
   bottom:14px;
@@ -173,7 +148,7 @@ body.page-home{
   align-items:center;
   justify-content:center;
 }
-.page-home .ct-hero__dot{
+.ct-hero__dot{
   width:6px;
   height:6px;
   border-radius:999px;
@@ -182,51 +157,49 @@ body.page-home{
   cursor:pointer;
   padding:0;
 }
-.page-home .ct-hero__dot.is-active{
+.ct-hero__dot.is-active{
   background:rgba(255,255,255,.9);
 }
 
-/* ---------------------------------------------------
-   3) Entry strip BELOW hero (spacing + dividers)
-   IMPORTANT: 需要 HTML 给 entry-strip 加 class="entry-strip entry-strip--below"
-   --------------------------------------------------- */
-.page-home .entry-strip--below{
+/* ===================================================
+   2) Entry strip below hero (Kith-like spacing + dividers)
+   + Desktop desc line
+   =================================================== */
+.entry-strip--below{
   padding: 22px 0 10px;
   background:#fff;
 }
 
-/* ✅ 把下面内容拉回 1200 容器 */
-.page-home .entry-strip--below .entry-strip__inner,
-.page-home #home-news,
-.page-home .site-footer{
+.entry-strip__inner{
   max-width:1200px;
   margin:0 auto;
-  padding:0 24px;
-}
+  padding: 0 24px;
 
-.page-home .entry-strip--below .entry-strip__inner{
   display:grid;
   grid-template-columns:repeat(5, 1fr);
   gap:0;
   border-top:1px solid rgba(18,18,18,.10);
   border-bottom:1px solid rgba(18,18,18,.10);
+  background:#fff;
 }
 
-.page-home .entry-strip--below .entry-item{
+.entry-item{
   text-decoration:none;
   color:#121212;
   padding: 18px 10px 16px;
   text-align:center;
-  border-right:1px solid rgba(18,18,18,.10);
-}
-.page-home .entry-strip--below .entry-item:last-child{ border-right:0; }
 
-.page-home .entry-strip--below .entry-en{
+  border-right:1px solid rgba(18,18,18,.10);
+  background:#fff;
+}
+.entry-item:last-child{ border-right:0; }
+
+.entry-en{
   font-size:11px;
   letter-spacing:.18em;
   opacity:.75;
 }
-.page-home .entry-strip--below .entry-cn{
+.entry-cn{
   margin-top:6px;
   font-size:13px;
   letter-spacing:.10em;
@@ -234,71 +207,33 @@ body.page-home{
   opacity:.92;
 }
 
+/* ✅ 第4点：desc 小于英文入口 */
+.entry-desc{
+  margin-top:6px;
+  font-size:10px;
+  letter-spacing:.14em;
+  opacity:.55;
+}
+
 /* mobile */
 @media (max-width: 720px){
-  .page-home .ct-hero__caption{
+  .ct-hero__caption{
     max-width:calc(100% - 36px);
   }
-  .page-home .entry-strip--below .entry-strip__inner{
+  .entry-strip__inner{
     grid-template-columns:repeat(3, 1fr);
+    row-gap:0;
   }
-  .page-home .entry-strip--below .entry-item:nth-child(3){
+  .entry-item:nth-child(3){
     border-right:0;
   }
+  .entry-desc{ display:none; } /* ✅ 手机隐藏 desc */
 }
 
-/* ===== FIX: 顶部白边（地址栏下面那条）===== */
-html, body{
-  margin:0 !important;
-  padding:0 !important;
-  background:#000 !important; /* 避免任何空隙露白 */
-}
-
-/* 首页：确保主容器不制造顶部空隙 */
-.page-home-main{
-  margin:0 !important;
-  padding:0 !important;
-}
-
-/* 如果 topbar 仍在文档流里，会把 hero 顶下去：让它 overlay */
-.page-home .topbar{
-  position:fixed !important;
-  top:0; left:0; right:0;
-  z-index:9999;
-  background:transparent;
-}
-
-/* 首页 hero 本身不能有 margin-top */
-.page-home .ct-hero{
-  margin-top:0 !important;
-}
-
-/* 避免 100vw 触发横向滚动条造成“看起来有白边/缝” */
-body{ overflow-x:hidden; }
-
-/* ===== HOME: kill top white gap ===== */
-.page-home,
-.page-home body{
-  margin:0 !important;
-  padding:0 !important;
-  background:#000 !important;
-}
-
-/* 彻底清掉任何“为导航预留的顶部占位” */
-.page-home main,
-.page-home .page-home-main,
+/* ===================================================
+   3) Safety: stop any leftover "page padding" from affecting hero
+   =================================================== */
 .page-home .page{
-  margin-top:0 !important;
-  padding-top:0 !important;
+  /* 只影响下面内容容器，不要去碰 hero */
+  background:#fff;
 }
-
-/* 如果 topbar 仍然在文档流里，会把内容顶下去：改为 overlay */
-.page-home .topbar{
-  position:fixed !important;
-  top:0; left:0; right:0;
-  z-index:9999;
-  background:transparent;
-}
-
-/* 兜底：防止 100vw 造成横向滚动引发视觉“白缝” */
-.page-home body{ overflow-x:hidden; }
