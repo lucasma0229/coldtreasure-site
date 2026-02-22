@@ -90,8 +90,12 @@ body{
    - 首页顶部：overlay 时不让位（hero 触顶）
    =================================================== */
 body{
-  padding-top: var(--navH);
+  padding-top: 0;
 }
+
+/* 非首页才需要给 fixed header 让位 */
+body:not(.page-home){ padding-top: var(--navH); }
+
 html.ct-nav--overlay body.page-home{
   padding-top: 0;
 }
