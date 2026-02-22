@@ -14,10 +14,24 @@
 </header>
 
 <script>
+/**
+ * ColdTreasure Header (Kith-like)
+ * - Home at top: overlay (transparent + white)
+ * - Home scrolled: solid (white bg + black)
+ * - Other pages: solid
+ *
+ * Works when injected via include.js because it runs immediately after insertion.
+ */
 (function(){
-  const path = (location.pathname || "/").toLowerCase();
+  // 防止 include 重复插入导致重复绑定
+  if (window.__CT_HEADER_INITED__) return;
+  window.__CT_HEADER_INITED__ = true;
 
-  // ========== Nav active ==========
+  const path = (location.pathname || "/").toLowerCase();
+  const topbar = document.querySelector("[data-topbar]");
+  if (!topbar) return;
+
+  // ======== Nav active ========
   document.querySelectorAll(".nav a").forEach(a => {
     const href = (a.getAttribute("href") || "").toLowerCase();
     const isNews = (href === "/news/") && (path.startsWith("/news") || path.startsWith("/post"));
@@ -25,43 +39,42 @@
     if (isNews || isSection) a.classList.add("is-active");
   });
 
-  // ========== Kith-style Header state ==========
-  const topbar = document.querySelector("[data-topbar]");
-  if (!topbar) return;
-
+  // ======== Home detection ========
   const isHome =
     (String(window.CT_PAGE || "").toLowerCase() === "home") ||
     document.body.classList.contains("page-home") ||
     path === "/" || path === "/index.html";
 
   function syncNavH(){
+    // 用真实高度驱动 --navH（layout.css 用它做 padding-top/overlay）
     const h = Math.round(topbar.getBoundingClientRect().height || 72);
     document.documentElement.style.setProperty("--navH", h + "px");
   }
 
-  function applyState() {
+  function applyState(){
     syncNavH();
-
     const y = window.scrollY || document.documentElement.scrollTop || 0;
 
-    if (!isHome) {
+    if (!isHome){
       document.documentElement.classList.remove("ct-nav--overlay");
       document.documentElement.classList.add("ct-nav--solid");
       return;
     }
 
-    // 首页：顶部 overlay（白字，白底消失）；下滑一点点就 solid（白底出现）
-    if (y <= 8) {
+    if (y <= 8){
       document.documentElement.classList.add("ct-nav--overlay");
       document.documentElement.classList.remove("ct-nav--solid");
-    } else {
+    }else{
       document.documentElement.classList.remove("ct-nav--overlay");
       document.documentElement.classList.add("ct-nav--solid");
     }
   }
 
-  applyState();
-  window.addEventListener("scroll", applyState, { passive: true });
+  // 初始执行（用 rAF 确保布局尺寸已稳定）
+  requestAnimationFrame(applyState);
+
+  // 绑定一次即可
+  window.addEventListener("scroll", applyState, { passive:true });
   window.addEventListener("resize", applyState);
 })();
 </script>
