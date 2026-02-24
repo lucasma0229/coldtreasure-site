@@ -6,18 +6,20 @@
   <title>ColdTreasure</title>
 
   <link rel="stylesheet" href="/assets/css/main.css?v=220" />
-</head>
 
-<body class="page-home">
-<!-- Header -->
-<div data-include="/modules/header/header.html"></div>
-
-  <!-- Main layout shell -->
-  <main data-include="/modules/layout/shell.html"></main>
-
+  <!-- ✅ 更稳：在任何 defer 脚本加载前声明页面类型 -->
   <script>window.CT_PAGE = "home";</script>
+
   <script src="/assets/js/include.v3.js?v=12" defer></script>
   <script src="/assets/js/header.js?v=2" defer></script>
   <script src="/assets/js/app.js?v=210" defer></script>
+</head>
+
+<body class="page-home">
+  <!-- Header -->
+  <div data-include="/modules/header/header.html"></div>
+
+  <!-- Main layout shell -->
+  <main data-include="/modules/layout/shell.html"></main>
 </body>
 </html>
