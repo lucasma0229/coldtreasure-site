@@ -1,10 +1,11 @@
 /* ===================================================
-   ColdTreasure app.js (CMS Core)
-   - One data source: /assets/data/posts.json
-   - One detail page: /post/?id=<id>
-   - List pages render by CT_PAGE: news / record / archive / guide / feature
-   - Home latest cards (#homeNews) + home carousel init
-   =================================================== */
+ColdTreasure app.js (CMS Core) - Full Replace
+- One data source: /assets/data/posts.json
+- One detail page: /post/?id=<id>
+- List pages render by CT_PAGE: news / record / archive / guide / feature
+- Home latest cards (#homeNews) + home carousel init
+- Auto-load /assets/js/header.js so you don't bump every page
+=================================================== */
 
 /* 1) Page identity -> body class */
 (function () {
@@ -78,11 +79,28 @@
     return json;
   }
 
+  /* ---------- header.js auto-loader ---------- */
+  async function ensureHeaderJS() {
+    // 如果 header.js 已经初始化了，直接结束
+    if (window.CT_HEADER_INITED) return;
+
+    // 如果你未来要 bump header.js，只需要改这个 v
+    const url = "/assets/js/header.js?v=1";
+
+    await new Promise((resolve) => {
+      const s = document.createElement("script");
+      s.src = url;
+      s.defer = true;
+      s.onload = () => resolve();
+      s.onerror = () => resolve(); // 不阻塞主流程
+      document.head.appendChild(s);
+    });
+  }
+
   /* ---------- templates ---------- */
   function tplNewsItem(p) {
     const id = asText(p.id);
     const href = postUrl(p);
-
     const title = esc(p.title || p.name || id || "Untitled");
     const summary = esc(p.summary || p.desc || "");
     const date = esc(p.date || p.release_date || "");
@@ -111,9 +129,9 @@
   function tplListItem(p) {
     const href = postUrl(p);
     const cover = pickCover(p);
-
     const title = esc(p.title || "");
     const summary = esc(p.summary || "");
+
     const brand = Array.isArray(p.brand) ? esc(p.brand.join(", ")) : esc(p.brand || "");
     const model = esc(p.model || "");
     const date = esc(p.release_date || p.date || "");
@@ -136,36 +154,55 @@
 
   /* ---------- list rendering (news / record / archive / guide / feature) ---------- */
   function renderList(posts) {
-    // CMS pages use #list as container (we will align news/index.html to this)
     const listEl = $("#list");
     const emptyEl = $("#listEmpty");
     if (!listEl) return;
 
     const page = CT_PAGE || "news";
-    const filtered = posts.filter(p => asText(p.section || "news").toLowerCase() === page);
+    const filtered = posts.filter((p) => asText(p.section || "news").toLowerCase() === page);
 
-    filtered.sort((a, b) => {
+    // ✅ Search filter: /news/?q=
+    const q = (() => {
+      try { return (new URL(location.href).searchParams.get("q") || "").trim(); }
+      catch (e) { return ""; }
+    })();
+
+    const qLower = q.toLowerCase();
+    const searched = q
+      ? filtered.filter((p) => {
+          const hay = [
+            p.title, p.summary,
+            Array.isArray(p.brand) ? p.brand.join(" ") : p.brand,
+            p.model,
+            Array.isArray(p.tags) ? p.tags.join(" ") : p.tags,
+            p.id
+          ].filter(Boolean).join(" ").toLowerCase();
+          return hay.includes(qLower);
+        })
+      : filtered;
+
+    searched.sort((a, b) => {
       const ak = parseDateKey(a.date || a.release_date);
       const bk = parseDateKey(b.date || b.release_date);
       if (Number.isFinite(ak) && Number.isFinite(bk)) return bk - ak;
       return asText(b.date || b.release_date || "").localeCompare(asText(a.date || a.release_date || ""));
     });
 
-    // status text on page head if exists
     const statusEl = $("#pageStatus");
-    if (statusEl) statusEl.textContent = `${filtered.length} posts`;
+    if (statusEl) {
+      statusEl.textContent = q ? `${searched.length} posts · "${q}"` : `${searched.length} posts`;
+    }
 
-    if (!filtered.length) {
+    if (!searched.length) {
       if (emptyEl) emptyEl.style.display = "block";
       listEl.innerHTML = "";
       return;
     }
 
-    // News uses the nice "news-item" card layout; others keep list-item for now
     if (page === "news") {
-      listEl.innerHTML = `<section class="news-list">${filtered.map(tplNewsItem).join("")}</section>`;
+      listEl.innerHTML = `<section class="news-list">${searched.map(tplNewsItem).join("")}</section>`;
     } else {
-      listEl.innerHTML = filtered.map(tplListItem).join("");
+      listEl.innerHTML = searched.map(tplListItem).join("");
     }
   }
 
@@ -174,7 +211,7 @@
     const homeNews = document.getElementById("homeNews");
     if (!homeNews) return;
 
-    const newsOnly = posts.filter(p => asText(p.section || "news").toLowerCase() === "news");
+    const newsOnly = posts.filter((p) => asText(p.section || "news").toLowerCase() === "news");
 
     const latest = newsOnly
       .slice()
@@ -186,7 +223,7 @@
       })
       .slice(0, 3);
 
-    homeNews.innerHTML = latest.map(p => `
+    homeNews.innerHTML = latest.map((p) => `
       <a class="news-card" href="${postUrl(p)}">
         <div class="card-media">
           <img src="${esc(p.thumb || p.cover || p.image || p.hero || "")}" alt="">
@@ -203,7 +240,6 @@
   function initHomeCarousel() {
     if (CT_PAGE !== "home") return;
 
-    // new carousel structure
     const root = document.querySelector("[data-ct-carousel]");
     if (root) {
       if (root.dataset.inited === "1") return;
@@ -257,18 +293,6 @@
       root.addEventListener("mouseenter", stop);
       root.addEventListener("mouseleave", start);
 
-      let x0 = null;
-      root.addEventListener("touchstart", (e) => { x0 = e.touches?.[0]?.clientX ?? null; }, { passive: true });
-      root.addEventListener("touchend", (e) => {
-        const x1 = e.changedTouches?.[0]?.clientX ?? null;
-        if (x0 == null || x1 == null) return;
-        const dx = x1 - x0;
-        if (Math.abs(dx) < 40) return;
-        go(i + (dx < 0 ? 1 : -1));
-        restart();
-        x0 = null;
-      }, { passive: true });
-
       render();
       start();
       return;
@@ -285,7 +309,7 @@
     const prev = legacyRoot.querySelector(".hero-arrow.is-prev");
     const next = legacyRoot.querySelector(".hero-arrow.is-next");
 
-    let i = slides.findIndex(s => s.classList.contains("is-active"));
+    let i = slides.findIndex((s) => s.classList.contains("is-active"));
     if (i < 0) i = 0;
 
     function render(n) {
@@ -317,6 +341,9 @@
   /* ---------- boot ---------- */
   await waitForModulesLoaded();
 
+  // ✅ 关键：模块注入后再加载 header.js（确保 [data-topbar] 已存在）
+  await ensureHeaderJS();
+
   initHomeCarousel();
 
   let posts = [];
@@ -325,7 +352,9 @@
   } catch (e) {
     console.error("[ColdTreasure] failed to load posts.json:", e);
     const listEl = $("#list");
-    if (listEl) listEl.innerHTML = `<div class="empty">posts.json 读取失败：请打开控制台查看报错（F12 → Console）</div>`;
+    if (listEl) {
+      listEl.innerHTML = `<div class="empty">posts.json 读取失败：请打开控制台查看报错（F12 → Console）</div>`;
+    }
     return;
   }
 
