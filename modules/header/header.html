@@ -11,21 +11,56 @@
     <a href="/record/">Record</a>
     <a href="/archive/">Archive</a>
   </nav>
+
+  <!-- ✅ Search (minimal, Kith-like) -->
+  <div class="ct-search" aria-label="Site search">
+    <input id="ctSearchInput" type="search" placeholder="Search…" autocomplete="off" />
+  </div>
 </header>
+
+<style>
+  /* ✅ 极小样式：不依赖 news.css，也不碰 main.css，避免误伤 */
+  .ct-search{ margin-left:14px; display:flex; align-items:center; }
+  .ct-search input{
+    width: 180px;
+    max-width: 42vw;
+    height: 34px;
+    padding: 0 12px;
+    border: 1px solid rgba(18,18,18,.14);
+    border-radius: 999px;
+    background: rgba(255,255,255,.9);
+    color: #121212;
+    font-size: 13px;
+    letter-spacing: .02em;
+    outline: none;
+  }
+  .ct-search input::placeholder{ color: rgba(18,18,18,.55); }
+  .ct-search input:focus{
+    border-color: rgba(18,18,18,.28);
+    background: #fff;
+  }
+
+  @media (max-width: 860px){
+    .ct-search input{ width: 130px; }
+  }
+</style>
 
 <script>
 /**
- * ColdTreasure Header (Kith-like)
- * - Home at top: overlay (transparent + white)
- * - Home scrolled: solid (white bg + black)
- * - Other pages: solid
- *
- * Works when injected via include.js because it runs immediately after insertion.
- */
+- ColdTreasure Header (Kith-like)
+-
+- Home at top: overlay (transparent + white)
+-
+- Home scrolled: solid (white bg + black)
+-
+- Other pages: solid
+-
+- Works when injected via include.js because it runs immediately after insertion.
+*/
 (function(){
   // 防止 include 重复插入导致重复绑定
-  if (window.__CT_HEADER_INITED__) return;
-  window.__CT_HEADER_INITED__ = true;
+  if (window.CT_HEADER_INITED) return;
+  window.CT_HEADER_INITED = true;
 
   const path = (location.pathname || "/").toLowerCase();
   const topbar = document.querySelector("[data-topbar]");
@@ -38,6 +73,25 @@
     const isSection = (href !== "/news/") && href !== "/" && path.startsWith(href);
     if (isNews || isSection) a.classList.add("is-active");
   });
+
+  // ======== Search behavior ========
+  const input = document.getElementById("ctSearchInput");
+  if (input) {
+    // 如果当前就在 /search/，把 q 回填进输入框
+    try{
+      if (path.startsWith("/search")) {
+        const q = new URL(location.href).searchParams.get("q") || "";
+        input.value = q;
+      }
+    }catch(e){}
+
+    input.addEventListener("keydown", (e) => {
+      if (e.key !== "Enter") return;
+      const q = (input.value || "").trim();
+      if (!q) return;
+      location.href = `/search/?q=${encodeURIComponent(q)}`;
+    });
+  }
 
   // ======== Home detection ========
   const isHome =
