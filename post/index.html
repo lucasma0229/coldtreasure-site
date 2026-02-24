@@ -5,10 +5,8 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>ColdTreasure | Post</title>
 
-  <!-- 与全站一致 -->
   <link rel="stylesheet" href="/assets/css/main.css?v=203" />
 
-  <!-- 文章页自身排版（不覆盖 topbar / footer） -->
   <style>
     :root { --w: 980px; --muted:#777; --line:#eee; }
 
@@ -32,25 +30,19 @@
 
     h1{ font-size:30px; line-height:1.2; margin:0 0 8px; letter-spacing:.2px; }
 
-    /* =========================================================
-       ✅ Post 首图：统一 3:2（与 News 封面一致）+ 自动裁切长图
-       - 默认居中裁切
-       - 可用每篇文章字段 post.heroFocus 覆盖裁切焦点，如："50% 30%"
-    ========================================================= */
     .hero{
       width:100%;
       border-radius:14px;
       overflow:hidden;
       background:#f6f6f6;
       border:1px solid var(--line);
-
-      aspect-ratio: 3 / 2;   /* ★核心：固定 3:2 */
+      aspect-ratio: 3 / 2;
     }
     .hero img{
       width:100%;
-      height:100%;           /* ★让容器高度生效 */
-      object-fit:cover;      /* ★自动裁切 */
-      object-position: var(--hero-focus, 50% 50%); /* ★可被每篇文章覆盖 */
+      height:100%;
+      object-fit:cover;
+      object-position: var(--hero-focus, 50% 50%);
       display:block;
     }
 
@@ -85,150 +77,19 @@
   <!-- ✅ 统一：在脚本前声明页面类型 -->
   <script>window.CT_PAGE = "post";</script>
   <script src="/assets/js/include.v3.js?v=3" defer></script>
-  <script src="/assets/js/app.js?v=203" defer></script>
+
+  <!-- ✅ 重要：post 页只需要 post.js（不要再加载 app.js） -->
+  <script src="/assets/js/post.js?v=1" defer></script>
 </head>
 
 <body>
-  <!-- ✅ 统一导航 -->
   <div data-include="/modules/header/header.html"></div>
 
+  <!-- ✅ post.js 会把文章渲染到 #app -->
   <main id="app">
     <div class="muted">Loading…</div>
   </main>
 
-  <!-- ✅ 统一 Footer -->
   <div data-include="/modules/footer/footer.html"></div>
-
-  <script>
-    function escapeHtml(str){
-      return String(str ?? "")
-        .replaceAll("&","&amp;")
-        .replaceAll("<","&lt;")
-        .replaceAll(">","&gt;")
-        .replaceAll('"',"&quot;")
-        .replaceAll("'","&#039;");
-    }
-
-    function getId(){
-      const u = new URL(location.href);
-      return u.searchParams.get("id")?.trim() || "";
-    }
-
-    async function loadPosts(){
-      const res = await fetch(`/assets/data/posts.json?v=${Date.now()}`, { cache: "no-store" });
-      if(!res.ok) throw new Error(`Failed to load posts.json (${res.status})`);
-      return await res.json();
-    }
-
-    function renderBlock(block){
-      if(!block || !block.type) return "";
-      if(block.type === "p") return `<p>${escapeHtml(block.text)}</p>`;
-      if(block.type === "h2") return `<h2>${escapeHtml(block.text)}</h2>`;
-      if(block.type === "ul"){
-        const items = (block.items || []).map(x => `<li>${escapeHtml(x)}</li>`).join("");
-        return `<ul>${items}</ul>`;
-      }
-      return "";
-    }
-
-    function normalizeFocus(v){
-      if(!v) return "";
-      if(typeof v === "string") return v.trim();
-      if(Array.isArray(v) && v.length >= 2) return `${v[0]}% ${v[1]}%`;
-      if(typeof v === "object" && v.x != null && v.y != null) return `${v.x}% ${v.y}%`;
-      return "";
-    }
-
-    function render(post){
-      const brand = Array.isArray(post.brand) ? post.brand.join(" / ") : (post.brand || "");
-      const tags = Array.isArray(post.tags) ? post.tags : [];
-      const metaParts = [];
-      if(brand) metaParts.push(escapeHtml(brand));
-      if(post.date) metaParts.push(escapeHtml(post.date));
-      if(tags.length) metaParts.push(tags.map(t => `#${escapeHtml(t)}`).join(" "));
-
-      const heroFocus = normalizeFocus(post.heroFocus);
-      const heroStyle = heroFocus ? ` style="--hero-focus:${escapeHtml(heroFocus)}"` : "";
-
-      const heroSrc = post.thumb || post.cover || post.hero || "";
-      const heroHtml = heroSrc ? `
-        <div class="hero"${heroStyle}>
-          <img src="${escapeHtml(heroSrc)}" alt="${escapeHtml(post.title)}" loading="eager" />
-        </div>
-      ` : "";
-
-      const contentHtml = (post.content || []).map(renderBlock).join("");
-
-      const gallery = Array.isArray(post.gallery) ? post.gallery : [];
-      const galleryHtml = gallery.length ? `
-        <section class="gallery">
-          <h2>Gallery</h2>
-          <div class="grid">
-            ${gallery.map(src => `<img src="${escapeHtml(src)}" alt="" loading="lazy" />`).join("")}
-          </div>
-        </section>
-      ` : "";
-
-      return `
-        <article>
-          <h1>${escapeHtml(post.title || "Untitled")}</h1>
-          <div class="meta">${metaParts.join(" · ")}</div>
-          ${heroHtml}
-          ${post.summary ? `<div class="summary">${escapeHtml(post.summary)}</div>` : ""}
-          <div class="content">${contentHtml}</div>
-          ${galleryHtml}
-        </article>
-      `;
-    }
-
-    // ✅ 等 header/footer 注入完成后再渲染正文（避免跳动）
-    (async function main(){
-      const app = document.getElementById("app");
-      const id = getId();
-
-      // 等 include.v3.js 注入完（如果没有 modules:loaded，也不会卡死）
-      await new Promise((resolve) => {
-        let done = false;
-        const finish = () => { if(done) return; done = true; resolve(); };
-        document.addEventListener("modules:loaded", finish, { once: true });
-        setTimeout(finish, 1200);
-      });
-
-      if(!id){
-        app.innerHTML = `<div class="error"><b>Missing id</b><div class="muted">URL 需要带参数：<code>?id=xxx</code></div></div>`;
-        return;
-      }
-
-      try{
-        const posts = await loadPosts();
-        const post = (Array.isArray(posts) ? posts : []).find(p => p && p.id === id);
-
-        if(!post){
-          app.innerHTML = `
-            <div class="error">
-              <b>Post not found</b>
-              <div class="muted">未找到 id = <code>${escapeHtml(id)}</code> 的文章。</div>
-              <div class="muted" style="margin-top:8px;">请确认：<code>assets/data/posts.json</code> 中存在同名 id。</div>
-            </div>
-          `;
-          return;
-        }
-
-        app.innerHTML = render(post);
-      }catch(err){
-        app.innerHTML = `
-          <div class="error">
-            <b>Load failed</b>
-            <div class="muted">${escapeHtml(err.message || err)}</div>
-            <div class="muted" style="margin-top:8px;">
-              重点检查：<code>assets/data/posts.json</code> 文件名是否正确，以及是否已部署生效（Ctrl+F5）。
-            </div>
-          </div>
-        `;
-      }
-    })();
-  </script>
 </body>
 </html>
-
-<script src="/assets/js/post.js"></script>
