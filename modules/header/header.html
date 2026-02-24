@@ -12,12 +12,20 @@
     <a href="/archive/">Archive</a>
   </nav>
 
-  <div class="ct-search" aria-label="Site search">
-    <input id="ctSearchInput" type="search" placeholder="Search…" autocomplete="off" />
-  </div>
+  <!-- ✅ Search：用 form 提交，Enter 必跳转（不依赖 JS） -->
+  <form class="ct-search" role="search" action="/news/" method="GET" aria-label="Site search">
+    <input
+      id="ctSearchInput"
+      name="q"
+      type="search"
+      placeholder="Search…"
+      autocomplete="off"
+    />
+  </form>
 </header>
 
 <style>
+  /* ✅ 极小样式：不依赖 news.css，也不碰 main.css，避免误伤 */
   .ct-search{ margin-left:14px; display:flex; align-items:center; }
   .ct-search input{
     width: 180px;
@@ -42,5 +50,65 @@
   }
 </style>
 
-<!-- ✅ 关键：让脚本跟着 header 注入，永远不会“绑定太早” -->
-<script src="/assets/js/header.js?v=1" defer></script>
+<script>
+(function(){
+  // 防止 include 重复插入导致重复绑定
+  if (window.CT_HEADER_INITED) return;
+  window.CT_HEADER_INITED = true;
+
+  const path = (location.pathname || "/").toLowerCase();
+  const topbar = document.querySelector("[data-topbar]");
+  if (!topbar) return;
+
+  // ======== Nav active ========
+  document.querySelectorAll(".nav a").forEach(a => {
+    const href = (a.getAttribute("href") || "").toLowerCase();
+    const isNews = (href === "/news/") && (path.startsWith("/news") || path.startsWith("/post"));
+    const isSection = (href !== "/news/") && href !== "/" && path.startsWith(href);
+    if (isNews || isSection) a.classList.add("is-active");
+  });
+
+  // ======== Search: 回填 q（可选，但很实用） ========
+  const input = document.getElementById("ctSearchInput");
+  if (input) {
+    try{
+      const q = new URL(location.href).searchParams.get("q") || "";
+      if (q) input.value = q;
+    }catch(e){}
+  }
+
+  // ======== Home detection ========
+  const isHome =
+    (String(window.CT_PAGE || "").toLowerCase() === "home") ||
+    document.body.classList.contains("page-home") ||
+    path === "/" || path === "/index.html";
+
+  function syncNavH(){
+    const h = Math.round(topbar.getBoundingClientRect().height || 72);
+    document.documentElement.style.setProperty("--navH", h + "px");
+  }
+
+  function applyState(){
+    syncNavH();
+    const y = window.scrollY || document.documentElement.scrollTop || 0;
+
+    if (!isHome){
+      document.documentElement.classList.remove("ct-nav--overlay");
+      document.documentElement.classList.add("ct-nav--solid");
+      return;
+    }
+
+    if (y <= 8){
+      document.documentElement.classList.add("ct-nav--overlay");
+      document.documentElement.classList.remove("ct-nav--solid");
+    }else{
+      document.documentElement.classList.remove("ct-nav--overlay");
+      document.documentElement.classList.add("ct-nav--solid");
+    }
+  }
+
+  requestAnimationFrame(applyState);
+  window.addEventListener("scroll", applyState, { passive:true });
+  window.addEventListener("resize", applyState);
+})();
+</script>
