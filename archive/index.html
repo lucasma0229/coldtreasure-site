@@ -1,25 +1,23 @@
 <!doctype html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Archive — ColdTreasure</title>
+
   <link rel="stylesheet" href="/assets/css/main.css?v=203" />
+
+  <!-- ✅ 先声明页面类型 -->
+  <script>window.CT_PAGE = "archive";</script>
+
+  <!-- ✅ 统一模块注入 + CMS 渲染器 -->
+  <script src="/assets/js/include.v3.js?v=3" defer></script>
+  <script src="/assets/js/app.js?v=204" defer></script>
 </head>
 
 <body>
-  <header class="topbar">
-    <a class="brand-lockup" href="/" aria-label="ColdTreasure Home">
-      <div class="brand-name">COLD TREASURE</div>
-      <div class="brand-slogan">ARCHIVE IS NOT FOR RESALE</div>
-    </a>
-
-    <nav class="nav">
-      <a href="/news/">News</a>
-      <a href="/record/">Record</a>
-      <a class="is-active" href="/archive/">Archive</a>
-    </nav>
-  </header>
+  <!-- Header 模块 -->
+  <div data-include="/modules/header/header.html"></div>
 
   <main class="page">
     <section class="page-head">
@@ -28,12 +26,15 @@
     </section>
 
     <section class="list-wrap">
+      <!-- ✅ CMS 容器：app.js 会渲染到这里 -->
       <div id="list" class="list"></div>
+
+      <!-- ✅ 空态：仅当没有内容时显示 -->
       <div id="listEmpty" class="empty" style="display:none;">Nothing archived yet.</div>
     </section>
-  </main>
 
-  <script>window.CT_PAGE = "archive";</script>
-  <script src="/assets/js/app.js?v=203" defer></script>
+    <!-- Footer 模块 -->
+    <div data-include="/modules/footer/footer.html"></div>
+  </main>
 </body>
 </html>
