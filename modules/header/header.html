@@ -39,7 +39,6 @@
     border-color: rgba(18,18,18,.28);
     background: #fff;
   }
-
   @media (max-width: 860px){
     .ct-search input{ width: 130px; }
   }
@@ -77,21 +76,19 @@
   // ======== Search behavior ========
   const input = document.getElementById("ctSearchInput");
   if (input) {
-    // 如果当前就在 /search/，把 q 回填进输入框
+    // ✅ 只要 URL 里有 q，就回填（不依赖 /search 路径）
     try{
-      if (path.startsWith("/search")) {
-        const q = new URL(location.href).searchParams.get("q") || "";
-        input.value = q;
-      }
+      const q0 = new URL(location.href).searchParams.get("q") || "";
+      if (q0) input.value = q0;
     }catch(e){}
 
     input.addEventListener("keydown", (e) => {
       if (e.key !== "Enter") return;
       e.preventDefault();
-      
+
       const q = (input.value || "").trim();
       if (!q) return;
-      
+
       location.href = `/news/?q=${encodeURIComponent(q)}`;
     });
   }
