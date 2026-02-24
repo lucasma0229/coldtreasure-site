@@ -1,7 +1,6 @@
 [
   {
     "id": "foamposite-one-floral-2026",
-    "section": "news",
     "title": "Nike Air Foamposite One “Floral” 确认回归：Holiday 2026 再度登场",
     "date": "2026-02-10",
     "brand": ["Nike"],
@@ -19,17 +18,24 @@
     ],
     "summary": "2019 花卉 Foamposite 确认回归，预计 Holiday 2026 再度发售。",
     "content": [
-      { "type": "p", "text": "2019 年首次亮相的 Nike Air Foamposite One “Floral”，以大胆花卉图案覆盖经典发泡鞋壳，为 Foamposite 系列带来罕见的视觉表达。2026 年，这双档案级配色确认回归。" },
-      { "type": "p", "text": "本次复刻预计沿用原始花卉印花鞋面与黑色基底设定，并以 Holiday 2026 档期重新进入市场，继续补强 Foamposite 近年来逐步回暖的复古阵线。" },
+      {
+        "type": "p",
+        "text": "2019 年首次亮相的 Nike Air Foamposite One “Floral”，以大胆花卉图案覆盖经典发泡鞋壳，为 Foamposite 系列带来罕见的视觉表达。2026 年，这双档案级配色确认回归。"
+      },
+      {
+        "type": "p",
+        "text": "本次复刻预计沿用原始花卉印花鞋面与黑色基底设定，并以 Holiday 2026 档期重新进入市场，继续补强 Foamposite 近年来逐步回暖的复古阵线。"
+      },
       { "type": "h2", "text": "发售信息" },
-      { "type": "ul", "items": ["Nike Air Foamposite One “Floral”", "发售时间：Holiday 2026", "定价：$240", "渠道：Nike / 指定零售商"] }
+      {
+        "type": "ul",
+        "items": ["Nike Air Foamposite One “Floral”", "发售时间：Holiday 2026", "定价：$240", "渠道：Nike / 指定零售商"]
+      }
     ],
-    "source_url": "https://sneakerbardetroit.com/nike-air-foamposite-one-floral-2026/",
     "tags": ["Nike", "Foamposite", "2026"]
   },
   {
     "id": "air-jordan-6-psg-2026",
-    "section": "news",
     "title": "PSG x Air Jordan 6 “Metallic Silver” 官图释出",
     "date": "2026-02-11",
     "brand": ["Jordan Brand"],
@@ -48,17 +54,24 @@
     ],
     "summary": "PSG 与 Jordan Brand 再度合作 Air Jordan 6，2026 确认发售。",
     "content": [
-      { "type": "p", "text": "Jordan Brand 与巴黎圣日耳曼的合作持续深化。2026 年双方再度围绕 Air Jordan 6 推出全新 PSG 版本，以金属银色为核心视觉。" },
-      { "type": "p", "text": "鞋身以银色皮革为主调，辅以白色与灰调细节，整体呈现更偏时装化的高端质感，并继续沿用 PSG 标志性联名徽章。" },
+      {
+        "type": "p",
+        "text": "Jordan Brand 与巴黎圣日耳曼的合作持续深化。2026 年双方再度围绕 Air Jordan 6 推出全新 PSG 版本，以金属银色为核心视觉。"
+      },
+      {
+        "type": "p",
+        "text": "鞋身以银色皮革为主调，辅以白色与灰调细节，整体呈现更偏时装化的高端质感，并继续沿用 PSG 标志性联名徽章。"
+      },
       { "type": "h2", "text": "发售信息" },
-      { "type": "ul", "items": ["PSG x Air Jordan 6", "发售时间：2026", "定价：$215", "渠道：SNKRS / 指定店铺"] }
+      {
+        "type": "ul",
+        "items": ["PSG x Air Jordan 6", "发售时间：2026", "定价：$215", "渠道：SNKRS / 指定店铺"]
+      }
     ],
-    "source_url": "https://sneakerbardetroit.com/psg-air-jordan-6-metallic-silver-2026/",
     "tags": ["Air Jordan 6", "PSG", "2026"]
   },
   {
     "id": "juju-watkins-lebron-nxxt-silver-lining-2026",
-    "section": "news",
     "title": "JuJu Watkins x Nike LeBron NXXT Gen “Silver Lining”",
     "date": "2026-02-11",
     "brand": ["Nike"],
@@ -66,22 +79,27 @@
     "image": "/assets/img/posts/juju-watkins-lebron-nxxt-silver-lining-2026/lebron-nxxt.jpg",
     "cover": "/assets/img/posts/juju-watkins-lebron-nxxt-silver-lining-2026/lebron-nxxt.jpg",
     "thumb": "/assets/img/posts/juju-watkins-lebron-nxxt-silver-lining-2026/lebron-nxxt.jpg",
-    "gallery": [
-      "/assets/img/posts/juju-watkins-lebron-nxxt-silver-lining-2026/nike-lebron-nxxt-gen-juju-watkins-silver-lining-1_结果.jpg"
-    ],
+    "gallery": ["/assets/img/posts/juju-watkins-lebron-nxxt-silver-lining-2026/nike-lebron-nxxt-gen-juju-watkins-silver-lining-1_结果.jpg"],
     "summary": "JuJu Watkins 参与打造 LeBron NXXT Gen 特别配色。",
     "content": [
-      { "type": "p", "text": "Nike 正在持续扩大新生代球员在产品线中的参与度。2026 年，JuJu Watkins 正式参与 LeBron NXXT Gen 系列设计。" },
-      { "type": "p", "text": "本次 “Silver Lining” 版本以金属银为视觉核心，并融入 JuJu 个人风格与签名细节，象征 Nike 篮球新世代的叙事方向。" },
+      {
+        "type": "p",
+        "text": "Nike 正在持续扩大新生代球员在产品线中的参与度。2026 年，JuJu Watkins 正式参与 LeBron NXXT Gen 系列设计。"
+      },
+      {
+        "type": "p",
+        "text": "本次 “Silver Lining” 版本以金属银为视觉核心，并融入 JuJu 个人风格与签名细节，象征 Nike 篮球新世代的叙事方向。"
+      },
       { "type": "h2", "text": "发售信息" },
-      { "type": "ul", "items": ["LeBron NXXT Gen by JuJu", "预计发售：2026", "定价：$170", "渠道：Nike Basketball"] }
+      {
+        "type": "ul",
+        "items": ["LeBron NXXT Gen by JuJu", "预计发售：2026", "定价：$170", "渠道：Nike Basketball"]
+      }
     ],
-    "source_url": "https://sneakerbardetroit.com/nike-lebron-nxxt-gen-juju-watkins-silver-lining/",
     "tags": ["LeBron", "Nike Basketball", "JuJu"]
   },
   {
     "id": "kd18-kith-am95-001",
-    "section": "news",
     "title": "Kith x Nike KD18 “Air Max 95” F&F 版本曝光",
     "date": "2026-02-11",
     "brand": ["Nike", "Kith"],
@@ -103,12 +121,17 @@
     ],
     "summary": "Kith 与 Nike KD18 融合 Air Max 95 语言的 F&F 版本曝光。",
     "content": [
-      { "type": "p", "text": "Ronnie Fieg 再度将 Kith 档案语言注入 Nike 篮球体系。本次 KD18 融入 Air Max 95 经典配色逻辑，并以 Friends & Family 规格呈现。" },
-      { "type": "p", "text": "鞋身采用灰黑渐层与荧光细节组合，同时融入 Kith 标志压纹材质，整体更偏向收藏级项目，目前暂无公开发售计划。" },
+      {
+        "type": "p",
+        "text": "Ronnie Fieg 再度将 Kith 档案语言注入 Nike 篮球体系。本次 KD18 融入 Air Max 95 经典配色逻辑，并以 Friends & Family 规格呈现。"
+      },
+      {
+        "type": "p",
+        "text": "鞋身采用灰黑渐层与荧光细节组合，同时融入 Kith 标志压纹材质，整体更偏向收藏级项目，目前暂无公开发售计划。"
+      },
       { "type": "h2", "text": "发售情报" },
       { "type": "ul", "items": ["Kith x Nike KD18", "规格：Friends & Family", "暂无公开发售"] }
     ],
-    "source_url": "https://sneakerbardetroit.com/kith-nike-kd-18-air-max-95/",
     "tags": ["KD18", "Kith", "F&F"]
   }
 ]
