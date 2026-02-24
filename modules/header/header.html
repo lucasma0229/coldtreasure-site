@@ -87,9 +87,12 @@
 
     input.addEventListener("keydown", (e) => {
       if (e.key !== "Enter") return;
+      e.preventDefault();
+      
       const q = (input.value || "").trim();
       if (!q) return;
-      location.href = `/search/?q=${encodeURIComponent(q)}`;
+      
+      location.href = `/news/?q=${encodeURIComponent(q)}`;
     });
   }
 
