@@ -5,16 +5,17 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>ColdTreasure | News</title>
 
-  <!-- 全站样式 -->
   <link rel="stylesheet" href="/assets/css/main.css?v=203" />
 
-  <!-- ✅ 统一：在脚本前声明页面类型 -->
   <script>window.CT_PAGE = "news";</script>
   <script src="/assets/js/include.v3.js?v=3" defer></script>
-  <script src="/assets/js/app.js?v=203" defer></script>
 
-  <!-- News 页专属布局 -->
+  <!-- ✅ 重要：app.js 改了以后记得 bump v -->
+  <script src="/assets/js/app.js?v=204" defer></script>
+
+  <!-- News 页专属布局（保持你现有的） -->
   <style>
+    /* 你原来的 CSS 保持不动 */
     :root{
       --ct-w: 1240px;
       --ct-pad: 26px;
@@ -23,147 +24,44 @@
       --ct-shadow: 0 10px 30px rgba(0,0,0,.06);
       --ct-radius: 18px;
     }
-
-    /* 页面容器（对齐首页留白） */
-    main.page{
-      max-width: var(--ct-w);
-      margin: 22px auto 0;
-      padding: 0 var(--ct-pad);
-    }
-
-    /* Page head（升级：编辑部信息条 + 分割线） */
-    .page-head{
-      margin: 18px 0 18px;
-    }
-    .page-head__top{
-      display:flex;
-      align-items:flex-end;
-      justify-content:space-between;
-      gap:16px;
-    }
-    .page-title{
-      margin:0;
-      font-size: 38px;
-      letter-spacing: -0.02em;
-    }
-    .page-head__right{
-      display:flex;
-      align-items:baseline;
-      gap:10px;
-      color: var(--ct-muted);
-      font-size:13px;
-      letter-spacing: .06em;
-      white-space:nowrap;
-    }
-    .page-kicker{
-      font-weight:600;
-      text-transform:uppercase;
-    }
+    main.page{ max-width: var(--ct-w); margin: 22px auto 0; padding: 0 var(--ct-pad); }
+    .page-head{ margin: 18px 0 18px; }
+    .page-head__top{ display:flex; align-items:flex-end; justify-content:space-between; gap:16px; }
+    .page-title{ margin:0; font-size: 38px; letter-spacing: -0.02em; }
+    .page-head__right{ display:flex; align-items:baseline; gap:10px; color: var(--ct-muted); font-size:13px; letter-spacing: .06em; white-space:nowrap; }
+    .page-kicker{ font-weight:600; text-transform:uppercase; }
     .page-dot{ opacity:.5; }
     .page-status{ opacity:.85; }
+    .page-rule{ margin-top:14px; height:1px; background: var(--ct-line); opacity:.9; }
 
-    .page-rule{
-      margin-top:14px;
-      height:1px;
-      background: var(--ct-line);
-      opacity:.9;
-    }
+    .news-list{ display:flex; flex-direction:column; gap: 26px; margin: 18px 0 0; padding: 0; }
 
-    /* 单列列表 */
-    .news-list{
-      display:flex;
-      flex-direction:column;
-      gap: 26px; /* 原 18：偏紧，阴影容易黏连 */
-      margin: 18px 0 0;
-      padding: 0;
-    }
-
-    /* 单条资讯：左图右文 */
     .news-item{
-      display:flex;
-      gap: 18px;
-      align-items: stretch;
+      display:flex; gap: 18px; align-items: stretch;
       border: 1px solid var(--ct-line);
       border-radius: var(--ct-radius);
-      background:#fff;
-      overflow:hidden;
-
-      /* ✅ 常态也给一点点阴影：更高级，也更不突兀 */
+      background:#fff; overflow:hidden;
       box-shadow: 0 6px 18px rgba(0,0,0,.05);
-
       transition: box-shadow .18s ease, border-color .18s ease;
     }
-    
-    .news-item:hover{
-      /* ✅ 关键：取消大幅上抬，避免阴影“压到上一条/下一条” */
-      box-shadow: 0 10px 30px rgba(0,0,0,.08);
-      border-color: rgba(0,0,0,.08);
-    }
+    .news-item:hover{ box-shadow: 0 10px 30px rgba(0,0,0,.08); border-color: rgba(0,0,0,.08); }
 
-    /* 左侧大图：尽可能大但不挤爆留白 */
-    .news-media{
-      flex: 0 0 clamp(380px, 42vw, 520px);
-      display:block;
-      background:#f6f6f6;
-      overflow:hidden;
-    }
-    .news-media img{
-      width:100%;
-      height:100%;
-      aspect-ratio: 3 / 2;
-      object-fit: cover;
-      display:block;
-    }
+    .news-media{ flex: 0 0 clamp(380px, 42vw, 520px); display:block; background:#f6f6f6; overflow:hidden; }
+    .news-media img{ width:100%; height:100%; aspect-ratio: 3 / 2; object-fit: cover; display:block; }
 
-    /* 右侧文字 */
-    .news-body{
-      flex:1;
-      min-width:0;
-      padding: 16px 16px 16px 0;
-      display:flex;
-      flex-direction:column;
-      justify-content:center;
-    }
+    .news-body{ flex:1; min-width:0; padding: 16px 16px 16px 0; display:flex; flex-direction:column; justify-content:center; }
 
-    .news-meta{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-      align-items:center;
-      font-size:12px;
-      color: var(--ct-muted);
-      margin-bottom: 10px;
-    }
-    .pill{
-      border:1px solid var(--ct-line);
-      border-radius:999px;
-      padding: 4px 10px;
-      background:#fff;
-    }
+    .news-meta{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; font-size:12px; color: var(--ct-muted); margin-bottom: 10px; }
+    .pill{ border:1px solid var(--ct-line); border-radius:999px; padding: 4px 10px; background:#fff; }
 
-    .news-title{
-      margin:0 0 10px;
-      font-size: 22px;
-      line-height: 1.18;
-      letter-spacing: -0.01em;
-      font-weight: 800;
-    }
-    .news-title a{
-      color: inherit;
-      text-decoration:none;
-    }
+    .news-title{ margin:0 0 10px; font-size: 22px; line-height: 1.18; letter-spacing: -0.01em; font-weight: 800; }
+    .news-title a{ color: inherit; text-decoration:none; }
 
     .news-summary{
-      margin:0;
-      font-size:14px;
-      line-height: 1.65;
-      color:#2b2b2b;
-      opacity:.85;
-      display:-webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow:hidden;
-      max-width: 68ch;
+      margin:0; font-size:14px; line-height: 1.65;
+      color:#2b2b2b; opacity:.85;
+      display:-webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+      overflow:hidden; max-width: 68ch;
     }
 
     .empty, .error{
@@ -173,23 +71,12 @@
       color: var(--ct-muted);
       background:#fff;
     }
-    .error{
-      border-color:#ffd0d0;
-      background:#fff5f5;
-      color:#7a2b2b;
-    }
+    .error{ border-color:#ffd0d0; background:#fff5f5; color:#7a2b2b; }
 
-    /* 移动端：页头改上下、卡片改上下 */
     @media (max-width: 860px){
       main.page{ padding: 0 16px; }
-
-      .page-head__top{
-        align-items:flex-start;
-        flex-direction:column;
-        gap:10px;
-      }
+      .page-head__top{ align-items:flex-start; flex-direction:column; gap:10px; }
       .page-title{ font-size: 34px; }
-
       .news-item{ flex-direction:column; gap: 0; }
       .news-media{ flex: 0 0 auto; width:100%; }
       .news-media img{ aspect-ratio: 16 / 10; }
@@ -200,7 +87,6 @@
 </head>
 
 <body>
-  <!-- Header 模块 -->
   <div data-include="/modules/header/header.html"></div>
 
   <main class="page">
@@ -216,97 +102,10 @@
       <div class="page-rule" aria-hidden="true"></div>
     </header>
 
-    <div id="app" class="empty">Loading…</div>
+    <!-- ✅ 关键：让 app.js 渲染到 #list -->
+    <div id="list" class="empty">Loading…</div>
 
-    <!-- Footer 模块 -->
     <div data-include="/modules/footer/footer.html"></div>
   </main>
-
-  <script>
-    function escapeHtml(str){
-      return String(str ?? "")
-        .replaceAll("&","&amp;")
-        .replaceAll("<","&lt;")
-        .replaceAll(">","&gt;")
-        .replaceAll('"',"&quot;")
-        .replaceAll("'","&#039;");
-    }
-
-    async function loadPosts(){
-      const res = await fetch(`/assets/data/posts.json?v=${Date.now()}`, { cache:"no-store" });
-      if(!res.ok) throw new Error(`Failed to load /assets/data/posts.json (${res.status})`);
-      const data = await res.json();
-      return Array.isArray(data) ? data : [];
-    }
-
-    function renderItem(post){
-      const id = post.id || "";
-      const title = post.title || post.name || id || "Untitled";
-      const summary = post.summary || post.desc || "";
-      const date = post.date || post.release_date || "";
-      const brand = Array.isArray(post.brand) ? post.brand.join(" / ") : (post.brand || "");
-
-      const hero = post.thumb || post.hero || post.cover || post.image || "";
-
-      const brandHtml = brand ? `<span class="pill">${escapeHtml(brand)}</span>` : "";
-      const dateHtml  = date  ? `<span class="date">${escapeHtml(date)}</span>` : "";
-
-      const href = `/post/?id=${encodeURIComponent(id)}`;
-
-      const v = encodeURIComponent((date || "1").toString());
-
-      return `
-        <article class="news-item">
-          <a class="news-media" href="${href}" aria-label="${escapeHtml(title)}">
-            ${hero ? `<img src="${escapeHtml(hero)}?v=${v}" alt="${escapeHtml(title)}" loading="lazy">` : ``}
-          </a>
-
-          <div class="news-body">
-            <div class="news-meta">${brandHtml}${dateHtml}</div>
-            <h2 class="news-title"><a href="${href}">${escapeHtml(title)}</a></h2>
-            ${summary ? `<p class="news-summary">${escapeHtml(summary)}</p>` : ``}
-          </div>
-        </article>
-      `;
-    }
-
-    // ✅ 等模块注入完成后再渲染（避免 header/footer 未注入造成跳动）
-    (async function main(){
-      const app = document.getElementById("app");
-      const statusEl = document.getElementById("pageStatus");
-
-      await new Promise((resolve) => {
-        let done = false;
-        const finish = () => { if(done) return; done = true; resolve(); };
-        document.addEventListener("modules:loaded", finish, { once: true });
-        setTimeout(finish, 1200);
-      });
-
-      try{
-        const list = await loadPosts();
-        if(!list.length){
-          if (statusEl) statusEl.textContent = "0 posts";
-          app.className = "empty";
-          app.textContent = "No posts yet.";
-          return;
-        }
-
-        const sorted = [...list].sort((a,b)=>{
-          const da = (a.date || "").toString();
-          const db = (b.date || "").toString();
-          return db.localeCompare(da);
-        });
-
-        if (statusEl) statusEl.textContent = `${sorted.length} posts`;
-
-        app.className = "";
-        app.innerHTML = `<section class="news-list">${sorted.map(renderItem).join("")}</section>`;
-      }catch(err){
-        if (statusEl) statusEl.textContent = "Error";
-        app.className = "error";
-        app.innerHTML = `<b>Load failed</b><div style="margin-top:8px;">${escapeHtml(err.message || err)}</div>`;
-      }
-    })();
-  </script>
 </body>
 </html>
