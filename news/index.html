@@ -10,12 +10,11 @@
   <script>window.CT_PAGE = "news";</script>
   <script src="/assets/js/include.v3.js?v=3" defer></script>
 
-  <!-- ✅ 重要：app.js 改了以后记得 bump v -->
+  <!-- ✅ 你可以保留 app.js（不依赖它渲染 News） -->
   <script src="/assets/js/app.js?v=204" defer></script>
 
   <!-- News 页专属布局（保持你现有的） -->
   <style>
-    /* 你原来的 CSS 保持不动 */
     :root{
       --ct-w: 1240px;
       --ct-pad: 26px;
@@ -102,10 +101,153 @@
       <div class="page-rule" aria-hidden="true"></div>
     </header>
 
-    <!-- ✅ 关键：让 app.js 渲染到 #list -->
-    <div id="list" class="empty">Loading…</div>
+    <!-- ✅ News 页自己渲染到 #app（和你的卡片 CSS 完全匹配） -->
+    <div id="app" class="empty">Loading…</div>
 
     <div data-include="/modules/footer/footer.html"></div>
   </main>
+
+  <script>
+    function escapeHtml(str){
+      return String(str ?? "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+
+    function getQuery(){
+      try{
+        const q = new URL(location.href).searchParams.get("q") || "";
+        return q.trim();
+      }catch(e){
+        return "";
+      }
+    }
+
+    function termsOf(q){
+      return q
+        .toLowerCase()
+        .split(/\s+/)
+        .map(s => s.trim())
+        .filter(Boolean);
+    }
+
+    function matchesPost(post, q){
+      const terms = termsOf(q);
+      if(!terms.length) return true;
+
+      const brand = Array.isArray(post.brand) ? post.brand.join(" ") : (post.brand || "");
+      const tags  = Array.isArray(post.tags)  ? post.tags.join(" ")  : (post.tags || "");
+      const hay = [
+        post.id || "",
+        post.title || post.name || "",
+        post.summary || post.desc || "",
+        brand,
+        tags,
+        post.model || ""
+      ].join(" ").toLowerCase();
+
+      // ✅ 多词：全部命中（更像搜索）
+      return terms.every(t => hay.includes(t));
+    }
+
+    async function loadPosts(){
+      const res = await fetch(`/assets/data/posts.json?v=${Date.now()}`, { cache:"no-store" });
+      if(!res.ok) throw new Error(`Failed to load /assets/data/posts.json (${res.status})`);
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
+    }
+
+    function renderItem(post){
+      const id = post.id || "";
+      const title = post.title || post.name || id || "Untitled";
+      const summary = post.summary || post.desc || "";
+      const date = post.date || post.release_date || "";
+      const brand = Array.isArray(post.brand) ? post.brand.join(" / ") : (post.brand || "");
+
+      const hero = post.thumb || post.hero || post.cover || post.image || "";
+
+      const brandHtml = brand ? `<span class="pill">${escapeHtml(brand)}</span>` : "";
+      const dateHtml  = date  ? `<span class="date">${escapeHtml(date)}</span>` : "";
+
+      const href = `/post/?id=${encodeURIComponent(id)}`;
+      const v = encodeURIComponent((date || "1").toString());
+
+      return `
+        <article class="news-item">
+          <a class="news-media" href="${href}" aria-label="${escapeHtml(title)}">
+            ${hero ? `<img src="${escapeHtml(hero)}?v=${v}" alt="${escapeHtml(title)}" loading="lazy">` : ``}
+          </a>
+
+          <div class="news-body">
+            <div class="news-meta">${brandHtml}${dateHtml}</div>
+            <h2 class="news-title"><a href="${href}">${escapeHtml(title)}</a></h2>
+            ${summary ? `<p class="news-summary">${escapeHtml(summary)}</p>` : ``}
+          </div>
+        </article>
+      `;
+    }
+
+    // ✅ 等模块注入完成后再渲染（避免 header/footer 未注入造成跳动）
+    (async function main(){
+      const app = document.getElementById("app");
+      const statusEl = document.getElementById("pageStatus");
+
+      await new Promise((resolve) => {
+        let done = false;
+        const finish = () => { if(done) return; done = true; resolve(); };
+        document.addEventListener("modules:loaded", finish, { once: true });
+        setTimeout(finish, 1200);
+      });
+
+      const q = getQuery();
+
+      try{
+        const listAll = await loadPosts();
+
+        // ✅ 只显示 news（兼容：没有 section 字段时，默认当 news）
+        const newsOnly = listAll.filter(p => {
+          const sec = String(p?.section || "news").toLowerCase();
+          return sec === "news";
+        });
+
+        // ✅ 搜索筛选
+        const filtered = q ? newsOnly.filter(p => matchesPost(p, q)) : newsOnly;
+
+        // ✅ 排序：按 date 字符串倒序（你现有格式 YYYY-MM-DD 没问题）
+        const sorted = [...filtered].sort((a,b)=>{
+          const da = (a.date || a.release_date || "").toString();
+          const db = (b.date || b.release_date || "").toString();
+          return db.localeCompare(da);
+        });
+
+        // 状态栏文案
+        if (statusEl){
+          if(q){
+            statusEl.textContent = `${sorted.length} results · “${q}”`;
+          }else{
+            statusEl.textContent = `${sorted.length} posts`;
+          }
+        }
+
+        if(!sorted.length){
+          app.className = "empty";
+          app.innerHTML = q
+            ? `No results for <b>${escapeHtml(q)}</b>.`
+            : `No posts yet.`;
+          return;
+        }
+
+        app.className = "";
+        app.innerHTML = `<section class="news-list">${sorted.map(renderItem).join("")}</section>`;
+      }catch(err){
+        if (statusEl) statusEl.textContent = "Error";
+        app.className = "error";
+        app.innerHTML = `<b>Load failed</b><div style="margin-top:8px;">${escapeHtml(err.message || err)}</div>`;
+      }
+    })();
+  </script>
 </body>
 </html>
