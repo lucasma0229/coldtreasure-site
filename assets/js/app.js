@@ -42,7 +42,7 @@
   // ✅ A 路线：所有详情页统一 /news/<id>/
   function postUrl(p) {
     const id = encodeURIComponent(asText(p.id));
-    return `/news/${id}/`;
+    return `/post/?id=${id}`;
   }
 
   function pickCover(p) {
