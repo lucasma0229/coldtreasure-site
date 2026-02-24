@@ -73,7 +73,7 @@
     .news-list{
       display:flex;
       flex-direction:column;
-      gap: 18px;
+      gap: 26px; /* 原 18：偏紧，阴影容易黏连 */
       margin: 18px 0 0;
       padding: 0;
     }
@@ -87,11 +87,16 @@
       border-radius: var(--ct-radius);
       background:#fff;
       overflow:hidden;
-      transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+
+      /* ✅ 常态也给一点点阴影：更高级，也更不突兀 */
+      box-shadow: 0 6px 18px rgba(0,0,0,.05);
+
+      transition: box-shadow .18s ease, border-color .18s ease;
     }
+    
     .news-item:hover{
-      transform: translateY(-3px);
-      box-shadow: var(--ct-shadow);
+      /* ✅ 关键：取消大幅上抬，避免阴影“压到上一条/下一条” */
+      box-shadow: 0 10px 30px rgba(0,0,0,.08);
       border-color: rgba(0,0,0,.08);
     }
 
