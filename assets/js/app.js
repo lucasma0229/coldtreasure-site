@@ -1,14 +1,14 @@
 /* ===================================================
-   ColdTreasure app.js (Full Replace)
-   - Keeps existing list rendering logic
-   - Rebuilds HOME carousel init (no DOM overwrite)
-   - Fixes esc() scope issue for homeNews loader
+   ColdTreasure app.js (CMS Core)
+   - One data source: /assets/data/posts.json
+   - One detail page: /post/?id=<id>
+   - List pages render by CT_PAGE: news / record / archive / guide / feature
+   - Home latest cards (#homeNews) + home carousel init
    =================================================== */
 
 /* 1) Page identity -> body class */
 (function () {
   const page = String(window.CT_PAGE || "").trim().toLowerCase();
-
   const map = {
     home: "page-home",
     news: "page-news",
@@ -18,7 +18,6 @@
     guide: "page-guide",
     feature: "page-feature",
   };
-
   document.body.classList.add(map[page] || "page-unknown");
 })();
 
@@ -33,20 +32,20 @@
       "<": "&lt;",
       ">": "&gt;",
       '"': "&quot;",
-      "'": "&#39;"
+      "'": "&#39;",
     }[m]));
   }
 
   function asText(v) { return (v == null) ? "" : String(v); }
 
-  // ✅ A 路线：所有详情页统一 /news/<id>/
+  // ✅ CMS route: single template page
   function postUrl(p) {
     const id = encodeURIComponent(asText(p.id));
     return `/post/?id=${id}`;
   }
 
   function pickCover(p) {
-    return p.cover || p.hero || "/assets/img/cover.jpg";
+    return p.thumb || p.cover || p.image || p.hero || "/assets/img/cover.jpg";
   }
 
   function parseDateKey(v) {
@@ -57,7 +56,7 @@
     return Number.isFinite(t) ? t : NaN;
   }
 
-  // 等待模块注入完成：由 include.js 触发 modules:loaded
+  // wait modules injected (include.v3.js emits modules:loaded)
   function waitForModulesLoaded(timeoutMs = 2500) {
     return new Promise((resolve) => {
       let done = false;
@@ -79,8 +78,65 @@
     return json;
   }
 
-  /* ---------- list rendering (news / record / archive etc.) ---------- */
+  /* ---------- templates ---------- */
+  function tplNewsItem(p) {
+    const id = asText(p.id);
+    const href = postUrl(p);
+
+    const title = esc(p.title || p.name || id || "Untitled");
+    const summary = esc(p.summary || p.desc || "");
+    const date = esc(p.date || p.release_date || "");
+    const brand = Array.isArray(p.brand) ? esc(p.brand.join(" / ")) : esc(p.brand || "");
+
+    const hero = pickCover(p);
+    const v = encodeURIComponent((p.date || p.release_date || "1").toString());
+
+    const brandHtml = brand ? `<span class="pill">${brand}</span>` : "";
+    const dateHtml = date ? `<span class="date">${date}</span>` : "";
+
+    return `
+      <article class="news-item">
+        <a class="news-media" href="${href}" aria-label="${title}">
+          ${hero ? `<img src="${esc(hero)}?v=${v}" alt="${title}" loading="lazy">` : ``}
+        </a>
+        <div class="news-body">
+          <div class="news-meta">${brandHtml}${dateHtml}</div>
+          <h2 class="news-title"><a href="${href}">${title}</a></h2>
+          ${summary ? `<p class="news-summary">${summary}</p>` : ``}
+        </div>
+      </article>
+    `;
+  }
+
+  function tplListItem(p) {
+    const href = postUrl(p);
+    const cover = pickCover(p);
+
+    const title = esc(p.title || "");
+    const summary = esc(p.summary || "");
+    const brand = Array.isArray(p.brand) ? esc(p.brand.join(", ")) : esc(p.brand || "");
+    const model = esc(p.model || "");
+    const date = esc(p.release_date || p.date || "");
+
+    const meta = [brand, model, date].filter(Boolean).join(" · ");
+
+    return `
+      <a class="list-item" href="${href}">
+        <div class="list-img">
+          <img src="${esc(cover)}" alt="">
+        </div>
+        <div class="list-text">
+          <div class="list-title">${title}</div>
+          ${summary ? `<div class="list-summary">${summary}</div>` : ``}
+          ${meta ? `<div class="list-meta">${meta}</div>` : ``}
+        </div>
+      </a>
+    `;
+  }
+
+  /* ---------- list rendering (news / record / archive / guide / feature) ---------- */
   function renderList(posts) {
+    // CMS pages use #list as container (we will align news/index.html to this)
     const listEl = $("#list");
     const emptyEl = $("#listEmpty");
     if (!listEl) return;
@@ -95,37 +151,22 @@
       return asText(b.date || b.release_date || "").localeCompare(asText(a.date || a.release_date || ""));
     });
 
+    // status text on page head if exists
+    const statusEl = $("#pageStatus");
+    if (statusEl) statusEl.textContent = `${filtered.length} posts`;
+
     if (!filtered.length) {
       if (emptyEl) emptyEl.style.display = "block";
       listEl.innerHTML = "";
       return;
     }
 
-    listEl.innerHTML = filtered.map(p => {
-      const url = postUrl(p);
-      const cover = pickCover(p);
-      const title = esc(p.title || "");
-      const summary = esc(p.summary || "");
-
-      const brand = Array.isArray(p.brand) ? esc(p.brand.join(", ")) : esc(p.brand || "");
-      const model = esc(p.model || "");
-      const date = esc(p.release_date || p.date || "");
-
-      const meta = [brand, model, date].filter(Boolean).join(" · ");
-
-      return `
-        <a class="list-item" href="${url}">
-          <div class="list-img">
-            <img src="${esc(cover)}" alt="">
-          </div>
-          <div class="list-text">
-            <div class="list-title">${title}</div>
-            ${summary ? `<div class="list-summary">${summary}</div>` : ``}
-            ${meta ? `<div class="list-meta">${meta}</div>` : ``}
-          </div>
-        </a>
-      `;
-    }).join("");
+    // News uses the nice "news-item" card layout; others keep list-item for now
+    if (page === "news") {
+      listEl.innerHTML = `<section class="news-list">${filtered.map(tplNewsItem).join("")}</section>`;
+    } else {
+      listEl.innerHTML = filtered.map(tplListItem).join("");
+    }
   }
 
   /* ---------- HOME: Latest 3 posts cards (#homeNews) ---------- */
@@ -133,9 +174,8 @@
     const homeNews = document.getElementById("homeNews");
     if (!homeNews) return;
 
-    // ✅ 关键修复：首页只取 news 分区，避免 record/archive 等混入导致 /news/<id>/ 404
     const newsOnly = posts.filter(p => asText(p.section || "news").toLowerCase() === "news");
-     
+
     const latest = newsOnly
       .slice()
       .sort((a, b) => {
@@ -143,7 +183,7 @@
         const bk = parseDateKey(b.date || b.release_date);
         if (Number.isFinite(ak) && Number.isFinite(bk)) return bk - ak;
         return asText(b.date || b.release_date || "").localeCompare(asText(a.date || a.release_date || ""));
-    })
+      })
       .slice(0, 3);
 
     homeNews.innerHTML = latest.map(p => `
@@ -159,14 +199,13 @@
     `).join("");
   }
 
-  /* ---------- HOME: Carousel init (NEW structure) ---------- */
+  /* ---------- HOME: Carousel init (NEW structure + legacy fallback) ---------- */
   function initHomeCarousel() {
     if (CT_PAGE !== "home") return;
 
-    // Prefer new rebuilt carousel structure
+    // new carousel structure
     const root = document.querySelector("[data-ct-carousel]");
     if (root) {
-      // prevent double init (include can re-run)
       if (root.dataset.inited === "1") return;
       root.dataset.inited = "1";
 
@@ -183,7 +222,6 @@
 
       let i = 0;
 
-      // Build dots (clean rebuild each init)
       const dots = [];
       if (dotsWrap) {
         dotsWrap.innerHTML = "";
@@ -202,38 +240,25 @@
         track.style.transform = `translateX(${-i * 100}%)`;
         dots.forEach((d, idx) => d.classList.toggle("is-active", idx === i));
       }
+      function go(idx) { i = (idx + n) % n; render(); }
 
-      function go(idx) {
-        i = (idx + n) % n;
-        render();
-      }
-
-      prev && prev.addEventListener("click", () => { go(i - 1); restart(); });
-      next && next.addEventListener("click", () => { go(i + 1); restart(); });
-
-      // Autoplay (quiet)
       let timer = null;
-      function stop() {
-        if (timer) clearInterval(timer);
-        timer = null;
-      }
+      function stop() { if (timer) clearInterval(timer); timer = null; }
       function start() {
         stop();
-        // reduced motion：不自动轮播
         if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
         timer = setInterval(() => go(i + 1), 6500);
       }
       function restart() { stop(); start(); }
 
+      prev && prev.addEventListener("click", () => { go(i - 1); restart(); });
+      next && next.addEventListener("click", () => { go(i + 1); restart(); });
+
       root.addEventListener("mouseenter", stop);
       root.addEventListener("mouseleave", start);
 
-      // Minimal swipe
       let x0 = null;
-      root.addEventListener("touchstart", (e) => {
-        x0 = e.touches?.[0]?.clientX ?? null;
-      }, { passive: true });
-
+      root.addEventListener("touchstart", (e) => { x0 = e.touches?.[0]?.clientX ?? null; }, { passive: true });
       root.addEventListener("touchend", (e) => {
         const x1 = e.changedTouches?.[0]?.clientX ?? null;
         if (x0 == null || x1 == null) return;
@@ -249,7 +274,7 @@
       return;
     }
 
-    // Fallback: legacy hero-stage carousel if exists (keeps your older pages safe)
+    // legacy fallback
     const legacyRoot = document.querySelector("[data-hero]");
     if (!legacyRoot) return;
     if (legacyRoot.dataset.inited === "1") return;
@@ -268,11 +293,7 @@
       dots.forEach((d, idx) => d.classList.toggle("is-active", idx === n));
       i = n;
     }
-
-    function go(step) {
-      const n = (i + step + slides.length) % slides.length;
-      render(n);
-    }
+    function go(step) { render((i + step + slides.length) % slides.length); }
 
     prev && prev.addEventListener("click", () => go(-1));
     next && next.addEventListener("click", () => go(1));
@@ -296,26 +317,18 @@
   /* ---------- boot ---------- */
   await waitForModulesLoaded();
 
-  // HOME carousel (new + legacy safe)
   initHomeCarousel();
 
-  // Load posts once, then render what exists on this page
   let posts = [];
   try {
     posts = await loadPosts();
   } catch (e) {
     console.error("[ColdTreasure] failed to load posts.json:", e);
-
     const listEl = $("#list");
-    if (listEl) {
-      listEl.innerHTML = `<div class="empty">posts.json 读取失败：请打开控制台查看报错（F12 → Console）</div>`;
-    }
+    if (listEl) listEl.innerHTML = `<div class="empty">posts.json 读取失败：请打开控制台查看报错（F12 → Console）</div>`;
     return;
   }
 
-  // News list / record list / archive list (auto-skip if #list absent)
   renderList(posts);
-
-  // Home latest cards (auto-skip if #homeNews absent)
   renderHomeLatest(posts);
 })();
