@@ -361,3 +361,79 @@ ColdTreasure app.js (CMS Core) - Full Replace
   renderList(posts);
   renderHomeLatest(posts);
 })();
+
+/* ===================================================
+   CT Hero Autoplay (safe for include injection)
+   =================================================== */
+(function(){
+  const ROOT_SEL  = ".ct-hero";
+  const SLIDE_SEL = ".ct-hero__slide";
+  const DOT_SEL   = ".ct-hero__dot, .ct-hero__dots button, [data-hero-dot]";
+  const INTERVAL  = 5000;
+
+  let root = null;
+  let timer = null;
+
+  function qsa(sel, ctx=document){ return Array.from(ctx.querySelectorAll(sel)); }
+
+  function getActiveIndex(slides){
+    const i = slides.findIndex(s => s.classList.contains("is-active") || s.getAttribute("aria-current")==="true");
+    return i >= 0 ? i : 0;
+  }
+
+  function setActive(slides, idx){
+    slides.forEach((s, i) => s.classList.toggle("is-active", i === idx));
+    // 如果你有 dot，也同步一下（可选）
+    const dots = qsa(DOT_SEL, root);
+    if (dots.length) {
+      dots.forEach((d,i)=> d.classList.toggle("is-active", i===idx));
+    }
+  }
+
+  function next(){
+    if (!root || document.hidden) return;
+    const slides = qsa(SLIDE_SEL, root);
+    if (slides.length <= 1) return;
+
+    const cur = getActiveIndex(slides);
+    const nxt = (cur + 1) % slides.length;
+    setActive(slides, nxt);
+  }
+
+  function stop(){
+    if (timer) { clearInterval(timer); timer = null; }
+  }
+
+  function start(){
+    stop();
+    timer = setInterval(next, INTERVAL);
+  }
+
+  function bind(){
+    // hover / touch 时暂停
+    root.addEventListener("pointerenter", stop, {passive:true});
+    root.addEventListener("pointerleave", start, {passive:true});
+
+    // tab 切换恢复
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) stop();
+      else start();
+    });
+  }
+
+  function initIfReady(){
+    if (root) return true;
+    root = document.querySelector(ROOT_SEL);
+    if (!root) return false;
+
+    bind();
+    start();
+    // console.log("[CT] hero autoplay ON");
+    return true;
+  }
+
+  // 等 include 把 hero 注入进来
+  (function wait(){
+    if (!initIfReady()) requestAnimationFrame(wait);
+  })();
+})();
