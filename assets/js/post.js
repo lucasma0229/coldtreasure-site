@@ -1,10 +1,9 @@
 /* ===================================================
-   ColdTreasure post.js (Full Replace)
-   - Render post by ?id=xxx
-   - Inject into <main id="app">
-   - NO "source" / NO source_url output
-   =================================================== */
-
+ColdTreasure post.js (Full Replace)
+- Render post by ?id=xxx
+- Inject into <main id="app">
+- NO "source" / NO source_url output
+=================================================== */
 (async function () {
   const $ = (sel) => document.querySelector(sel);
 
@@ -62,25 +61,29 @@
     const heroStyle = heroFocus ? ` style="--hero-focus:${esc(heroFocus)}"` : "";
 
     const heroSrc = post.thumb || post.cover || post.hero || post.image || "";
-    const heroHtml = heroSrc ? `
-      <div class="hero"${heroStyle}>
-        <img src="${esc(heroSrc)}" alt="${esc(post.title || "")}" loading="eager" />
-      </div>
-    ` : "";
+    const heroHtml = heroSrc
+      ? `
+        <div class="hero"${heroStyle}>
+          <img src="${esc(heroSrc)}" alt="${esc(post.title || "")}" loading="eager" />
+        </div>
+      `
+      : "";
 
     const contentHtml = (post.content || []).map(renderBlock).join("");
 
     const gallery = Array.isArray(post.gallery) ? post.gallery : [];
-    const galleryHtml = gallery.length ? `
-      <section class="gallery">
-        <h2>Gallery</h2>
-        <div class="grid">
-          ${gallery.map((src) => `<img src="${esc(src)}" alt="" loading="lazy" />`).join("")}
-        </div>
-      </section>
-    ` : "";
+    const galleryHtml = gallery.length
+      ? `
+        <section class="gallery">
+          <h2>Gallery</h2>
+          <div class="grid">
+            ${gallery.map((src) => `<img src="${esc(src)}" alt="" loading="lazy" />`).join("")}
+          </div>
+        </section>
+      `
+      : "";
 
-    // ✅ 注意：这里没有任何 source / source_url 的渲染
+    // ✅ 这里明确不渲染 source / source_url
     return `
       <article>
         <h1>${esc(post.title || "Untitled")}</h1>
@@ -109,7 +112,12 @@
   await waitModulesLoaded();
 
   if (!id) {
-    app.innerHTML = `<div class="error"><b>Missing id</b><div class="muted">URL 需要带参数：<code>?id=xxx</code></div></div>`;
+    app.innerHTML = `
+      <div class="error">
+        <b>Missing id</b>
+        <div class="muted">URL 需要带参数：<code>?id=xxx</code></div>
+      </div>
+    `;
     return;
   }
 
