@@ -105,6 +105,14 @@ html.ct-nav--solid .topbar{
   backdrop-filter:saturate(180%) blur(10px);
 }
 
+/* 🔥 overlay 强制白字（修复被子元素覆盖） */
+html.ct-nav--overlay .topbar,
+html.ct-nav--overlay .topbar a,
+html.ct-nav--overlay .brand-name,
+html.ct-nav--overlay .brand-slogan{
+  color:#fff !important;
+}
+
 /* ===================================================
    Body offset for fixed header
    - 默认所有页面让位（避免内容被压住）
