@@ -133,18 +133,26 @@
     const homeNews = document.getElementById("homeNews");
     if (!homeNews) return;
 
-    const latest = posts
+    // ✅ 关键修复：首页只取 news 分区，避免 record/archive 等混入导致 /news/<id>/ 404
+    const newsOnly = posts.filter(p => asText(p.section || "news").toLowerCase() === "news");
+     
+    const latest = newsOnly
       .slice()
-      .sort((a, b) => parseDateKey(b.date) - parseDateKey(a.date))
+      .sort((a, b) => {
+        const ak = parseDateKey(a.date || a.release_date);
+        const bk = parseDateKey(b.date || b.release_date);
+        if (Number.isFinite(ak) && Number.isFinite(bk)) return bk - ak;
+        return asText(b.date || b.release_date || "").localeCompare(asText(a.date || a.release_date || ""));
+    })
       .slice(0, 3);
 
     homeNews.innerHTML = latest.map(p => `
-      <a class="news-card" href="/news/${encodeURIComponent(p.id)}/">
+      <a class="news-card" href="${postUrl(p)}">
         <div class="card-media">
           <img src="${esc(p.thumb || p.cover || p.image || p.hero || "")}" alt="">
         </div>
         <div class="card-body">
-          <div class="card-meta">${esc(p.date || "")} · ${esc((p.brand || []).join(", "))}</div>
+          <div class="card-meta">${esc(p.date || p.release_date || "")} · ${esc(Array.isArray(p.brand) ? p.brand.join(", ") : (p.brand || ""))}</div>
           <div class="card-title">${esc(p.title || "")}</div>
         </div>
       </a>
