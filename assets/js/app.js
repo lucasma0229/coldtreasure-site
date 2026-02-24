@@ -366,6 +366,9 @@ ColdTreasure app.js (CMS Core) - Full Replace
    CT Hero Autoplay (safe for include injection)
    =================================================== */
 (function(){
+  if (window.__CT_HERO_AUTOPLAY__) return;
+  window.__CT_HERO_AUTOPLAY__ = true;
+
   const ROOT_SEL  = ".ct-hero";
   const SLIDE_SEL = ".ct-hero__slide";
   const DOT_SEL   = ".ct-hero__dot, .ct-hero__dots button, [data-hero-dot]";
