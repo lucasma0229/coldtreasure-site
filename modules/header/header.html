@@ -12,14 +12,12 @@
     <a href="/archive/">Archive</a>
   </nav>
 
-  <!-- ✅ Search (minimal, Kith-like) -->
   <div class="ct-search" aria-label="Site search">
     <input id="ctSearchInput" type="search" placeholder="Search…" autocomplete="off" />
   </div>
 </header>
 
 <style>
-  /* ✅ 极小样式：不依赖 news.css，也不碰 main.css，避免误伤 */
   .ct-search{ margin-left:14px; display:flex; align-items:center; }
   .ct-search input{
     width: 180px;
@@ -43,3 +41,6 @@
     .ct-search input{ width: 130px; }
   }
 </style>
+
+<!-- ✅ 关键：让脚本跟着 header 注入，永远不会“绑定太早” -->
+<script src="/assets/js/header.js?v=1" defer></script>
