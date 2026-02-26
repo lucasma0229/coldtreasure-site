@@ -29,7 +29,7 @@ export async function onRequest(context) {
     id: p.id,
     title: p.properties.title?.title?.[0]?.plain_text || "",
     slug: p.properties.slug?.rich_text?.[0]?.plain_text || "",
-    cover: p.properties.cover?.files?.[0]?.file?.url || "",
+    cover: (p.properties.cover?.files?.[0]?.file?.url) || (p.properties.cover?.files?.[0]?.external?.url) || "",
     date: p.properties.date?.date?.start || "",
     content: p.properties.content?.rich_text?.[0]?.plain_text || ""
   }));
