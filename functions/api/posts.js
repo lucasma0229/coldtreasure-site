@@ -18,24 +18,19 @@ export async function onRequest(context) {
   const safeText = (prop) => {
     if (!prop) return "";
 
-    // title
     if (prop.type === "title") {
       return prop.title?.map(t => t.plain_text).join("") ?? "";
     }
 
-    // rich_text
     if (prop.type === "rich_text") {
       return prop.rich_text?.map(t => t.plain_text).join("") ?? "";
     }
 
-    // select
     if (prop.type === "select") {
       return prop.select?.name ?? "";
     }
 
-    // formula (often used for computed slug)
     if (prop.type === "formula") {
-      // Notion formula may be string/number/boolean/date
       return (
         prop.formula?.string ??
         (prop.formula?.number != null ? String(prop.formula.number) : "") ??
@@ -44,7 +39,6 @@ export async function onRequest(context) {
       );
     }
 
-    // fallback: try common containers
     return "";
   };
 
@@ -68,10 +62,68 @@ export async function onRequest(context) {
     return arr.map((x) => x?.name).filter(Boolean);
   };
 
-  const safeCheckbox = (prop) => {
-    // If property is checkbox type
-    if (prop?.type === "checkbox") return !!prop.checkbox;
-    // If property exists but not checkbox, treat as false
+  // ✅ publish 强兼容：checkbox / formula(boolean) / rollup / select/status(按名字) / rich_text(按内容)
+  const safePublish = (prop) => {
+    if (!prop) return false;
+
+    // 1) checkbox
+    if (prop.type === "checkbox") return !!prop.checkbox;
+
+    // 2) formula boolean
+    if (prop.type === "formula") {
+      if (typeof prop.formula?.boolean === "boolean") return prop.formula.boolean;
+      // 有人用 formula 输出字符串 "true"/"false"
+      const s = String(prop.formula?.string ?? "").toLowerCase().trim();
+      if (s === "true" || s === "yes" || s === "1") return true;
+      if (s === "false" || s === "no" || s === "0") return false;
+      return false;
+    }
+
+    // 3) rollup
+    if (prop.type === "rollup") {
+      const r = prop.rollup;
+      if (!r) return false;
+
+      // rollup number > 0
+      if (r.type === "number") return (r.number ?? 0) > 0;
+
+      // rollup array: any checkbox true or any select/status named "Published"
+      if (r.type === "array" && Array.isArray(r.array)) {
+        for (const it of r.array) {
+          if (it?.type === "checkbox" && it.checkbox === true) return true;
+          if (it?.type === "select" && it.select?.name) {
+            const name = it.select.name.toLowerCase();
+            if (name === "published" || name === "publish" || name === "true" || name === "yes") return true;
+          }
+          if (it?.type === "status" && it.status?.name) {
+            const name = it.status.name.toLowerCase();
+            if (name === "published" || name === "publish") return true;
+          }
+        }
+      }
+      return false;
+    }
+
+    // 4) select/status：名字判断（你也可以按自己 Notion 设定改关键词）
+    if (prop.type === "select" && prop.select?.name) {
+      const name = prop.select.name.toLowerCase();
+      return name === "published" || name === "publish" || name === "true" || name === "yes";
+    }
+    if (prop.type === "status" && prop.status?.name) {
+      const name = prop.status.name.toLowerCase();
+      return name === "published" || name === "publish";
+    }
+
+    // 5) rich_text/title：内容判断（兜底）
+    if (prop.type === "rich_text") {
+      const t = prop.rich_text?.map(x => x.plain_text).join("").toLowerCase().trim() ?? "";
+      return t === "true" || t === "yes" || t === "published" || t === "publish" || t === "1";
+    }
+    if (prop.type === "title") {
+      const t = prop.title?.map(x => x.plain_text).join("").toLowerCase().trim() ?? "";
+      return t === "true" || t === "yes" || t === "published" || t === "publish" || t === "1";
+    }
+
     return false;
   };
 
@@ -85,7 +137,6 @@ export async function onRequest(context) {
     do {
       const body = {
         page_size: 100,
-        // 这里保留 date 排序；如果 Notion 里 date 不是 date 类型，会影响排序但不影响拉取
         sorts: [{ property: "date", direction: "descending" }],
         ...(start_cursor ? { start_cursor } : {}),
       };
@@ -113,7 +164,6 @@ export async function onRequest(context) {
       start_cursor = data?.next_cursor || undefined;
       pages += 1;
 
-      // 防御：避免异常导致循环
       if (pages > 20) break;
     } while (has_more);
 
@@ -131,7 +181,6 @@ export async function onRequest(context) {
 
     const results = q.results || [];
 
-    // 映射成前端消费结构
     let posts = results.map((p) => {
       const props = p.properties || {};
       return {
@@ -143,22 +192,21 @@ export async function onRequest(context) {
         content: safeText(props.content),
         gallery: safeFiles(props.gallery),
         keywords: safeMultiSelect(props.keywords),
-        // 在服务器端做 publish 判断（别在 Notion query filter 里做）
-        publish: safeCheckbox(props.publish),
-        // 可选：如果你以后要用这些字段
+        publish: safePublish(props.publish),
         brand: safeText(props.brand),
         release_info: safeText(props.release_info),
       };
     });
 
-    // 默认只吐 publish=true；?all=1 则吐全部
     if (!all) {
       posts = posts.filter(p => p.publish === true);
     }
 
-    // debug 输出 meta（方便你核对列名/数量）
     if (debug) {
       const samplePropertyNames = results?.[0]?.properties ? Object.keys(results[0].properties) : [];
+      // 额外输出 publish 类型，帮你一次确认 Notion 的真实类型
+      const samplePublishType = results?.[0]?.properties?.publish?.type ?? null;
+
       return new Response(
         JSON.stringify({
           meta: {
@@ -168,6 +216,7 @@ export async function onRequest(context) {
             pages: q.meta?.pages,
             has_more: q.meta?.has_more,
             samplePropertyNames,
+            samplePublishType,
             sampleFirstPost: posts[0] || null,
           },
           posts,
@@ -176,7 +225,6 @@ export async function onRequest(context) {
       );
     }
 
-    // 默认：直接返回数组（兼容现有 Search）
     return new Response(JSON.stringify(posts), {
       headers: { "Content-Type": "application/json; charset=utf-8" },
     });
