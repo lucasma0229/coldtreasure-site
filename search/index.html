@@ -33,119 +33,148 @@
   </main>
 
   <script>
-    function esc(s=""){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));}
-    function norm(s=""){return String(s||"").toLowerCase().trim();}
-    function getQ(){ return new URL(location.href).searchParams.get("q")?.trim() || ""; }
+  function esc(s=""){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));}
 
-    async function loadPosts(){
-      const res = await fetch(`/assets/data/posts.json?v=${Date.now()}`, { cache:"no-store" });
-      if(!res.ok) throw new Error(`Failed to load posts.json (${res.status})`);
-      const data = await res.json();
-      return Array.isArray(data) ? data : [];
-    }
+  // 统一搜索归一化：
+  // - 小写
+  // - 去空格/短横线/下划线/常见标点
+  // 这样 "NY VS NY"、"nyvsny"、"ny-vs-ny" 都会变成 "nyvsny"
+  function normKey(s=""){
+    return String(s||"")
+      .toLowerCase()
+      .trim()
+      .replace(/[\s\-_./\\|:;'"“”‘’()（）[\]【】{}<>!?，。、《》]+/g, "");
+  }
 
-    // ✅ 搜索权重：title > brand/tags > summary > content text
-    function haystack(post){
-      const title = post.title || "";
-      const brand = Array.isArray(post.brand) ? post.brand.join(" ") : (post.brand || "");
-      const tags  = Array.isArray(post.tags) ? post.tags.join(" ") : "";
-      const summary = post.summary || "";
-      const contentText = Array.isArray(post.content)
-        ? post.content.map(b => (b?.text || "") + " " + (Array.isArray(b?.items) ? b.items.join(" ") : "")).join(" ")
-        : "";
-      return norm([title, brand, tags, summary, contentText].join(" "));
-    }
+  function normLoose(s=""){
+    // 用于普通 contains：仅小写+trim，不去掉符号（方便显示/权重）
+    return String(s||"").toLowerCase().trim();
+  }
 
-    function score(post, q){
-      const t = norm(post.title || "");
-      const b = norm(Array.isArray(post.brand)? post.brand.join(" "):(post.brand||""));
-      const tags = norm(Array.isArray(post.tags)? post.tags.join(" "):"");
-      const s = norm(post.summary || "");
-      const h = haystack(post);
+  function getQ(){ return new URL(location.href).searchParams.get("q")?.trim() || ""; }
 
-      let sc = 0;
-      if (t.includes(q)) sc += 5;
-      if (b.includes(q)) sc += 3;
-      if (tags.includes(q)) sc += 3;
-      if (s.includes(q)) sc += 2;
-      if (h.includes(q)) sc += 1;
-      return sc;
-    }
+  async function loadPosts(){
+    const res = await fetch(`/api/posts?v=${Date.now()}`, { cache:"no-store" });
+    const data = await res.json();
+    if(!res.ok) throw new Error(data?.error || `Failed to load /api/posts (${res.status})`);
+    return Array.isArray(data) ? data : [];
+  }
 
-    function renderItem(post){
-      const id = post.id || "";
-      const title = post.title || id || "Untitled";
-      const summary = post.summary || "";
-      const date = post.date || post.release_date || "";
-      const brand = Array.isArray(post.brand) ? post.brand.join(" / ") : (post.brand || "");
-      const hero = post.thumb || post.hero || post.cover || post.image || "";
+  // 把一篇文章“可搜索文本”拼起来（对齐 /api/posts 结构）
+  function haystack(post){
+    const title = post.title || "";
+    const date  = post.date || "";
+    const keywords = Array.isArray(post.keywords) ? post.keywords.join(" ") : "";
+    const content = post.content || "";
+    const release = post.release_info || ""; // 如果你 API 还没吐这个字段，也不影响
+    return normLoose([title, keywords, date, release, content].join(" "));
+  }
 
-      const href = `/post/?id=${encodeURIComponent(id)}`;
-      const v = encodeURIComponent((date || "1").toString());
+  function score(post, qRaw){
+    const q = normLoose(qRaw);
+    const qk = normKey(qRaw);
 
-      return `
-        <article class="news-item">
-          <a class="news-media" href="${href}" aria-label="${esc(title)}">
-            ${hero ? `<img src="${esc(hero)}?v=${v}" alt="${esc(title)}" loading="lazy">` : ``}
-          </a>
-          <div class="news-body">
-            <div class="news-meta">
-              ${brand ? `<span class="pill">${esc(brand)}</span>` : ``}
-              ${date ? `<span class="date">${esc(date)}</span>` : ``}
-            </div>
-            <h2 class="news-title"><a href="${href}">${esc(title)}</a></h2>
-            ${summary ? `<p class="news-summary">${esc(summary)}</p>` : ``}
+    const title = normLoose(post.title || "");
+    const keywords = normLoose(Array.isArray(post.keywords) ? post.keywords.join(" ") : "");
+    const content = normLoose(post.content || "");
+    const release = normLoose(post.release_info || "");
+
+    // 强匹配：归一化后匹配（解决 NY VS NY / nyvsny）
+    const titleK = normKey(post.title || "");
+    const keywordsK = normKey(Array.isArray(post.keywords) ? post.keywords.join(" ") : "");
+    const contentK = normKey(post.content || "");
+
+    let sc = 0;
+
+    // 归一化强匹配更高权重
+    if (titleK.includes(qk)) sc += 8;
+    if (keywordsK.includes(qk)) sc += 6;
+    if (contentK.includes(qk)) sc += 2;
+
+    // 普通 contains（兼容中文、完整短语）
+    if (title.includes(q)) sc += 5;
+    if (keywords.includes(q)) sc += 4;
+    if (release.includes(q)) sc += 2;
+    if (content.includes(q)) sc += 1;
+
+    return sc;
+  }
+
+  function renderItem(post){
+    const title = post.title || "Untitled";
+    const summary = post.summary || ""; // 如果你还没做 summary 字段，不影响
+    const date = post.date || "";
+    const hero = post.cover || "";
+    const slug = post.slug || "";
+
+    // ✅ 跳转统一改为 slug
+    const href = `/post/?slug=${encodeURIComponent(slug)}`;
+    const v = encodeURIComponent((date || "1").toString());
+
+    return `
+      <article class="news-item">
+        <a class="news-media" href="${href}" aria-label="${esc(title)}">
+          ${hero ? `<img src="${esc(hero)}?v=${v}" alt="${esc(title)}" loading="lazy">` : ``}
+        </a>
+        <div class="news-body">
+          <div class="news-meta">
+            ${date ? `<span class="date">${esc(date)}</span>` : ``}
           </div>
-        </article>
-      `;
+          <h2 class="news-title"><a href="${href}">${esc(title)}</a></h2>
+          ${summary ? `<p class="news-summary">${esc(summary)}</p>` : ``}
+        </div>
+      </article>
+    `;
+  }
+
+  (async function main(){
+    const app = document.getElementById("app");
+    const statusEl = document.getElementById("pageStatus");
+
+    await new Promise((resolve) => {
+      let done = false;
+      const finish = () => { if(done) return; done = true; resolve(); };
+      document.addEventListener("modules:loaded", finish, { once:true });
+      setTimeout(finish, 1200);
+    });
+
+    const qRaw = getQ();
+
+    if(!qRaw){
+      if (statusEl) statusEl.textContent = "0 results";
+      app.className = "empty";
+      app.innerHTML = `请输入关键词搜索（例如：<b>Nike</b> / <b>AJ4</b> / <b>NY VS NY</b> / <b>nyvsny</b>）。`;
+      return;
     }
 
-    (async function main(){
-      const app = document.getElementById("app");
-      const statusEl = document.getElementById("pageStatus");
+    try{
+      const posts = await loadPosts();
 
-      await new Promise((resolve) => {
-        let done = false;
-        const finish = () => { if(done) return; done = true; resolve(); };
-        document.addEventListener("modules:loaded", finish, { once:true });
-        setTimeout(finish, 1200);
-      });
+      // 过滤掉没有 slug 的（避免跳转坏链）
+      const valid = posts.filter(p => p && String(p.slug || "").trim());
 
-      const qRaw = getQ();
-      const q = norm(qRaw);
+      const hits = valid
+        .map(p => ({ p, sc: score(p, qRaw) }))
+        .filter(x => x.sc > 0)
+        .sort((a,b) => b.sc - a.sc || String(b.p.date||"").localeCompare(String(a.p.date||"")))
+        .map(x => x.p);
 
-      if(!q){
-        if (statusEl) statusEl.textContent = "0 results";
+      if (statusEl) statusEl.textContent = `${hits.length} results for “${qRaw}”`;
+
+      if(!hits.length){
         app.className = "empty";
-        app.innerHTML = `请输入关键词搜索（例如：<b>Nike</b> / <b>PSG</b> / <b>KD18</b>）。`;
+        app.innerHTML = `没有找到与 <b>${esc(qRaw)}</b> 相关的文章。`;
         return;
       }
 
-      try{
-        const posts = await loadPosts();
-        const hits = posts
-          .map(p => ({ p, sc: score(p, q) }))
-          .filter(x => x.sc > 0)
-          .sort((a,b) => b.sc - a.sc || String(b.p.date||"").localeCompare(String(a.p.date||"")))
-          .map(x => x.p);
-
-        if (statusEl) statusEl.textContent = `${hits.length} results for “${qRaw}”`;
-
-        if(!hits.length){
-          app.className = "empty";
-          app.innerHTML = `没有找到与 <b>${esc(qRaw)}</b> 相关的文章。`;
-          return;
-        }
-
-        // ✅ 复用你 News 卡片样式（前提：news.css 为空也没关系，你内联样式也能跑）
-        app.className = "";
-        app.innerHTML = `<section class="news-list">${hits.map(renderItem).join("")}</section>`;
-      }catch(err){
-        if (statusEl) statusEl.textContent = "Error";
-        app.className = "error";
-        app.innerHTML = `<b>Load failed</b><div style="margin-top:8px;">${esc(err.message || err)}</div>`;
-      }
-    })();
-  </script>
+      app.className = "";
+      app.innerHTML = `<section class="news-list">${hits.map(renderItem).join("")}</section>`;
+    }catch(err){
+      if (statusEl) statusEl.textContent = "Error";
+      app.className = "error";
+      app.innerHTML = `<b>Load failed</b><div style="margin-top:8px;">${esc(err.message || err)}</div>`;
+    }
+  })();
+</script>
 </body>
 </html>
