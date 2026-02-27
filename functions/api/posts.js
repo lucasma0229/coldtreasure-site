@@ -8,8 +8,26 @@ export async function onRequest(context) {
   const debug = url.searchParams.get("debug") === "1";
 
   // 旧源（静态）位置：你 repo 里是 /assets/data/posts.json
-  const STATIC_POSTS_URL = `${url.origin}/assets/data/posts.json?v=${Date.now()}`;
+  async function loadStaticPosts() {
+    try {
+      const res = await context.env.ASSETS.fetch(
+        new Request("https://static/assets/data/posts.json")
+      );
 
+      if (!res.ok) return [];
+
+      const data = await res.json().catch(() => null);
+      const arr = Array.isArray(data)
+        ? data
+        : Array.isArray(data?.posts)
+        ? data.posts
+        : [];
+
+      return Array.isArray(arr) ? arr : [];
+    } catch {
+      return [];
+    }
+  }
   const version = "posts-api-merge-2026-02-27-01";
 
   // ---------- Safe readers ----------
