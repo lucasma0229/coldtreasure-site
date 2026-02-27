@@ -33,12 +33,13 @@
   </main>
 
   <script>
+  // ---------------------------
+  // Helpers
+  // ---------------------------
   function esc(s=""){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));}
 
-  // 统一搜索归一化：
-  // - 小写
-  // - 去空格/短横线/下划线/常见标点
-  // 这样 "NY VS NY"、"nyvsny"、"ny-vs-ny" 都会变成 "nyvsny"
+  // 强归一化：小写 + 去空格/短横线/下划线/常见标点
+  // "NY VS NY"、"nyvsny"、"ny-vs-ny" => "nyvsny"
   function normKey(s=""){
     return String(s||"")
       .toLowerCase()
@@ -46,45 +47,55 @@
       .replace(/[\s\-_./\\|:;'"“”‘’()（）[\]【】{}<>!?，。、《》]+/g, "");
   }
 
+  // 宽松归一化：仅小写+trim（用于普通 contains）
   function normLoose(s=""){
-    // 用于普通 contains：仅小写+trim，不去掉符号（方便显示/权重）
     return String(s||"").toLowerCase().trim();
   }
 
   function getQ(){ return new URL(location.href).searchParams.get("q")?.trim() || ""; }
 
+  // slug 兜底生成（避免 API 缺 slug 导致被过滤/无法跳转）
+  function slugifyLoose(s=""){
+    const x = String(s || "")
+      .toLowerCase()
+      .trim()
+      .replace(/['"“”‘’]/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/-+/g, "-")
+      .replace(/^-|-$/g, "");
+    return x || "";
+  }
+
+  // ---------------------------
+  // Data loading (API -> fallback)
+  // ---------------------------
   async function loadPosts(){
-  // 1) primary: /api/posts
-  try{
-    const res = await fetch(`/api/posts?v=${Date.now()}`, { cache:"no-store" });
-    const data = await res.json().catch(()=>null);
+    // 1) primary: /api/posts
+    try{
+      const res = await fetch(`/api/posts?v=${Date.now()}`, { cache:"no-store" });
+      const data = await res.json().catch(()=>null);
 
-    if(!res.ok) throw new Error(data?.error || `Failed to load /api/posts (${res.status})`);
+      if(!res.ok){
+        throw new Error(data?.error || `Failed to load /api/posts (${res.status})`);
+      }
 
-    const arr = Array.isArray(data) ? data : (Array.isArray(data?.posts) ? data.posts : []);
-    if(arr && arr.length) return arr;
-    // 如果 API 返回空数组，就继续走 fallback
-  }catch(e){
-    // ignore, fallback
+      const arr = Array.isArray(data) ? data : (Array.isArray(data?.posts) ? data.posts : []);
+      if(arr && arr.length) return arr;
+      // 如果 API 返回空数组，继续走 fallback
+    }catch(e){
+      // ignore, fallback below
+    }
+
+    // 2) fallback: /assets/data/posts.json
+    const res2 = await fetch(`/assets/data/posts.json?v=${Date.now()}`, { cache:"no-store" });
+    if(!res2.ok) throw new Error(`Failed to load /assets/data/posts.json (${res2.status})`);
+    const data2 = await res2.json();
+    return Array.isArray(data2) ? data2 : (Array.isArray(data2?.posts) ? data2.posts : []);
   }
 
-  // 2) fallback: /assets/data/posts.json
-  const res2 = await fetch(`/assets/data/posts.json?v=${Date.now()}`, { cache:"no-store" });
-  if(!res2.ok) throw new Error(`Failed to load /assets/data/posts.json (${res2.status})`);
-  const data2 = await res2.json();
-  return Array.isArray(data2) ? data2 : (Array.isArray(data2?.posts) ? data2.posts : []);
-}
-
-  // 把一篇文章“可搜索文本”拼起来（对齐 /api/posts 结构）
-  function haystack(post){
-    const title = post.title || "";
-    const date  = post.date || "";
-    const keywords = Array.isArray(post.keywords) ? post.keywords.join(" ") : "";
-    const content = post.content || "";
-    const release = post.release_info || ""; // 如果你 API 还没吐这个字段，也不影响
-    return normLoose([title, keywords, date, release, content].join(" "));
-  }
-
+  // ---------------------------
+  // Search scoring
+  // ---------------------------
   function score(post, qRaw){
     const q = normLoose(qRaw);
     const qk = normKey(qRaw);
@@ -94,14 +105,13 @@
     const content = normLoose(post.content || "");
     const release = normLoose(post.release_info || "");
 
-    // 强匹配：归一化后匹配（解决 NY VS NY / nyvsny）
     const titleK = normKey(post.title || "");
     const keywordsK = normKey(Array.isArray(post.keywords) ? post.keywords.join(" ") : "");
     const contentK = normKey(post.content || "");
 
     let sc = 0;
 
-    // 归一化强匹配更高权重
+    // 强匹配（归一化）
     if (titleK.includes(qk)) sc += 8;
     if (keywordsK.includes(qk)) sc += 6;
     if (contentK.includes(qk)) sc += 2;
@@ -115,14 +125,16 @@
     return sc;
   }
 
+  // ---------------------------
+  // Render
+  // ---------------------------
   function renderItem(post){
     const title = post.title || "Untitled";
-    const summary = post.summary || ""; // 如果你还没做 summary 字段，不影响
+    const summary = post.summary || "";
     const date = post.date || "";
     const hero = post.cover || "";
-    const slug = post.slug || "";
+    const slug = String(post.slug || "").trim();
 
-    // ✅ 跳转统一改为 slug
     const href = `/post/?slug=${encodeURIComponent(slug)}`;
     const v = encodeURIComponent((date || "1").toString());
 
@@ -142,10 +154,14 @@
     `;
   }
 
+  // ---------------------------
+  // Main
+  // ---------------------------
   (async function main(){
     const app = document.getElementById("app");
     const statusEl = document.getElementById("pageStatus");
 
+    // 等 include 模块加载（header/footer）
     await new Promise((resolve) => {
       let done = false;
       const finish = () => { if(done) return; done = true; resolve(); };
@@ -165,8 +181,14 @@
     try{
       const posts = await loadPosts();
 
-      // 过滤掉没有 slug 的（避免跳转坏链）
-      const valid = posts.filter(p => p && String(p.slug || "").trim());
+      // 统一补 slug（API 没给也不怕）
+      const valid = (posts || [])
+        .filter(p => p)
+        .map(p => {
+          const slug = String(p.slug || "").trim() || slugifyLoose(p.title || "");
+          return { ...p, slug };
+        })
+        .filter(p => String(p.slug || "").trim());
 
       const hits = valid
         .map(p => ({ p, sc: score(p, qRaw) }))
@@ -190,6 +212,6 @@
       app.innerHTML = `<b>Load failed</b><div style="margin-top:8px;">${esc(err.message || err)}</div>`;
     }
   })();
-</script>
+  </script>
 </body>
 </html>
