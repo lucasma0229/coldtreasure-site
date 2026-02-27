@@ -7,29 +7,17 @@ export async function onRequest(context) {
   const all = url.searchParams.get("all") === "1";
   const debug = url.searchParams.get("debug") === "1";
 
-  if (!NOTION_KEY || !DATABASE_ID) {
-    return new Response(
-      JSON.stringify({ error: "Missing env: NOTION_KEY or NOTION_DATABASE_ID" }, null, 2),
-      { status: 500, headers: { "Content-Type": "application/json; charset=utf-8" } }
-    );
-  }
+  // 旧源（静态）位置：你 repo 里是 /assets/data/posts.json
+  const STATIC_POSTS_URL = `${url.origin}/assets/data/posts.json?v=${Date.now()}`;
+
+  const version = "posts-api-merge-2026-02-27-01";
 
   // ---------- Safe readers ----------
   const safeText = (prop) => {
     if (!prop) return "";
-
-    if (prop.type === "title") {
-      return prop.title?.map(t => t.plain_text).join("") ?? "";
-    }
-
-    if (prop.type === "rich_text") {
-      return prop.rich_text?.map(t => t.plain_text).join("") ?? "";
-    }
-
-    if (prop.type === "select") {
-      return prop.select?.name ?? "";
-    }
-
+    if (prop.type === "title") return prop.title?.map(t => t.plain_text).join("") ?? "";
+    if (prop.type === "rich_text") return prop.rich_text?.map(t => t.plain_text).join("") ?? "";
+    if (prop.type === "select") return prop.select?.name ?? "";
     if (prop.type === "formula") {
       return (
         prop.formula?.string ??
@@ -38,7 +26,6 @@ export async function onRequest(context) {
         ""
       );
     }
-
     return "";
   };
 
@@ -62,73 +49,15 @@ export async function onRequest(context) {
     return arr.map((x) => x?.name).filter(Boolean);
   };
 
-  // ✅ publish 强兼容：checkbox / formula(boolean) / rollup / select/status(按名字) / rich_text(按内容)
-  const safePublish = (prop) => {
-    if (!prop) return false;
-
-    // 1) checkbox
-    if (prop.type === "checkbox") return !!prop.checkbox;
-
-    // 2) formula boolean
-    if (prop.type === "formula") {
-      if (typeof prop.formula?.boolean === "boolean") return prop.formula.boolean;
-      // 有人用 formula 输出字符串 "true"/"false"
-      const s = String(prop.formula?.string ?? "").toLowerCase().trim();
-      if (s === "true" || s === "yes" || s === "1") return true;
-      if (s === "false" || s === "no" || s === "0") return false;
-      return false;
-    }
-
-    // 3) rollup
-    if (prop.type === "rollup") {
-      const r = prop.rollup;
-      if (!r) return false;
-
-      // rollup number > 0
-      if (r.type === "number") return (r.number ?? 0) > 0;
-
-      // rollup array: any checkbox true or any select/status named "Published"
-      if (r.type === "array" && Array.isArray(r.array)) {
-        for (const it of r.array) {
-          if (it?.type === "checkbox" && it.checkbox === true) return true;
-          if (it?.type === "select" && it.select?.name) {
-            const name = it.select.name.toLowerCase();
-            if (name === "published" || name === "publish" || name === "true" || name === "yes") return true;
-          }
-          if (it?.type === "status" && it.status?.name) {
-            const name = it.status.name.toLowerCase();
-            if (name === "published" || name === "publish") return true;
-          }
-        }
-      }
-      return false;
-    }
-
-    // 4) select/status：名字判断（你也可以按自己 Notion 设定改关键词）
-    if (prop.type === "select" && prop.select?.name) {
-      const name = prop.select.name.toLowerCase();
-      return name === "published" || name === "publish" || name === "true" || name === "yes";
-    }
-    if (prop.type === "status" && prop.status?.name) {
-      const name = prop.status.name.toLowerCase();
-      return name === "published" || name === "publish";
-    }
-
-    // 5) rich_text/title：内容判断（兜底）
-    if (prop.type === "rich_text") {
-      const t = prop.rich_text?.map(x => x.plain_text).join("").toLowerCase().trim() ?? "";
-      return t === "true" || t === "yes" || t === "published" || t === "publish" || t === "1";
-    }
-    if (prop.type === "title") {
-      const t = prop.title?.map(x => x.plain_text).join("").toLowerCase().trim() ?? "";
-      return t === "true" || t === "yes" || t === "published" || t === "publish" || t === "1";
-    }
-
-    return false;
-  };
+  const safeCheckbox = (prop) => (prop?.type === "checkbox" ? !!prop.checkbox : false);
 
   // ---------- Notion query with auto pagination ----------
-  async function queryAllPages() {
+  async function queryNotionAllPages() {
+    if (!NOTION_KEY || !DATABASE_ID) {
+      // 没配 Notion env 时也允许继续（只返回静态源）
+      return { ok: true, results: [], meta: { pages: 0, has_more: false, skipped: true } };
+    }
+
     let start_cursor = undefined;
     const out = [];
     let has_more = false;
@@ -157,9 +86,7 @@ export async function onRequest(context) {
         return { ok: false, status: 500, error: { error: "Notion API error", detail: data } };
       }
 
-      const results = data?.results || [];
-      out.push(...results);
-
+      out.push(...(data?.results || []));
       has_more = !!data?.has_more;
       start_cursor = data?.next_cursor || undefined;
       pages += 1;
@@ -170,21 +97,63 @@ export async function onRequest(context) {
     return { ok: true, results: out, meta: { pages, has_more } };
   }
 
+  // ---------- Load static posts.json ----------
+  async function loadStaticPosts() {
+    try {
+      const res = await fetch(STATIC_POSTS_URL, { cf: { cacheTtl: 0 }, cache: "no-store" });
+      if (!res.ok) return [];
+      const data = await res.json().catch(() => null);
+      const arr = Array.isArray(data) ? data : (Array.isArray(data?.posts) ? data.posts : []);
+      return Array.isArray(arr) ? arr : [];
+    } catch {
+      return [];
+    }
+  }
+
+  // ---------- Normalize post shape (for merge) ----------
+  function normalizePost(p) {
+    if (!p) return null;
+    const slug = String(p.slug || "").trim();
+    const title = String(p.title || "").trim();
+    if (!slug && !title) return null;
+
+    return {
+      id: p.id || slug || title,
+      title,
+      slug,
+      cover: p.cover || "",
+      date: p.date || "",
+      content: p.content || "",
+      gallery: Array.isArray(p.gallery) ? p.gallery : [],
+      keywords: Array.isArray(p.keywords) ? p.keywords : [],
+      publish: typeof p.publish === "boolean" ? p.publish : true, // 静态源默认认为已发布
+      brand: p.brand || "",
+      release_info: p.release_info || "",
+      source: p.source || "static",
+    };
+  }
+
+  function dateKey(d) {
+    // 让排序更稳定：YYYY-MM-DD 直接可比；空日期放后面
+    const s = String(d || "").trim();
+    return s ? s : "0000-00-00";
+  }
+
   try {
-    const q = await queryAllPages();
-    if (!q.ok) {
-      return new Response(JSON.stringify(q.error, null, 2), {
-        status: q.status || 500,
+    // 1) 拉 Notion
+    const nq = await queryNotionAllPages();
+    if (!nq.ok) {
+      return new Response(JSON.stringify(nq.error, null, 2), {
+        status: nq.status || 500,
         headers: { "Content-Type": "application/json; charset=utf-8" },
       });
     }
 
-    const results = q.results || [];
-
-    let posts = results.map((p) => {
-      const props = p.properties || {};
-      return {
-        id: p.id,
+    const notionResults = nq.results || [];
+    let notionPosts = notionResults.map((row) => {
+      const props = row.properties || {};
+      return normalizePost({
+        id: row.id,
         title: safeText(props.title),
         slug: safeText(props.slug),
         cover: safeCover(props.cover),
@@ -192,40 +161,54 @@ export async function onRequest(context) {
         content: safeText(props.content),
         gallery: safeFiles(props.gallery),
         keywords: safeMultiSelect(props.keywords),
-        publish: safePublish(props.publish),
+        publish: safeCheckbox(props.publish),
         brand: safeText(props.brand),
         release_info: safeText(props.release_info),
-      };
-    });
+        source: "notion",
+      });
+    }).filter(Boolean);
 
-    if (!all) {
-      posts = posts.filter(p => p.publish === true);
+    // 默认只吐 notion publish=true；?all=1 则吐全部 notion（包含 publish=false）
+    if (!all) notionPosts = notionPosts.filter(p => p.publish === true);
+
+    // 2) 拉静态 posts.json
+    const staticRaw = await loadStaticPosts();
+    const staticPosts = staticRaw.map(p => normalizePost({ ...p, source: "static" })).filter(Boolean);
+
+    // 3) 合并：Notion 优先覆盖静态（同 slug 认为同一篇）
+    const map = new Map();
+    for (const p of staticPosts) {
+      map.set(p.slug || p.id, p);
     }
+    for (const p of notionPosts) {
+      map.set(p.slug || p.id, p); // notion override
+    }
+
+    const merged = Array.from(map.values())
+      .sort((a, b) => dateKey(b.date).localeCompare(dateKey(a.date)));
 
     if (debug) {
-      const samplePropertyNames = results?.[0]?.properties ? Object.keys(results[0].properties) : [];
-      // 额外输出 publish 类型，帮你一次确认 Notion 的真实类型
-      const samplePublishType = results?.[0]?.properties?.publish?.type ?? null;
-
-      return new Response(
-        JSON.stringify({
-          meta: {
-            all,
-            totalFetched: results.length,
-            returned: posts.length,
-            pages: q.meta?.pages,
-            has_more: q.meta?.has_more,
-            samplePropertyNames,
-            samplePublishType,
-            sampleFirstPost: posts[0] || null,
-          },
-          posts,
-        }, null, 2),
-        { headers: { "Content-Type": "application/json; charset=utf-8" } }
-      );
+      const samplePropertyNames = notionResults?.[0]?.properties ? Object.keys(notionResults[0].properties) : [];
+      return new Response(JSON.stringify({
+        meta: {
+          version,
+          all,
+          notionFetched: notionResults.length,
+          notionReturned: notionPosts.length,
+          staticFetched: staticPosts.length,
+          mergedReturned: merged.length,
+          pages: nq.meta?.pages,
+          has_more: nq.meta?.has_more,
+          samplePropertyNames,
+        },
+        posts: merged,
+      }, null, 2), {
+        headers: { "Content-Type": "application/json; charset=utf-8" },
+      });
     }
 
-    return new Response(JSON.stringify(posts), {
+    // 返回数组：兼容你现有 Search 逻辑
+    return new Response(JSON.stringify(merged), {
       headers: { "Content-Type": "application/json; charset=utf-8" },
     });
   } catch (err) {
