@@ -101,7 +101,6 @@
       <div class="page-rule" aria-hidden="true"></div>
     </header>
 
-    <!-- ✅ News 页自己渲染到 #app（和你的卡片 CSS 完全匹配） -->
     <div id="app" class="empty">Loading…</div>
 
     <div data-include="/modules/footer/footer.html"></div>
@@ -126,53 +125,65 @@
       }
     }
 
+    function normLoose(s=""){ return String(s ?? "").toLowerCase().trim(); }
+
     function termsOf(q){
-      return q
-        .toLowerCase()
-        .split(/\s+/)
-        .map(s => s.trim())
-        .filter(Boolean);
+      return normLoose(q).split(/\s+/).map(s => s.trim()).filter(Boolean);
     }
 
     function matchesPost(post, q){
       const terms = termsOf(q);
       if(!terms.length) return true;
 
-      const brand = Array.isArray(post.brand) ? post.brand.join(" ") : (post.brand || "");
-      const tags  = Array.isArray(post.tags)  ? post.tags.join(" ")  : (post.tags || "");
-      const hay = [
-        post.id || "",
-        post.title || post.name || "",
-        post.summary || post.desc || "",
-        brand,
-        tags,
-        post.model || ""
-      ].join(" ").toLowerCase();
+      const title = post.title || "";
+      const brand = post.brand || "";
+      const keywords = Array.isArray(post.keywords) ? post.keywords.join(" ") : "";
+      const release = post.release_info || "";
+      const content = post.content || "";
 
-      // ✅ 多词：全部命中（更像搜索）
+      const hay = normLoose([title, brand, keywords, release, content, post.slug || "", post.id || ""].join(" "));
       return terms.every(t => hay.includes(t));
     }
 
+    // ✅ News 页改为读 /api/posts（已合并 Notion + 静态）
     async function loadPosts(){
-      const res = await fetch(`/assets/data/posts.json?v=${Date.now()}`, { cache:"no-store" });
-      if(!res.ok) throw new Error(`Failed to load /assets/data/posts.json (${res.status})`);
-      const data = await res.json();
-      return Array.isArray(data) ? data : [];
+      const res = await fetch(`/api/posts?v=${Date.now()}`, { cache:"no-store" });
+      const data = await res.json().catch(() => null);
+
+      if(!res.ok){
+        throw new Error(data?.error || `Failed to load /api/posts (${res.status})`);
+      }
+
+      // 兼容：debug=1 时可能返回 {posts:[...]}
+      if (Array.isArray(data)) return data;
+      if (Array.isArray(data?.posts)) return data.posts;
+      return [];
+    }
+
+    // 简单摘要：优先 summary，否则截取 content
+    function getSummary(post){
+      const s = String(post.summary || "").trim();
+      if (s) return s;
+
+      const c = String(post.content || "").trim();
+      if (!c) return "";
+      return c.length > 120 ? (c.slice(0, 120) + "…") : c;
     }
 
     function renderItem(post){
-      const id = post.id || "";
-      const title = post.title || post.name || id || "Untitled";
-      const summary = post.summary || post.desc || "";
-      const date = post.date || post.release_date || "";
-      const brand = Array.isArray(post.brand) ? post.brand.join(" / ") : (post.brand || "");
-
-      const hero = post.thumb || post.hero || post.cover || post.image || "";
+      const title = post.title || "Untitled";
+      const summary = getSummary(post);
+      const date = post.date || "";
+      const brand = post.brand || "";
+      const hero = post.cover || "";
 
       const brandHtml = brand ? `<span class="pill">${escapeHtml(brand)}</span>` : "";
       const dateHtml  = date  ? `<span class="date">${escapeHtml(date)}</span>` : "";
 
-      const href = `/post/?id=${encodeURIComponent(id)}`;
+      // ✅ 跳转统一 slug（你的 API 已保证静态也有 slug 兜底）
+      const slug = String(post.slug || "").trim();
+      const href = `/post/?slug=${encodeURIComponent(slug)}`;
+
       const v = encodeURIComponent((date || "1").toString());
 
       return `
@@ -207,19 +218,13 @@
       try{
         const listAll = await loadPosts();
 
-        // ✅ 只显示 news（兼容：没有 section 字段时，默认当 news）
-        const newsOnly = listAll.filter(p => {
-          const sec = String(p?.section || "news").toLowerCase();
-          return sec === "news";
-        });
-
         // ✅ 搜索筛选
-        const filtered = q ? newsOnly.filter(p => matchesPost(p, q)) : newsOnly;
+        const filtered = q ? listAll.filter(p => matchesPost(p, q)) : listAll;
 
-        // ✅ 排序：按 date 字符串倒序（你现有格式 YYYY-MM-DD 没问题）
+        // ✅ 排序：按 date 字符串倒序（YYYY-MM-DD）
         const sorted = [...filtered].sort((a,b)=>{
-          const da = (a.date || a.release_date || "").toString();
-          const db = (b.date || b.release_date || "").toString();
+          const da = String(a?.date || "");
+          const db = String(b?.date || "");
           return db.localeCompare(da);
         });
 
