@@ -1,3 +1,4 @@
+// functions/api/posts.js
 export async function onRequest(context) {
   const NOTION_KEY = context.env.NOTION_KEY;
   const DATABASE_ID = context.env.NOTION_DATABASE_ID;
@@ -7,19 +8,43 @@ export async function onRequest(context) {
   const debug = url.searchParams.get("debug") === "1";
 
   if (!NOTION_KEY || !DATABASE_ID) {
-    return new Response(JSON.stringify({ error: "Missing env: NOTION_KEY or NOTION_DATABASE_ID" }, null, 2), {
-      status: 500,
-      headers: { "Content-Type": "application/json; charset=utf-8" },
-    });
+    return new Response(
+      JSON.stringify({ error: "Missing env: NOTION_KEY or NOTION_DATABASE_ID" }, null, 2),
+      { status: 500, headers: { "Content-Type": "application/json; charset=utf-8" } }
+    );
   }
 
+  // ---------- Safe readers ----------
   const safeText = (prop) => {
     if (!prop) return "";
-    if (prop.type === "title") return prop.title?.map(t => t.plain_text).join("") ?? "";
-    if (prop.type === "rich_text") return prop.rich_text?.map(t => t.plain_text).join("") ?? "";
-    if (prop.type === "select") return prop.select?.name ?? "";
-    // ✅ 常见：formula/string
-    if (prop.type === "formula") return prop.formula?.string ?? "";
+
+    // title
+    if (prop.type === "title") {
+      return prop.title?.map(t => t.plain_text).join("") ?? "";
+    }
+
+    // rich_text
+    if (prop.type === "rich_text") {
+      return prop.rich_text?.map(t => t.plain_text).join("") ?? "";
+    }
+
+    // select
+    if (prop.type === "select") {
+      return prop.select?.name ?? "";
+    }
+
+    // formula (often used for computed slug)
+    if (prop.type === "formula") {
+      // Notion formula may be string/number/boolean/date
+      return (
+        prop.formula?.string ??
+        (prop.formula?.number != null ? String(prop.formula.number) : "") ??
+        (prop.formula?.boolean != null ? String(prop.formula.boolean) : "") ??
+        ""
+      );
+    }
+
+    // fallback: try common containers
     return "";
   };
 
@@ -43,7 +68,14 @@ export async function onRequest(context) {
     return arr.map((x) => x?.name).filter(Boolean);
   };
 
-  // ✅ 自动分页拿全量（避免 has_more 情况下只拿到第一页）
+  const safeCheckbox = (prop) => {
+    // If property is checkbox type
+    if (prop?.type === "checkbox") return !!prop.checkbox;
+    // If property exists but not checkbox, treat as false
+    return false;
+  };
+
+  // ---------- Notion query with auto pagination ----------
   async function queryAllPages() {
     let start_cursor = undefined;
     const out = [];
@@ -53,6 +85,7 @@ export async function onRequest(context) {
     do {
       const body = {
         page_size: 100,
+        // 这里保留 date 排序；如果 Notion 里 date 不是 date 类型，会影响排序但不影响拉取
         sorts: [{ property: "date", direction: "descending" }],
         ...(start_cursor ? { start_cursor } : {}),
       };
@@ -70,7 +103,7 @@ export async function onRequest(context) {
       const data = await res.json().catch(() => null);
 
       if (!res.ok) {
-        return { error: { message: "Notion API error", detail: data }, status: 500 };
+        return { ok: false, status: 500, error: { error: "Notion API error", detail: data } };
       }
 
       const results = data?.results || [];
@@ -80,16 +113,16 @@ export async function onRequest(context) {
       start_cursor = data?.next_cursor || undefined;
       pages += 1;
 
-      // 防御：避免异常无限循环
+      // 防御：避免异常导致循环
       if (pages > 20) break;
     } while (has_more);
 
-    return { results: out, meta: { has_more, pages } };
+    return { ok: true, results: out, meta: { pages, has_more } };
   }
 
   try {
     const q = await queryAllPages();
-    if (q.error) {
+    if (!q.ok) {
       return new Response(JSON.stringify(q.error, null, 2), {
         status: q.status || 500,
         headers: { "Content-Type": "application/json; charset=utf-8" },
@@ -97,7 +130,9 @@ export async function onRequest(context) {
     }
 
     const results = q.results || [];
-    const posts = results.map((p) => {
+
+    // 映射成前端消费结构
+    let posts = results.map((p) => {
       const props = p.properties || {};
       return {
         id: p.id,
@@ -108,27 +143,40 @@ export async function onRequest(context) {
         content: safeText(props.content),
         gallery: safeFiles(props.gallery),
         keywords: safeMultiSelect(props.keywords),
+        // 在服务器端做 publish 判断（别在 Notion query filter 里做）
+        publish: safeCheckbox(props.publish),
+        // 可选：如果你以后要用这些字段
+        brand: safeText(props.brand),
+        release_info: safeText(props.release_info),
       };
     });
 
-    if (debug) {
-      // 输出 propertyNames 帮你确认列名是否匹配
-      const propertyNames = results?.[0]?.properties ? Object.keys(results[0].properties) : [];
-      return new Response(JSON.stringify({
-        meta: {
-          all,
-          totalFetched: results.length,
-          pages: q.meta?.pages,
-          has_more: q.meta?.has_more,
-          samplePropertyNames: propertyNames,
-          sampleFirstPost: posts[0] || null,
-        },
-        posts,
-      }, null, 2), {
-        headers: { "Content-Type": "application/json; charset=utf-8" },
-      });
+    // 默认只吐 publish=true；?all=1 则吐全部
+    if (!all) {
+      posts = posts.filter(p => p.publish === true);
     }
 
+    // debug 输出 meta（方便你核对列名/数量）
+    if (debug) {
+      const samplePropertyNames = results?.[0]?.properties ? Object.keys(results[0].properties) : [];
+      return new Response(
+        JSON.stringify({
+          meta: {
+            all,
+            totalFetched: results.length,
+            returned: posts.length,
+            pages: q.meta?.pages,
+            has_more: q.meta?.has_more,
+            samplePropertyNames,
+            sampleFirstPost: posts[0] || null,
+          },
+          posts,
+        }, null, 2),
+        { headers: { "Content-Type": "application/json; charset=utf-8" } }
+      );
+    }
+
+    // 默认：直接返回数组（兼容现有 Search）
     return new Response(JSON.stringify(posts), {
       headers: { "Content-Type": "application/json; charset=utf-8" },
     });
