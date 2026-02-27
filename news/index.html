@@ -13,7 +13,6 @@
   <!-- ✅ 你可以保留 app.js（不依赖它渲染 News） -->
   <script src="/assets/js/app.js?v=204" defer></script>
 
-  <!-- News 页专属布局（保持你现有的） -->
   <style>
     :root{
       --ct-w: 1240px;
@@ -131,6 +130,26 @@
       return normLoose(q).split(/\s+/).map(s => s.trim()).filter(Boolean);
     }
 
+    // ✅ 把 content（可能是 string，也可能是 blocks array）统一转成可读文本
+    function contentToText(content){
+      if (!content) return "";
+      if (typeof content === "string") return content.trim();
+
+      if (Array.isArray(content)){
+        const parts = [];
+        for (const b of content){
+          if (!b) continue;
+          if (b.type === "p" && b.text) parts.push(String(b.text));
+          else if (b.type === "h2" && b.text) parts.push(String(b.text));
+          else if (b.type === "ul" && Array.isArray(b.items)) parts.push(b.items.join(" "));
+          if (parts.join(" ").length > 220) break; // 防御：别太长
+        }
+        return parts.join(" ").replace(/\s+/g, " ").trim();
+      }
+
+      return String(content).trim();
+    }
+
     function matchesPost(post, q){
       const terms = termsOf(q);
       if(!terms.length) return true;
@@ -139,13 +158,13 @@
       const brand = post.brand || "";
       const keywords = Array.isArray(post.keywords) ? post.keywords.join(" ") : "";
       const release = post.release_info || "";
-      const content = post.content || "";
+      const content = contentToText(post.content);
 
       const hay = normLoose([title, brand, keywords, release, content, post.slug || "", post.id || ""].join(" "));
       return terms.every(t => hay.includes(t));
     }
 
-    // ✅ News 页改为读 /api/posts（已合并 Notion + 静态）
+    // ✅ News 页读 /api/posts（已合并 Notion + 静态）
     async function loadPosts(){
       const res = await fetch(`/api/posts?v=${Date.now()}`, { cache:"no-store" });
       const data = await res.json().catch(() => null);
@@ -160,12 +179,12 @@
       return [];
     }
 
-    // 简单摘要：优先 summary，否则截取 content
+    // ✅ 摘要：优先 summary；否则从 contentToText() 抽取可读文本（避免显示 JSON）
     function getSummary(post){
       const s = String(post.summary || "").trim();
       if (s) return s;
 
-      const c = String(post.content || "").trim();
+      const c = contentToText(post.content);
       if (!c) return "";
       return c.length > 120 ? (c.slice(0, 120) + "…") : c;
     }
@@ -175,21 +194,25 @@
       const summary = getSummary(post);
       const date = post.date || "";
       const brand = post.brand || "";
-      const hero = post.cover || "";
 
       const brandHtml = brand ? `<span class="pill">${escapeHtml(brand)}</span>` : "";
       const dateHtml  = date  ? `<span class="date">${escapeHtml(date)}</span>` : "";
 
-      // ✅ 跳转统一 slug（你的 API 已保证静态也有 slug 兜底）
+      // ✅ 跳转统一 slug
       const slug = String(post.slug || "").trim();
       const href = `/post/?slug=${encodeURIComponent(slug)}`;
 
+      // ✅ Notion cover 常为签名 URL（含 ?X-Amz...），不能再追加 ?v=
+      const hero = String(post.cover || "").trim();
       const v = encodeURIComponent((date || "1").toString());
+      const imgSrc = hero
+        ? (hero.includes("?") || hero.includes("X-Amz-") ? hero : `${hero}?v=${v}`)
+        : "";
 
       return `
         <article class="news-item">
           <a class="news-media" href="${href}" aria-label="${escapeHtml(title)}">
-            ${hero ? `<img src="${escapeHtml(hero)}?v=${v}" alt="${escapeHtml(title)}" loading="lazy">` : ``}
+            ${imgSrc ? `<img src="${escapeHtml(imgSrc)}" alt="${escapeHtml(title)}" loading="lazy">` : ``}
           </a>
 
           <div class="news-body">
@@ -201,7 +224,6 @@
       `;
     }
 
-    // ✅ 等模块注入完成后再渲染（避免 header/footer 未注入造成跳动）
     (async function main(){
       const app = document.getElementById("app");
       const statusEl = document.getElementById("pageStatus");
@@ -218,17 +240,16 @@
       try{
         const listAll = await loadPosts();
 
-        // ✅ 搜索筛选
+        // 搜索筛选
         const filtered = q ? listAll.filter(p => matchesPost(p, q)) : listAll;
 
-        // ✅ 排序：按 date 字符串倒序（YYYY-MM-DD）
+        // 排序：按 date 字符串倒序（YYYY-MM-DD）
         const sorted = [...filtered].sort((a,b)=>{
           const da = String(a?.date || "");
           const db = String(b?.date || "");
           return db.localeCompare(da);
         });
 
-        // 状态栏文案
         if (statusEl){
           if(q){
             statusEl.textContent = `${sorted.length} results · “${q}”`;
