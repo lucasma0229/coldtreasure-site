@@ -1,9 +1,8 @@
 /* ===================================================
 ColdTreasure post.js (Full Replace)
-- Render post by ?slug=xxx (case-insensitive) + supports /post/<slug>
-- Fetch from /api/posts (Notion -> Cloudflare Functions)
-- Render content (plain text with \n)
-- Render gallery (if provided)
+- Render post by ?slug=xxx (preferred) OR ?id=xxx (legacy)
+- Fetch from /api/posts (Notion-backed)
+- Inject into <main id="app">
 =================================================== */
 (async function () {
   const $ = (sel) => document.querySelector(sel);
@@ -18,91 +17,19 @@ ColdTreasure post.js (Full Replace)
     }[m]));
   }
 
-  function normSlug(s = "") {
-    return String(s).trim().toLowerCase();
-  }
-
-  function getSlug() {
+  function getKey() {
     const u = new URL(location.href);
-    const q = (u.searchParams.get("slug") || "").trim();
-    if (q) return q;
+    const slug = (u.searchParams.get("slug") || "").trim();
+    const id = (u.searchParams.get("id") || "").trim();
+    return { slug, id, key: slug || id };
+  }
 
-    // 支持 /post/<slug> 或 /post/<slug>/
-    const parts = u.pathname.split("/").filter(Boolean);
-    if (parts.length >= 2 && parts[0] === "post") return parts[1].trim();
-
+  function normalizeFocus(v) {
+    if (!v) return "";
+    if (typeof v === "string") return v.trim();
+    if (Array.isArray(v) && v.length >= 2) return `${v[0]}% ${v[1]}%`;
+    if (typeof v === "object" && v.x != null && v.y != null) return `${v.x}% ${v.y}%`;
     return "";
-  }
-
-  async function fetchPosts() {
-    const res = await fetch(`/api/posts?v=${Date.now()}`, { cache: "no-store" });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data?.error || `Failed to fetch /api/posts (${res.status})`);
-    return Array.isArray(data) ? data : [];
-  }
-
-  function renderContent(text = "") {
-    const raw = String(text || "").trim();
-    if (!raw) return `<p class="muted">暂无正文</p>`;
-
-    const safe = esc(raw);
-
-    // 双换行切段；单换行变 <br>
-    return safe
-      .split(/\n{2,}/)
-      .map((p) => p.replace(/\n/g, "<br>"))
-      .map((p) => `<p>${p}</p>`)
-      .join("");
-  }
-
-  function normalizeGallery(g) {
-    if (!g) return [];
-    if (Array.isArray(g)) return g.filter(Boolean).map(String);
-    return [];
-  }
-
-  function renderGallery(gallery) {
-    const arr = normalizeGallery(gallery);
-    if (!arr.length) return "";
-
-    return `
-      <section class="gallery">
-        <h2>Gallery</h2>
-        <div class="grid">
-          ${arr.map((src) => `<img src="${esc(src)}" alt="" loading="lazy" />`).join("")}
-        </div>
-      </section>
-    `;
-  }
-
-  function renderPost(post) {
-    const title = post?.title || "Untitled";
-    const date = post?.date || "";
-    const cover = post?.cover || "";
-    const content = post?.content || "";
-    const gallery = post?.gallery || [];
-
-    const meta = [date].filter(Boolean).map(esc).join(" · ");
-
-    const heroHtml = cover
-      ? `
-        <div class="hero">
-          <img src="${esc(cover)}" alt="${esc(title)}" loading="eager" />
-        </div>
-      `
-      : "";
-
-    return `
-      <article>
-        <h1>${esc(title)}</h1>
-        <div class="meta">${meta || ""}</div>
-        ${heroHtml}
-        <div class="content">
-          ${renderContent(content)}
-        </div>
-        ${renderGallery(gallery)}
-      </article>
-    `;
   }
 
   async function waitModulesLoaded(timeoutMs = 1200) {
@@ -114,35 +41,129 @@ ColdTreasure post.js (Full Replace)
     });
   }
 
+  async function loadPostsFromAPI() {
+    const res = await fetch(`/api/posts?v=${Date.now()}`, { cache: "no-store" });
+    if (!res.ok) throw new Error(`Failed to load /api/posts (${res.status})`);
+    const data = await res.json();
+    return Array.isArray(data) ? data : [];
+  }
+
+  // ---- content render helpers ----
+  function renderBlock(block) {
+    if (!block || !block.type) return "";
+    if (block.type === "p") return `<p>${esc(block.text || "")}</p>`;
+    if (block.type === "h2") return `<h2>${esc(block.text || "")}</h2>`;
+    if (block.type === "ul") {
+      const items = (block.items || []).map((x) => `<li>${esc(x || "")}</li>`).join("");
+      return `<ul>${items}</ul>`;
+    }
+    return "";
+  }
+
+  function renderContent(content) {
+    // 1) 旧格式：block array
+    if (Array.isArray(content)) {
+      return content.map(renderBlock).join("");
+    }
+
+    // 2) 新格式：string（Notion 返回的正文，含 \n）
+    if (typeof content === "string") {
+      const text = content.replace(/\r\n/g, "\n").trim();
+      if (!text) return "";
+      // 按空行分段 -> <p>
+      const paras = text.split(/\n{2,}/g).map((p) => p.trim()).filter(Boolean);
+      return paras.map((p) => `<p>${esc(p).replace(/\n/g, "<br>")}</p>`).join("");
+    }
+
+    return "";
+  }
+
+  function pickHero(post) {
+    return post.thumb || post.cover || post.hero || post.image || "";
+  }
+
+  function renderPost(post) {
+    const brand = Array.isArray(post.brand) ? post.brand.join(" / ") : (post.brand || "");
+    const tags = Array.isArray(post.tags) ? post.tags : [];
+
+    const metaParts = [];
+    if (brand) metaParts.push(esc(brand));
+    if (post.date) metaParts.push(esc(post.date));
+    if (tags.length) metaParts.push(tags.map((t) => `#${esc(t)}`).join(" "));
+
+    const heroFocus = normalizeFocus(post.heroFocus);
+    const heroStyle = heroFocus ? ` style="--hero-focus:${esc(heroFocus)}"` : "";
+
+    const heroSrc = pickHero(post);
+    const heroHtml = heroSrc
+      ? `
+        <div class="hero"${heroStyle}>
+          <img src="${esc(heroSrc)}" alt="${esc(post.title || "")}" loading="eager" />
+        </div>
+      `
+      : "";
+
+    const contentHtml = renderContent(post.content);
+
+    const gallery = Array.isArray(post.gallery) ? post.gallery : [];
+    const galleryHtml = gallery.length
+      ? `
+        <section class="gallery">
+          <h2>Gallery</h2>
+          <div class="grid">
+            ${gallery.map((src) => `<img src="${esc(src)}" alt="" loading="lazy" />`).join("")}
+          </div>
+        </section>
+      `
+      : "";
+
+    return `
+      <article>
+        <h1>${esc(post.title || "Untitled")}</h1>
+        <div class="meta">${metaParts.join(" · ")}</div>
+        ${heroHtml}
+        ${post.summary ? `<div class="summary">${esc(post.summary)}</div>` : ""}
+        <div class="content">${contentHtml}</div>
+        ${galleryHtml}
+      </article>
+    `;
+  }
+
   // -------- boot --------
   const app = $("#app") || document.body;
-  const slugRaw = getSlug();
-
   await waitModulesLoaded();
 
-  if (!slugRaw) {
+  const { slug, id, key } = getKey();
+
+  if (!key) {
     app.innerHTML = `
       <div class="error">
         <b>Missing slug</b>
-        <div class="muted">URL 需要带参数：<code>?slug=xxx</code></div>
+        <div class="muted">URL 需要带参数：<code>?slug=xxx</code>（兼容 <code>?id=xxx</code>）</div>
       </div>
     `;
     return;
   }
 
   try {
-    const posts = await fetchPosts();
-    const slug = normSlug(slugRaw);
+    const posts = await loadPostsFromAPI();
 
-    // ✅ slug 大小写无关匹配
-    const post = posts.find((p) => p && normSlug(p.slug || "") === slug);
+    // 优先 slug 匹配，其次 id 匹配（兼容旧链接）
+    const post = posts.find((p) =>
+      p && (
+        (slug && String(p.slug || "") === slug) ||
+        (!slug && id && String(p.id || "") === id)
+      )
+    );
 
     if (!post) {
       app.innerHTML = `
         <div class="error">
           <b>Post not found</b>
-          <div class="muted">未找到 slug = <code>${esc(slugRaw)}</code> 的文章。</div>
-          <div class="muted" style="margin-top:8px;">请确认：Notion 里 publish 已勾选、slug 填对。</div>
+          <div class="muted">未找到：<code>${esc(key)}</code></div>
+          <div class="muted" style="margin-top:8px;">
+            重点检查：该条目在 Notion 中 <code>publish</code> 是否已勾选；以及 <code>slug</code> 是否填写正确。
+          </div>
         </div>
       `;
       return;
@@ -155,7 +176,7 @@ ColdTreasure post.js (Full Replace)
         <b>Load failed</b>
         <div class="muted">${esc(err?.message || err)}</div>
         <div class="muted" style="margin-top:8px;">
-          重点检查：<code>/api/posts</code> 是否可访问、Functions 是否部署成功。
+          重点检查：<code>/api/posts</code> 是否可访问（打开看是否返回 JSON）。
         </div>
       </div>
     `;
