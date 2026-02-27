@@ -1,6 +1,7 @@
 /* ===================================================
 ColdTreasure post.js (Full Replace)
-- Fetch from /api/posts (Notion -> Worker)
+- Primary: /api/posts (Notion -> Worker)
+- Fallback: /assets/data/posts.json (legacy)
 - Support:
   1) ?slug=xxx
   2) ?id=<Notion page id>
@@ -35,28 +36,67 @@ ColdTreasure post.js (Full Replace)
     return "";
   }
 
-  async function loadPosts() {
+  async function waitModulesLoaded(timeoutMs = 1200) {
+    await new Promise((resolve) => {
+      let done = false;
+      const finish = () => { if (done) return; done = true; resolve(); };
+      document.addEventListener("modules:loaded", finish, { once: true });
+      setTimeout(finish, timeoutMs);
+    });
+  }
+
+  // ---------- loaders ----------
+  async function loadNotionPosts() {
     const res = await fetch(`/api/posts?v=${Date.now()}`, { cache: "no-store" });
     if (!res.ok) throw new Error(`Failed to load /api/posts (${res.status})`);
     const data = await res.json();
     return Array.isArray(data) ? data : [];
   }
 
-  function renderContent(content) {
-    // Notion -> API 当前给的是纯文本（包含 \n）
+  async function loadLegacyPosts() {
+    const res = await fetch(`/assets/data/posts.json?v=${Date.now()}`, { cache: "no-store" });
+    if (!res.ok) throw new Error(`Failed to load posts.json (${res.status})`);
+    const data = await res.json();
+    return Array.isArray(data) ? data : [];
+  }
+
+  // Notion content: plain text -> <p>
+  function renderNotionContent(content) {
     const text = (content || "").toString().trim();
     if (!text) return "";
-
-    // 以空行分段；段内保留换行 -> <br>
     const paras = text.split(/\n\s*\n/g).map((p) => p.trim()).filter(Boolean);
-    return paras
-      .map((p) => `<p>${esc(p).replace(/\n/g, "<br>")}</p>`)
-      .join("");
+    return paras.map((p) => `<p>${esc(p).replace(/\n/g, "<br>")}</p>`).join("");
+  }
+
+  // Legacy content: blocks -> html
+  function renderLegacyBlock(block) {
+    if (!block || !block.type) return "";
+    if (block.type === "p") return `<p>${esc(block.text || "")}</p>`;
+    if (block.type === "h2") return `<h2>${esc(block.text || "")}</h2>`;
+    if (block.type === "ul") {
+      const items = (block.items || []).map((x) => `<li>${esc(x || "")}</li>`).join("");
+      return `<ul>${items}</ul>`;
+    }
+    return "";
+  }
+
+  function renderLegacyContent(arr) {
+    const blocks = Array.isArray(arr) ? arr : [];
+    return blocks.map(renderLegacyBlock).join("");
+  }
+
+  function isLegacyPost(post) {
+    // legacy posts.json 通常是 content: []
+    return Array.isArray(post?.content);
+  }
+
+  function pickHero(post) {
+    return post.thumb || post.cover || post.hero || post.image || "";
   }
 
   function renderPost(post) {
     const title = post.title || "Untitled";
-    const date = post.date || "";
+    const date = post.date || post.release_date || "";
     const tags = Array.isArray(post.tags) ? post.tags : [];
     const keywords = Array.isArray(post.keywords) ? post.keywords : [];
 
@@ -68,7 +108,7 @@ ColdTreasure post.js (Full Replace)
     const heroFocus = normalizeFocus(post.heroFocus);
     const heroStyle = heroFocus ? ` style="--hero-focus:${esc(heroFocus)}"` : "";
 
-    const heroSrc = post.thumb || post.cover || post.hero || post.image || "";
+    const heroSrc = pickHero(post);
     const heroHtml = heroSrc
       ? `
         <div class="hero"${heroStyle}>
@@ -78,9 +118,11 @@ ColdTreasure post.js (Full Replace)
       : "";
 
     const summaryHtml = post.summary ? `<div class="summary">${esc(post.summary)}</div>` : "";
-    const contentHtml = `<div class="content">${renderContent(post.content)}</div>`;
 
-    // gallery 如果你 API 以后补了，也能直接吃
+    const contentHtml = isLegacyPost(post)
+      ? `<div class="content">${renderLegacyContent(post.content)}</div>`
+      : `<div class="content">${renderNotionContent(post.content)}</div>`;
+
     const gallery = Array.isArray(post.gallery) ? post.gallery : [];
     const galleryHtml = gallery.length
       ? `
@@ -105,12 +147,16 @@ ColdTreasure post.js (Full Replace)
     `;
   }
 
-  async function waitModulesLoaded(timeoutMs = 1200) {
-    await new Promise((resolve) => {
-      let done = false;
-      const finish = () => { if (done) return; done = true; resolve(); };
-      document.addEventListener("modules:loaded", finish, { once: true });
-      setTimeout(finish, timeoutMs);
+  function findPost(posts, slug, id) {
+    return posts.find((p) => {
+      if (!p) return false;
+      const pSlug = String(p.slug || "");
+      const pId = String(p.id || "");
+
+      if (slug && pSlug === slug) return true;
+      if (!slug && id && pSlug === id) return true; // legacy: id=slug
+      if (!slug && id && pId === id) return true;   // notion: id=pageId
+      return false;
     });
   }
 
@@ -131,23 +177,18 @@ ColdTreasure post.js (Full Replace)
   }
 
   try {
-    const posts = await loadPosts();
+    // 1) try notion
+    let post = null;
+    try {
+      const notionPosts = await loadNotionPosts();
+      post = findPost(notionPosts, slug, id);
+    } catch (_) {}
 
-    // 兼容逻辑：
-    // 1) ?slug=xxx -> 按 slug
-    // 2) ?id=xxx 且 xxx 其实是 slug -> 也按 slug
-    // 3) ?id=Notion page id -> 按 id
-    const post = posts.find((p) => {
-      if (!p) return false;
-      const pSlug = String(p.slug || "");
-      const pId = String(p.id || "");
-
-      if (slug && pSlug === slug) return true;
-      if (!slug && id && pSlug === id) return true;   // legacy: id=slug
-      if (!slug && id && pId === id) return true;     // id=notionId
-
-      return false;
-    });
+    // 2) fallback legacy
+    if (!post) {
+      const legacyPosts = await loadLegacyPosts();
+      post = findPost(legacyPosts, slug, id);
+    }
 
     if (!post) {
       app.innerHTML = `
@@ -155,7 +196,8 @@ ColdTreasure post.js (Full Replace)
           <b>Post not found</b>
           <div class="muted">未找到：<code>${esc(slug || id)}</code></div>
           <div class="muted" style="margin-top:8px;">
-            重点检查：Notion 里该条 <code>publish</code> 是否已勾选，并且 <code>slug</code> 是否填写正确。
+            若是新文章：检查 Notion 的 <code>publish</code> 与 <code>slug</code>。<br>
+            若是旧文章：检查 <code>/assets/data/posts.json</code> 是否包含该 slug/id。
           </div>
         </div>
       `;
@@ -168,7 +210,6 @@ ColdTreasure post.js (Full Replace)
       <div class="error">
         <b>Load failed</b>
         <div class="muted">${esc(err?.message || err)}</div>
-        <div class="muted" style="margin-top:8px;">重点检查：<code>/api/posts</code> 是否能正常打开。</div>
       </div>
     `;
   }
