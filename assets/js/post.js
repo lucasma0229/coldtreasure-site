@@ -149,12 +149,23 @@ ColdTreasure post.js (Full Replace)
     const posts = await loadPostsFromAPI();
 
     // 优先 slug 匹配，其次 id 匹配（兼容旧链接）
-    const post = posts.find((p) =>
-      p && (
-        (slug && String(p.slug || "") === slug) ||
-        (!slug && id && String(p.id || "") === id)
-      )
-    );
+    const post = posts.find((p) => {
+      if (!p) return false;
+
+      const pSlug = String(p.slug || "");
+      const pId   = String(p.id || "");
+      
+      // 1) ?slug=xxx -> 优先按 slug 找
+      if (slug && pSlug === slug) return true;
+
+      // 2) 兼容旧链接：?id=xxx 但 xxx 其实是 slug
+      if (!slug && id && pSlug === id) return true;
+
+      // 3) 新逻辑：?id=xxx 且 xxx 是 Notion page id
+      if (!slug && id && pSlug === id) return true;
+
+      return false;
+    });
 
     if (!post) {
       app.innerHTML = `
