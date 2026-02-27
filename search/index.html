@@ -105,18 +105,24 @@
     const content = normLoose(post.content || "");
     const release = normLoose(post.release_info || "");
 
+    // ✅ NEW: slug 也参与搜索（你搜 gtcut1 就靠它）
+    const slug = normLoose(post.slug || "");
+
     const titleK = normKey(post.title || "");
     const keywordsK = normKey(Array.isArray(post.keywords) ? post.keywords.join(" ") : "");
     const contentK = normKey(post.content || "");
+    const slugK = normKey(post.slug || "");
 
     let sc = 0;
 
-    // 强匹配（归一化）
+    // ✅ 强匹配（归一化）—— slug 给最高权重
+    if (slugK.includes(qk)) sc += 12;
     if (titleK.includes(qk)) sc += 8;
     if (keywordsK.includes(qk)) sc += 6;
     if (contentK.includes(qk)) sc += 2;
 
-    // 普通 contains（兼容中文、完整短语）
+    // ✅ 普通 contains
+    if (slug.includes(q)) sc += 10;
     if (title.includes(q)) sc += 5;
     if (keywords.includes(q)) sc += 4;
     if (release.includes(q)) sc += 2;
