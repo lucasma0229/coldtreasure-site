@@ -133,18 +133,44 @@
     // ✅ 把 content（可能是 string，也可能是 blocks array）统一转成可读文本
     function contentToText(content){
       if (!content) return "";
-      if (typeof content === "string") return content.trim();
 
+      // 1) 直接是字符串：先判断是不是 JSON 字符串（旧文章常见）
+      if (typeof content === "string") {
+        const s = content.trim();
+
+        // 像 JSON（数组/对象）就尝试 parse
+        if ((s.startsWith("[") && s.endsWith("]")) || (s.startsWith("{") && s.endsWith("}"))) {
+          try {
+            const parsed = JSON.parse(s);
+            return contentToText(parsed); // 递归复用数组/对象逻辑
+          } catch (e) {
+            // parse 失败就当普通文本
+          }
+        }
+
+        return s;
+      }
+      // 2) content 是 blocks 数组：抽取可读文本
       if (Array.isArray(content)){
         const parts = [];
         for (const b of content){
           if (!b) continue;
+
           if (b.type === "p" && b.text) parts.push(String(b.text));
           else if (b.type === "h2" && b.text) parts.push(String(b.text));
           else if (b.type === "ul" && Array.isArray(b.items)) parts.push(b.items.join(" "));
-          if (parts.join(" ").length > 220) break; // 防御：别太长
+          else if (typeof b === "string") parts.push(b);
+
+          if (parts.join(" ").length > 240) break;
         }
         return parts.join(" ").replace(/\s+/g, " ").trim();
+      }
+
+      // 3) 对象兜底：有些数据会是 {text:"..."} 或别的结构
+      if (typeof content === "object"){
+        if (content.text) return String(content.text).trim();
+        try { return JSON.stringify(content); } catch(e) {}
+        return "";
       }
 
       return String(content).trim();
