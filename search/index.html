@@ -54,11 +54,26 @@
   function getQ(){ return new URL(location.href).searchParams.get("q")?.trim() || ""; }
 
   async function loadPosts(){
+  // 1) primary: /api/posts
+  try{
     const res = await fetch(`/api/posts?v=${Date.now()}`, { cache:"no-store" });
-    const data = await res.json();
+    const data = await res.json().catch(()=>null);
+
     if(!res.ok) throw new Error(data?.error || `Failed to load /api/posts (${res.status})`);
-    return Array.isArray(data) ? data : [];
+
+    const arr = Array.isArray(data) ? data : (Array.isArray(data?.posts) ? data.posts : []);
+    if(arr && arr.length) return arr;
+    // 如果 API 返回空数组，就继续走 fallback
+  }catch(e){
+    // ignore, fallback
   }
+
+  // 2) fallback: /assets/data/posts.json
+  const res2 = await fetch(`/assets/data/posts.json?v=${Date.now()}`, { cache:"no-store" });
+  if(!res2.ok) throw new Error(`Failed to load /assets/data/posts.json (${res2.status})`);
+  const data2 = await res2.json();
+  return Array.isArray(data2) ? data2 : (Array.isArray(data2?.posts) ? data2.posts : []);
+}
 
   // 把一篇文章“可搜索文本”拼起来（对齐 /api/posts 结构）
   function haystack(post){
