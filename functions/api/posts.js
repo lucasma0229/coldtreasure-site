@@ -54,7 +54,6 @@ export async function onRequest(context) {
       const body = {
         page_size: 100,
         sorts: [{ property: "date", direction: "descending" }],
-        ...(all ? {} : { filter: { property: "publish", checkbox: { equals: true } } }),
         ...(start_cursor ? { start_cursor } : {}),
       };
 
