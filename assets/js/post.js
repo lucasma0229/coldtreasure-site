@@ -1,216 +1,199 @@
-/* ===================================================
-ColdTreasure post.js (Full Replace)
-- Primary: /api/posts (Notion -> Worker)
-- Fallback: /assets/data/posts.json (legacy)
-- Support:
-  1) ?slug=xxx
-  2) ?id=<Notion page id>
-  3) legacy: ?id=slug
-=================================================== */
-(async function () {
-  const $ = (sel) => document.querySelector(sel);
+// /assets/js/post.js
+(() => {
+  const $app = document.getElementById("app");
 
-  function esc(s = "") {
-    return String(s).replace(/[&<>"']/g, (m) => ({
+  const esc = (s = "") =>
+    String(s ?? "").replace(/[&<>"']/g, (m) => ({
       "&": "&amp;",
       "<": "&lt;",
       ">": "&gt;",
       '"': "&quot;",
       "'": "&#39;",
     }[m]));
+
+  const getParam = (name) => {
+    try { return new URL(location.href).searchParams.get(name) || ""; }
+    catch { return ""; }
+  };
+
+  const norm = (s = "") => String(s ?? "").trim();
+
+  const addCacheBuster = (url, v) => {
+    const s = String(url || "");
+    if (!s) return "";
+    // 已有 query 就不强加，避免破坏签名 URL（Notion/S3）
+    return s.includes("?") ? s : `${s}?v=${encodeURIComponent(v || "1")}`;
+  };
+
+  const showError = (msg) => {
+    $app.innerHTML = `<div class="error"><b>Load failed</b><div style="margin-top:8px;">${esc(msg)}</div></div>`;
+  };
+
+  // ✅ 从 /api/posts 读取（Notion + 静态已合并）
+  async function loadPosts() {
+    const res = await fetch(`/api/posts?v=${Date.now()}`, { cache: "no-store" });
+    const data = await res.json().catch(() => null);
+    if (!res.ok) throw new Error(data?.error || `Failed to load /api/posts (${res.status})`);
+    if (Array.isArray(data)) return data;
+    if (Array.isArray(data?.posts)) return data.posts; // debug=1 兼容
+    return [];
   }
 
-  function getParams() {
-    const u = new URL(location.href);
-    return {
-      slug: (u.searchParams.get("slug") || "").trim(),
-      id: (u.searchParams.get("id") || "").trim(),
-    };
+  // ✅ 旧静态 blocks 渲染
+  function renderBlocks(blocks) {
+    if (!Array.isArray(blocks)) return "";
+    return blocks.map((b) => {
+      const type = String(b?.type || "").toLowerCase();
+
+      if (type === "h2") return `<h2>${esc(b?.text || "")}</h2>`;
+      if (type === "p") return `<p>${esc(b?.text || "")}</p>`;
+      if (type === "quote" || type === "blockquote") return `<div style="margin:14px 0;padding:10px 12px;border-left:3px solid rgba(0,0,0,.12);background:rgba(0,0,0,.03);border-radius:10px;">${esc(b?.text || "")}</div>`;
+
+      if (type === "ul") {
+        const items = Array.isArray(b?.items) ? b.items : [];
+        return `<ul>${items.map((it) => `<li>${esc(it)}</li>`).join("")}</ul>`;
+      }
+
+      if (type === "ol") {
+        const items = Array.isArray(b?.items) ? b.items : [];
+        return `<ol>${items.map((it) => `<li>${esc(it)}</li>`).join("")}</ol>`;
+      }
+
+      // 兜底
+      const t = b?.text != null ? String(b.text) : "";
+      return t ? `<p>${esc(t)}</p>` : "";
+    }).join("");
   }
 
-  function normalizeFocus(v) {
-    if (!v) return "";
-    if (typeof v === "string") return v.trim();
-    if (Array.isArray(v) && v.length >= 2) return `${v[0]}% ${v[1]}%`;
-    if (typeof v === "object" && v.x != null && v.y != null) return `${v.x}% ${v.y}%`;
-    return "";
+  // ✅ 兼容三种 content：
+  // 1) string（Notion）
+  // 2) array（旧静态 blocks）
+  // 3) string but JSON（旧静态被序列化）
+  function renderContent(post) {
+    const c = post?.content;
+
+    if (Array.isArray(c)) return renderBlocks(c);
+
+    const s = String(c ?? "").trim();
+    if (!s) return "";
+
+    // 可能是 JSON 字符串
+    if ((s.startsWith("[") && s.endsWith("]")) || (s.startsWith("{") && s.endsWith("}"))) {
+      try {
+        const parsed = JSON.parse(s);
+        if (Array.isArray(parsed)) return renderBlocks(parsed);
+      } catch { /* ignore */ }
+    }
+
+    // 普通文本：按空行分段
+    const parts = s.split(/\n{2,}/).map((x) => x.trim()).filter(Boolean);
+    if (parts.length) return parts.map(p => `<p>${esc(p).replace(/\n/g, "<br>")}</p>`).join("");
+    return `<p>${esc(s)}</p>`;
   }
 
-  async function waitModulesLoaded(timeoutMs = 1200) {
+  function pickPost(posts, slug, id) {
+    const s = norm(slug);
+    const i = norm(id);
+
+    if (s) {
+      const hit = posts.find(p => norm(p?.slug) === s);
+      if (hit) return hit;
+    }
+    if (i) {
+      // 旧文章：很多用 id
+      const hit = posts.find(p => norm(p?.id) === i);
+      if (hit) return hit;
+
+      // 兜底：有时旧数据把 id 放在 slug（或反过来）
+      const hit2 = posts.find(p => norm(p?.slug) === i);
+      if (hit2) return hit2;
+    }
+    return null;
+  }
+
+  function renderGallery(urls) {
+    const arr = Array.isArray(urls) ? urls.filter(Boolean) : [];
+    if (!arr.length) return "";
+    return `
+      <section class="gallery">
+        <h2>Gallery</h2>
+        <div class="grid">
+          ${arr.map(u => `<img src="${esc(addCacheBuster(u, "1"))}" alt="" loading="lazy">`).join("")}
+        </div>
+      </section>
+    `;
+  }
+
+  async function main() {
+    // 等 header/footer include 注入（避免布局跳）
     await new Promise((resolve) => {
       let done = false;
       const finish = () => { if (done) return; done = true; resolve(); };
       document.addEventListener("modules:loaded", finish, { once: true });
-      setTimeout(finish, timeoutMs);
+      setTimeout(finish, 1200);
     });
-  }
 
-  // ---------- loaders ----------
-  async function loadNotionPosts() {
-    const res = await fetch(`/api/posts?v=${Date.now()}`, { cache: "no-store" });
-    if (!res.ok) throw new Error(`Failed to load /api/posts (${res.status})`);
-    const data = await res.json();
-    return Array.isArray(data) ? data : [];
-  }
+    const slug = getParam("slug");
+    const id = getParam("id");
 
-  async function loadLegacyPosts() {
-    const res = await fetch(`/assets/data/posts.json?v=${Date.now()}`, { cache: "no-store" });
-    if (!res.ok) throw new Error(`Failed to load posts.json (${res.status})`);
-    const data = await res.json();
-    return Array.isArray(data) ? data : [];
-  }
-
-  // Notion content: plain text -> <p>
-  function renderNotionContent(content) {
-    const text = (content || "").toString().trim();
-    if (!text) return "";
-    const paras = text.split(/\n\s*\n/g).map((p) => p.trim()).filter(Boolean);
-    return paras.map((p) => `<p>${esc(p).replace(/\n/g, "<br>")}</p>`).join("");
-  }
-
-  // Legacy content: blocks -> html
-  function renderLegacyBlock(block) {
-    if (!block || !block.type) return "";
-    if (block.type === "p") return `<p>${esc(block.text || "")}</p>`;
-    if (block.type === "h2") return `<h2>${esc(block.text || "")}</h2>`;
-    if (block.type === "ul") {
-      const items = (block.items || []).map((x) => `<li>${esc(x || "")}</li>`).join("");
-      return `<ul>${items}</ul>`;
+    if (!slug && !id) {
+      showError("Missing slug or id");
+      return;
     }
-    return "";
-  }
 
-  function renderLegacyContent(arr) {
-    const blocks = Array.isArray(arr) ? arr : [];
-    return blocks.map(renderLegacyBlock).join("");
-  }
+    try {
+      const posts = await loadPosts();
+      const post = pickPost(posts, slug, id);
 
-  function isLegacyPost(post) {
-    // legacy posts.json 通常是 content: []
-    return Array.isArray(post?.content);
-  }
+      if (!post) {
+        showError("Post not found");
+        return;
+      }
 
-  function pickHero(post) {
-    return post.thumb || post.cover || post.hero || post.image || "";
-  }
+      const title = post.title || "Untitled";
+      const date = post.date || "";
+      const brand = post.brand || "";
+      const summary = (post.summary || "").trim();
+      const cover = post.cover || post.hero || post.thumb || post.image || "";
+      const gallery = post.gallery || [];
 
-  function renderPost(post) {
-    const title = post.title || "Untitled";
-    const date = post.date || post.release_date || "";
-    const tags = Array.isArray(post.tags) ? post.tags : [];
-    const keywords = Array.isArray(post.keywords) ? post.keywords : [];
+      // hero focus（可选字段）
+      if (post?.hero_focus) {
+        document.documentElement.style.setProperty("--hero-focus", String(post.hero_focus));
+      }
 
-    const metaParts = [];
-    if (date) metaParts.push(esc(date));
-    if (tags.length) metaParts.push(tags.map((t) => `#${esc(t)}`).join(" "));
-    if (keywords.length) metaParts.push(keywords.map((k) => `@${esc(k)}`).join(" "));
+      const metaBits = [];
+      if (brand) metaBits.push(esc(brand));
+      if (date) metaBits.push(esc(date));
+      if (Array.isArray(post.keywords) && post.keywords.length) {
+        metaBits.push("@ " + esc(post.keywords.slice(0, 4).join(" / ")));
+      }
 
-    const heroFocus = normalizeFocus(post.heroFocus);
-    const heroStyle = heroFocus ? ` style="--hero-focus:${esc(heroFocus)}"` : "";
+      const heroHtml = cover
+        ? `<div class="hero"><img src="${esc(addCacheBuster(cover, date || "1"))}" alt="${esc(title)}" loading="lazy"></div>`
+        : "";
 
-    const heroSrc = pickHero(post);
-    const heroHtml = heroSrc
-      ? `
-        <div class="hero"${heroStyle}>
-          <img src="${esc(heroSrc)}" alt="${esc(title)}" loading="eager" />
-        </div>
-      `
-      : "";
+      const summaryHtml = summary ? `<div class="summary">${esc(summary)}</div>` : "";
+      const contentHtml = `<div class="content">${renderContent(post)}</div>`;
+      const galleryHtml = renderGallery(gallery);
 
-    const summaryHtml = post.summary ? `<div class="summary">${esc(post.summary)}</div>` : "";
-
-    const contentHtml = isLegacyPost(post)
-      ? `<div class="content">${renderLegacyContent(post.content)}</div>`
-      : `<div class="content">${renderNotionContent(post.content)}</div>`;
-
-    const gallery = Array.isArray(post.gallery) ? post.gallery : [];
-    const galleryHtml = gallery.length
-      ? `
-        <section class="gallery">
-          <h2>Gallery</h2>
-          <div class="grid">
-            ${gallery.map((src) => `<img src="${esc(src)}" alt="" loading="lazy" />`).join("")}
-          </div>
-        </section>
-      `
-      : "";
-
-    return `
-      <article>
-        <h1>${esc(title)}</h1>
-        <div class="meta">${metaParts.join(" · ")}</div>
+      $app.innerHTML = `
+        <header>
+          <h1>${esc(title)}</h1>
+          <div class="meta">${metaBits.join(" · ")}</div>
+        </header>
         ${heroHtml}
         ${summaryHtml}
         ${contentHtml}
         ${galleryHtml}
-      </article>
-    `;
-  }
-
-  function findPost(posts, slug, id) {
-    return posts.find((p) => {
-      if (!p) return false;
-      const pSlug = String(p.slug || "");
-      const pId = String(p.id || "");
-
-      if (slug && pSlug === slug) return true;
-      if (!slug && id && pSlug === id) return true; // legacy: id=slug
-      if (!slug && id && pId === id) return true;   // notion: id=pageId
-      return false;
-    });
-  }
-
-  // -------- boot --------
-  const app = $("#app") || document.body;
-  const { slug, id } = getParams();
-
-  await waitModulesLoaded();
-
-  if (!slug && !id) {
-    app.innerHTML = `
-      <div class="error">
-        <b>Missing slug / id</b>
-        <div class="muted">URL 需要带参数：<code>?slug=xxx</code> 或 <code>?id=xxx</code></div>
-      </div>
-    `;
-    return;
-  }
-
-  try {
-    // 1) try notion
-    let post = null;
-    try {
-      const notionPosts = await loadNotionPosts();
-      post = findPost(notionPosts, slug, id);
-    } catch (_) {}
-
-    // 2) fallback legacy
-    if (!post) {
-      const legacyPosts = await loadLegacyPosts();
-      post = findPost(legacyPosts, slug, id);
-    }
-
-    if (!post) {
-      app.innerHTML = `
-        <div class="error">
-          <b>Post not found</b>
-          <div class="muted">未找到：<code>${esc(slug || id)}</code></div>
-          <div class="muted" style="margin-top:8px;">
-            若是新文章：检查 Notion 的 <code>publish</code> 与 <code>slug</code>。<br>
-            若是旧文章：检查 <code>/assets/data/posts.json</code> 是否包含该 slug/id。
-          </div>
-        </div>
       `;
-      return;
-    }
 
-    app.innerHTML = renderPost(post);
-  } catch (err) {
-    app.innerHTML = `
-      <div class="error">
-        <b>Load failed</b>
-        <div class="muted">${esc(err?.message || err)}</div>
-      </div>
-    `;
+      document.title = `ColdTreasure | ${title}`;
+    } catch (err) {
+      showError(err?.message || String(err));
+    }
   }
+
+  // go
+  if ($app) main();
 })();
