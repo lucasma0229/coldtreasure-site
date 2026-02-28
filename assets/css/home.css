@@ -233,10 +233,22 @@ body.page-home{
   .ct-hero__caption{ max-width:calc(100% - 36px); }
 
   .entry-strip__inner{
-    grid-template-columns:repeat(3, 1fr);
+    grid-template-columns: repeat(5, 1fr) !important; /* 关键：手机端也保持 5 列 */
   }
-  .entry-item:nth-child(3){ border-right:0; }
-
+   
+  .entry-item{
+     padding: 14px 6px 12px !important; /* 变紧凑，避免被挤爆 */
+     min-width: 0;
+  }
+  .entry-en{
+     font-size: 10px !important;
+     letter-spacing: .16em !important;
+  }
+  .entry-cn{
+     font-size: 12px !important;
+     letter-spacing: .08em !important;
+  }
+  /* 手机端建议隐藏第三行描述（否则每格太挤） */
   .entry-desc{ display:none; }
 }
 
