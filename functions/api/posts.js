@@ -7,12 +7,11 @@ export async function onRequest(context) {
   const all = url.searchParams.get("all") === "1";
   const debug = url.searchParams.get("debug") === "1";
 
-  const version = "posts-api-merge-2026-02-27-02";
+  const version = "posts-api-merge-2026-02-28-01";
 
-  // 静态 JSON 真实路径（你已确认浏览器能打开）
+  // 你已确认可访问
   const STATIC_PATH = "/assets/data/posts.json";
 
-  // 用于 debug：告诉我们静态源到底怎么失败的
   let staticDebug = null;
 
   // ---------- Safe readers (Notion props) ----------
@@ -52,6 +51,14 @@ export async function onRequest(context) {
 
   const safeCheckbox = (prop) => (prop?.type === "checkbox" ? !!prop.checkbox : false);
 
+  // 兼容：Notion 字段名可能是中文“首页摘要”
+  const pickNotionProp = (props, candidates = []) => {
+    for (const key of candidates) {
+      if (props && props[key]) return props[key];
+    }
+    return null;
+  };
+
   // ---------- Notion query with auto pagination ----------
   async function queryNotionAllPages() {
     // 没配 Notion 也能工作（只返回静态源）
@@ -82,7 +89,6 @@ export async function onRequest(context) {
       });
 
       const data = await res.json().catch(() => null);
-
       if (!res.ok) {
         return { ok: false, status: 500, error: { error: "Notion API error", detail: data } };
       }
@@ -92,27 +98,22 @@ export async function onRequest(context) {
       start_cursor = data?.next_cursor || undefined;
       pages += 1;
 
-      if (pages > 20) break; // 防御
+      if (pages > 20) break;
     } while (has_more);
 
     return { ok: true, results: out, meta: { pages, has_more } };
   }
 
   // ---------- Load static posts.json (robust) ----------
-  // 策略：
-  // 1) 优先：ASSETS.fetch（如果存在）
-  // 2) fallback：同源 fetch（用真实 origin + cache bust），并尽量避免缓存
   async function loadStaticPosts() {
     const origin = url.origin;
     const bust = `v=${Date.now()}`;
     const absoluteUrl = `${origin}${STATIC_PATH}?${bust}`;
 
-    // helper to parse
     const parseJsonArray = async (res, channel) => {
       const ct = res.headers.get("content-type") || "";
       const text = await res.text();
 
-      // debug 记录（只记录第一次成功/失败的信息，避免太长）
       if (!staticDebug) {
         staticDebug = {
           channel,
@@ -120,7 +121,7 @@ export async function onRequest(context) {
           status: res.status,
           ok: res.ok,
           contentType: ct,
-          head: text.slice(0, 120),
+          head: text.slice(0, 160),
           hasASSETS: !!context.env.ASSETS,
         };
       }
@@ -137,13 +138,10 @@ export async function onRequest(context) {
     // 1) ASSETS.fetch
     try {
       if (context.env.ASSETS?.fetch) {
-        // 更稳的写法：给一个“正常 host”，只取 pathname
         const reqUrl = new URL(STATIC_PATH, "https://assets.local");
         const res = await context.env.ASSETS.fetch(new Request(reqUrl.toString()));
         const arr = await parseJsonArray(res, "ASSETS");
         if (arr.length) return arr;
-
-        // 如果 ASSETS 返回了但解析不到（例如返回 HTML），继续 fallback
       }
     } catch (e) {
       if (!staticDebug) staticDebug = { channel: "ASSETS", error: String(e?.message || e), hasASSETS: !!context.env.ASSETS };
@@ -153,51 +151,83 @@ export async function onRequest(context) {
     try {
       const res = await fetch(absoluteUrl, {
         cache: "no-store",
-        // cf 参数对 Pages/Workers 有用（尽量不缓存）
         cf: { cacheTtl: 0, cacheEverything: false },
       });
-      const arr = await parseJsonArray(res, "ORIGIN_FETCH");
-      return arr;
+      return await parseJsonArray(res, "ORIGIN_FETCH");
     } catch (e) {
       if (!staticDebug) staticDebug = { channel: "ORIGIN_FETCH", error: String(e?.message || e) };
       return [];
     }
   }
 
-  // ---------- Normalize + merge ----------
+  // ---------- Helpers: normalize / derive ----------
+  const normStr = (v) => String(v ?? "").trim();
+
+  // 把静态 content(blocks) 转成可搜索的纯文本（给 Search/News 摘要用）
+  function blocksToText(blocks) {
+    if (!Array.isArray(blocks)) return "";
+    return blocks
+      .map(b => {
+        if (!b) return "";
+        if (typeof b === "string") return b;
+        if (Array.isArray(b?.items)) return b.items.join(" ");
+        return b.text || "";
+      })
+      .filter(Boolean)
+      .join("\n");
+  }
+
   function normalizePost(p, source) {
     if (!p) return null;
 
-    // 旧 posts.json 里一般用 id；Notion 用 slug
-    const id = String(p.id || "").trim();
-    const slug = String(p.slug || "").trim();
-    const title = String(p.title || "").trim();
+    const rawId = normStr(p.id);
+    const rawSlug = normStr(p.slug);
+    const rawTitle = normStr(p.title);
 
-    if (!id && !slug && !title) return null;
+    if (!rawId && !rawSlug && !rawTitle) return null;
 
-    // 兼容旧数据：hero/image/thumb 也可能存在
-    const cover = p.cover || p.hero || p.image || p.thumb || "";
+    // 兼容旧数据：hero/image/thumb
+    const cover = normStr(p.cover || p.hero || p.image || p.thumb);
+
+    // content：可能是 string，也可能是 blocks array
+    const contentIsBlocks = Array.isArray(p.content);
+    const content_blocks = contentIsBlocks ? p.content : [];
+    const content_text =
+      typeof p.content === "string"
+        ? p.content
+        : (contentIsBlocks ? blocksToText(p.content) : (p.content ? JSON.stringify(p.content) : ""));
+
+    // summary：静态源常用 summary；Notion 我们会映射 summary
+    const summary = normStr(p.summary);
+
+    const date = normStr(p.date);
+    const brand = normStr(p.brand);
+    const release_info = normStr(p.release_info);
+
+    // slug 兜底：没有 slug 的旧文用 id
+    const slug = rawSlug || rawId;
 
     return {
-      id: p.id || slug || id || title,
-      title,
-      slug: slug || id, // 没 slug 的旧文，用 id 兜底
+      id: rawId || slug || rawTitle,
+      slug,
+      title: rawTitle,
+      date,
+      brand,
       cover,
-      date: p.date || "",
-      content: typeof p.content === "string" ? p.content : (p.content ? JSON.stringify(p.content) : ""),
-      gallery: Array.isArray(p.gallery) ? p.gallery : [],
+      summary,                // ✅ 首页摘要 / 列表摘要
+      release_info,           // ✅ 发售信息
       keywords: Array.isArray(p.keywords) ? p.keywords : (Array.isArray(p.tags) ? p.tags : []),
-      publish: typeof p.publish === "boolean" ? p.publish : true, // 静态源默认已发布
-      brand: p.brand || "",
-      release_info: p.release_info || "",
+      gallery: Array.isArray(p.gallery) ? p.gallery : [],
+      publish: typeof p.publish === "boolean" ? p.publish : true,
+
+      // ✅ 关键：同时给两种 content
+      content: content_text,         // 给旧逻辑/搜索用（string）
+      content_blocks,               // 给新版 post.js 用（结构化数组）
       source,
     };
   }
 
-  function dateKey(d) {
-    const s = String(d || "").trim();
-    return s ? s : "0000-00-00";
-  }
+  const dateKey = (d) => (normStr(d) ? normStr(d) : "0000-00-00");
 
   try {
     // 1) Notion
@@ -213,6 +243,11 @@ export async function onRequest(context) {
     let notionPosts = notionResults
       .map((row) => {
         const props = row.properties || {};
+
+        // ✅ 兼容“首页摘要”字段名（也兼容 summary/home_summary 这种英文命名）
+        const summaryProp = pickNotionProp(props, ["首页摘要", "summary", "home_summary", "excerpt"]);
+        const summary = safeText(summaryProp);
+
         return normalizePost(
           {
             id: row.id,
@@ -226,35 +261,28 @@ export async function onRequest(context) {
             publish: safeCheckbox(props.publish),
             brand: safeText(props.brand),
             release_info: safeText(props.release_info),
+            summary, // ✅
           },
           "notion"
         );
       })
       .filter(Boolean);
 
-    // 默认只吐 publish=true 的 Notion；?all=1 则吐全部
     if (!all) notionPosts = notionPosts.filter(p => p.publish === true);
 
     // 2) Static
     const staticRaw = await loadStaticPosts();
     const staticPosts = staticRaw.map(p => normalizePost(p, "static")).filter(Boolean);
 
-    // 3) Merge（Notion 覆盖静态：同 slug 认为同一篇）
+    // 3) Merge：Notion 覆盖静态（同 slug 认为同一篇）
     const map = new Map();
-
-    for (const p of staticPosts) {
-      map.set(String(p.slug || p.id), p);
-    }
-    for (const p of notionPosts) {
-      map.set(String(p.slug || p.id), p);
-    }
+    for (const p of staticPosts) map.set(String(p.slug || p.id), p);
+    for (const p of notionPosts) map.set(String(p.slug || p.id), p);
 
     const merged = Array.from(map.values()).sort((a, b) => dateKey(b.date).localeCompare(dateKey(a.date)));
 
-    // Debug response
     if (debug) {
       const samplePropertyNames = notionResults?.[0]?.properties ? Object.keys(notionResults[0].properties) : [];
-
       return new Response(
         JSON.stringify(
           {
@@ -279,10 +307,11 @@ export async function onRequest(context) {
       );
     }
 
-    // 默认：返回数组（兼容你 Search 现有写法）
+    // 默认：数组（兼容现有前端）
     return new Response(JSON.stringify(merged), {
       headers: { "Content-Type": "application/json; charset=utf-8" },
     });
+
   } catch (err) {
     return new Response(JSON.stringify({ error: String(err?.stack || err) }, null, 2), {
       status: 500,
