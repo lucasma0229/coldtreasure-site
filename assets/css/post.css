@@ -3,13 +3,101 @@
    只影响文章页
    =================================================== */
 
-.page-post .hero{
-  overflow:hidden;
-  border-radius:var(--radius);
+/* 兼容两种页面标识：
+   1) 未来你可能会用 body.page-post
+   2) 现在 post/index.html 用 template 渲染 <article class="post">
+*/
+.page-post .post,
+.post {
+  /* 这里不强行设字体/宽度，避免与 main.css 冲突 */
 }
 
-.page-post .hero img{
-  width:100%;
-  height:auto;
-  display:block;
+/* Hero */
+.page-post .hero,
+.post .hero {
+  overflow: hidden;
+  border-radius: var(--radius, 14px);
+}
+
+.page-post .hero img,
+.post .hero img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+/* Meta（如 main.css 已定义，这里只做兜底，不抢权重） */
+.post .meta {
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+/* Content typography: 兜底 */
+.post .post-content {
+  font-size: 16px;
+  line-height: 1.85;
+}
+
+.post .post-content h2 {
+  font-size: 18px;
+  margin: 22px 0 10px;
+}
+
+.post .post-content p {
+  margin: 12px 0;
+}
+
+.post .post-content ul,
+.post .post-content ol {
+  margin: 10px 0 14px 18px;
+}
+
+/* ===================================================
+   Release Info (发售信息) — 核心升级点
+   这个区块由 post.js 固定渲染 / 或从旧文迁移而来
+   =================================================== */
+
+.post .post-release {
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid var(--hair, rgba(18,18,18,.14));
+}
+
+.post .post-release h2 {
+  font-size: 18px;
+  margin: 0 0 10px;
+}
+
+/* 迁移过来的内容可能是 <ul> 或多个 <p>，都要兼容 */
+.post .post-release__body p {
+  margin: 10px 0;
+}
+
+.post .post-release__body ul,
+.post .post-release__body ol {
+  margin: 10px 0 0 18px;
+}
+
+.post .post-release__body li {
+  margin: 6px 0;
+}
+
+/* 如果 releaseBody 里只有单段文本，也不要显得太挤 */
+.post .post-release__body:empty {
+  display: none;
+}
+
+/* Gallery */
+.post .post-gallery {
+  margin-top: 26px;
+}
+
+.post .post-gallery h2 {
+  font-size: 18px;
+  margin: 0 0 10px;
+}
+
+.post .post-grid img {
+  border-radius: 12px;
 }
