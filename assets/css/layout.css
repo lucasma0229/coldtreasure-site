@@ -54,6 +54,7 @@ body{
   color:inherit;
   display:flex;
   align-items:center;
+  min-width:0; /* 允许在手机端收缩避免挤压 */
 }
 .brand-name{
   font-size:12px;
@@ -121,31 +122,45 @@ html.ct-nav--overlay .brand-slogan{
 
 /* default: no offset */
 body{ padding-top:0; }
-
 /* 非首页：永远让位 */
 body:not(.page-home){ padding-top:var(--navH); }
-
 /* 首页：只有在 solid 状态才让位；overlay 时不让位 */
 html.ct-nav--solid body.page-home{ padding-top:var(--navH); }
 html.ct-nav--overlay body.page-home{ padding-top:0; }
 
-/* =========================
-   Mobile: hide top nav links (keep logo + search)
-   ========================= */
+/* ===================================================
+   Mobile: simplify topbar + constrain search width
+   - hide nav links (News/Record/Archive)
+   - search width ~ right 1/3
+   - keep brand from being squeezed
+   =================================================== */
 @media (max-width: 768px){
-  .topbar .nav{ display:none !important; }
 
-  /* 让 topbar 只剩品牌和搜索时不挤、不叠 */
-  .topbar{
-    gap: 12px;
-    align-items: center;
+  .topbar .nav{
+    display:none !important;
   }
 
-  /* 尽量兼容你不同的 search 写法 */
+  .topbar{
+    gap:12px;
+    align-items:center;
+    justify-content:space-between;
+  }
+
+  /* Brand text: prevent wrap/overlap */
+  .brand-name,
+  .brand-slogan{
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+
+  /* Search: keep it "reasonable" (about right 1/3) */
   .topbar input[type="search"],
   .topbar .search input,
   .topbar .search-input{
-    width: min(56vw, 280px);
-    max-width: 280px;
+    flex:0 0 auto;
+    width:34vw !important;
+    max-width:220px !important;
+    min-width:140px !important;
   }
 }
