@@ -9,7 +9,6 @@
 
   <style>
     :root { --w: 980px; --muted:#777; --line:#eee; }
-
     body{
       margin:0;
       font-family: system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans SC", Arial;
@@ -53,6 +52,23 @@
     .content p{ margin: 12px 0; }
     .content ul{ margin: 10px 0 14px 18px; }
 
+    /* ✅ 新增：发售信息独立区（结构钉死，内容由 post.js 填充） */
+    .post-release{
+      margin-top: 22px;
+      padding-top: 18px;
+      border-top: 1px solid var(--line);
+    }
+    .post-release h2{
+      font-size:18px;
+      margin: 0 0 10px;
+    }
+    .post-release ul{
+      margin: 10px 0 0 18px;
+    }
+    .post-release p{
+      margin: 10px 0;
+    }
+
     .gallery{ margin-top:26px; }
     .gallery h2{ font-size:18px; margin:0 0 10px; }
     .grid{ display:grid; grid-template-columns: repeat(2, 1fr); gap:10px; }
@@ -77,9 +93,8 @@
   <!-- ✅ 统一：在脚本前声明页面类型 -->
   <script>window.CT_PAGE = "post";</script>
   <script src="/assets/js/include.v3.js?v=3" defer></script>
-
   <!-- ✅ 重要：post 页只需要 post.js（不要再加载 app.js） -->
-  <script src="/assets/js/post.js?v=4" defer></script>
+  <script src="/assets/js/post.js?v=5" defer></script>
 </head>
 
 <body>
@@ -91,5 +106,34 @@
   </main>
 
   <div data-include="/modules/footer/footer.html"></div>
+
+  <!-- ✅ 结构模板（可选）：给 post.js 复制用，避免 innerHTML 写错 -->
+  <template id="tpl-post">
+    <article class="post">
+      <header class="post-head">
+        <h1 class="post-title"></h1>
+        <div class="meta post-meta"></div>
+      </header>
+
+      <figure class="hero">
+        <img class="post-hero" alt="" />
+      </figure>
+
+      <div class="summary post-summary"></div>
+
+      <section class="content post-content"></section>
+
+      <!-- ✅ 发售信息固定出口：旧文从正文提取过来 / 新文直接渲染 -->
+      <section class="post-release" data-release>
+        <h2>发售信息</h2>
+        <div class="post-release__body" data-release-body></div>
+      </section>
+
+      <section class="gallery post-gallery" hidden>
+        <h2>图集</h2>
+        <div class="grid post-grid"></div>
+      </section>
+    </article>
+  </template>
 </body>
 </html>
