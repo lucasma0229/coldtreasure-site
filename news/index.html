@@ -130,27 +130,45 @@
       return normLoose(q).split(/\s+/).map(s => s.trim()).filter(Boolean);
     }
 
+    // ✅ 判断“签名/临时图片链接”：一律不能拼 v（否则签名失效 -> 裂图）
+    function isSignedImageUrl(url){
+      const u = String(url || "");
+      if(!u) return false;
+      // Notion / AWS presigned 常见特征
+      return (
+        /[?&]X-Amz-/i.test(u) ||
+        /notion\.so\/image/i.test(u) ||
+        /[?&]signature=/i.test(u) ||
+        /[?&]token=/i.test(u)
+      );
+    }
+
+    // ✅ 统一生成图片 src：签名图原样；静态图才加 ?v=
+    function safeImgSrc(url, v){
+      const u = String(url || "").trim();
+      if(!u) return "";
+      if (isSignedImageUrl(u)) return u;
+
+      // 已经有 query 的静态图：用 &v= 追加
+      if (u.includes("?")) return `${u}&v=${encodeURIComponent(v || Date.now())}`;
+      return `${u}?v=${encodeURIComponent(v || Date.now())}`;
+    }
+
     // ✅ 把 content（可能是 string，也可能是 blocks array）统一转成可读文本
     function contentToText(content){
       if (!content) return "";
 
-      // 1) 直接是字符串：先判断是不是 JSON 字符串（旧文章常见）
       if (typeof content === "string") {
         const s = content.trim();
-
-        // 像 JSON（数组/对象）就尝试 parse
         if ((s.startsWith("[") && s.endsWith("]")) || (s.startsWith("{") && s.endsWith("}"))) {
           try {
             const parsed = JSON.parse(s);
-            return contentToText(parsed); // 递归复用数组/对象逻辑
-          } catch (e) {
-            // parse 失败就当普通文本
-          }
+            return contentToText(parsed);
+          } catch (e) {}
         }
-
         return s;
       }
-      // 2) content 是 blocks 数组：抽取可读文本
+
       if (Array.isArray(content)){
         const parts = [];
         for (const b of content){
@@ -166,7 +184,6 @@
         return parts.join(" ").replace(/\s+/g, " ").trim();
       }
 
-      // 3) 对象兜底：有些数据会是 {text:"..."} 或别的结构
       if (typeof content === "object"){
         if (content.text) return String(content.text).trim();
         try { return JSON.stringify(content); } catch(e) {}
@@ -190,7 +207,6 @@
       return terms.every(t => hay.includes(t));
     }
 
-    // ✅ News 页读 /api/posts（已合并 Notion + 静态）
     async function loadPosts(){
       const res = await fetch(`/api/posts?v=${Date.now()}`, { cache:"no-store" });
       const data = await res.json().catch(() => null);
@@ -199,7 +215,6 @@
         throw new Error(data?.error || `Failed to load /api/posts (${res.status})`);
       }
 
-      // 兼容：debug=1 时可能返回 {posts:[...]}
       if (Array.isArray(data)) return data;
       if (Array.isArray(data?.posts)) return data.posts;
       return [];
@@ -224,16 +239,11 @@
       const brandHtml = brand ? `<span class="pill">${escapeHtml(brand)}</span>` : "";
       const dateHtml  = date  ? `<span class="date">${escapeHtml(date)}</span>` : "";
 
-      // ✅ 跳转统一 slug
       const slug = String(post.slug || "").trim();
       const href = `/post/?slug=${encodeURIComponent(slug)}`;
 
-      // ✅ Notion cover 常为签名 URL（含 ?X-Amz...），不能再追加 ?v=
       const hero = String(post.cover || "").trim();
-      const v = encodeURIComponent((date || "1").toString());
-      const imgSrc = hero
-        ? (hero.includes("?") || hero.includes("X-Amz-") ? hero : `${hero}?v=${v}`)
-        : "";
+      const imgSrc = hero ? safeImgSrc(hero, (date || Date.now())) : "";
 
       return `
         <article class="news-item">
@@ -266,10 +276,8 @@
       try{
         const listAll = await loadPosts();
 
-        // 搜索筛选
         const filtered = q ? listAll.filter(p => matchesPost(p, q)) : listAll;
 
-        // 排序：按 date 字符串倒序（YYYY-MM-DD）
         const sorted = [...filtered].sort((a,b)=>{
           const da = String(a?.date || "");
           const db = String(b?.date || "");
