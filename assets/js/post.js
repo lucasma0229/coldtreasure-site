@@ -18,6 +18,14 @@
     catch { return ""; }
   }
 
+  // 关键：不要破坏带 query 的 URL
+  function appendCacheBust(url, key = "v") {
+    const u = norm(url);
+    if (!u) return "";
+    // 已经有 query -> 用 &
+    return u.includes("?") ? `${u}&${key}=${Date.now()}` : `${u}?${key}=${Date.now()}`;
+  }
+
   async function loadPosts() {
     const res = await fetch(`/api/posts?v=${Date.now()}`, { cache: "no-store" });
     const data = await res.json().catch(() => null);
@@ -33,7 +41,6 @@
     for (const b of blocks) {
       if (!b) continue;
 
-      // 兼容：如果有人把字符串塞进 blocks
       if (typeof b === "string") {
         out.push(`<p>${escapeHtml(b)}</p>`);
         continue;
@@ -48,7 +55,6 @@
           out.push(`<ul>${items.map(it => `<li>${escapeHtml(it)}</li>`).join("")}</ul>`);
         }
       } else {
-        // 默认段落
         const txt = norm(b.text);
         if (txt) out.push(`<p>${escapeHtml(txt)}</p>`);
       }
@@ -61,8 +67,6 @@
   function renderTextContent(text) {
     const t = norm(text);
     if (!t) return "";
-
-    // 以空行分段
     const paras = t.split(/\n\s*\n/).map(s => norm(s)).filter(Boolean);
     return paras.map(p => `<p>${escapeHtml(p).replaceAll("\n", "<br>")}</p>`).join("\n");
   }
@@ -70,8 +74,6 @@
   function renderReleaseInfo(releaseInfo) {
     const t = norm(releaseInfo);
     if (!t) return "";
-
-    // 支持多行（你 Notion 里就是多行）
     const lines = t.split(/\n+/).map(s => norm(s)).filter(Boolean);
     if (!lines.length) return "";
 
@@ -90,24 +92,11 @@
         <h2>Gallery</h2>
         <div class="grid">
           ${gallery.map((src) => `
-            <img src="${escapeHtml(src)}" alt="${escapeHtml(title)}" loading="lazy">
+            <img src="${escapeHtml(appendCacheBust(src))}" alt="${escapeHtml(title)}" loading="lazy">
           `).join("")}
         </div>
       </section>
     `;
-  }
-
-  function pickHero(post) {
-    return norm(post.cover) || "";
-  }
-
-  function pickSummary(post) {
-    const s = norm(post.summary);
-    if (s) return s;
-    // 没 summary 就从 content 截取
-    const c = norm(post.content);
-    if (!c) return "";
-    return c.length > 160 ? (c.slice(0, 160) + "…") : c;
   }
 
   function renderPost(post) {
@@ -115,10 +104,11 @@
     const date = norm(post.date);
     const brand = norm(post.brand);
     const keywords = Array.isArray(post.keywords) ? post.keywords : [];
-    const hero = pickHero(post);
-    const summary = pickSummary(post);
 
-    // ✅ 关键：优先用 content_blocks（旧文），否则用 content（新文）
+    // ✅ 只认 cover 作为文章页封面（Notion/静态都统一）
+    const hero = norm(post.cover);
+
+    // ✅ 正文：优先 blocks（旧文），否则 text（新文）
     const blocksHtml = renderBlocks(post.content_blocks);
     const textHtml = blocksHtml ? "" : renderTextContent(post.content);
 
@@ -137,11 +127,12 @@
 
         ${hero ? `
           <div class="hero">
-            <img src="${escapeHtml(hero)}?v=${encodeURIComponent(date || "1")}" alt="${escapeHtml(title)}">
+            <!-- ✅ 不要用 ?v= 覆盖 Notion 的 query，改成安全追加 -->
+            <img src="${escapeHtml(appendCacheBust(hero))}" alt="${escapeHtml(title)}">
           </div>
         ` : ""}
 
-        ${summary ? `<p class="summary">${escapeHtml(summary)}</p>` : ""}
+        <!-- ✅ 按你的要求：文章页不再显示 summary -->
 
         <section class="content">
           ${blocksHtml || textHtml || ""}
@@ -157,7 +148,6 @@
     const app = $("#app");
     if (!app) return;
 
-    // 等 include 模块先注入（避免顶部跳动）
     await new Promise((resolve) => {
       let done = false;
       const finish = () => { if (done) return; done = true; resolve(); };
@@ -170,8 +160,6 @@
 
     try {
       const posts = await loadPosts();
-
-      // 兼容：既支持 ?slug= 也支持 ?id=
       const post = posts.find(p =>
         (slug && norm(p.slug) === slug) ||
         (id && (norm(p.id) === id || norm(p.slug) === id))
