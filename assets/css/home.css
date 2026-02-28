@@ -1,287 +1,166 @@
 /* ===================================================
-   HOME (Rebuild)
-   Hero first (3:2, full-bleed) + Entry strip below
+   LAYOUT (Topbar / Page container)
+   Clean version (dedup)
    =================================================== */
 
-/* 0) Home base reset (do NOT make whole page black) */
-body.page-home{
-  margin:0;
-  background:#fff; /* ✅ 关键：只让 Hero 黑，不让整页黑 */
+:root{
+  --navH: 72px; /* JS 会写入真实值；这里兜底 */
 }
 
-/* Home main wrapper */
-.page-home-main{
+/* Global base */
+html,body{ height:100%; }
+body{
   margin:0;
-  padding:0;
   background:#fff;
 }
 
-/* ===================================================
-   1) CT Hero (full-bleed, 3:2)
-   =================================================== */
-
-/* Full-bleed hero container */
-.ct-hero{
-  width:100vw;
-  margin-left:calc(50% - 50vw);
-  margin-right:calc(50% - 50vw);
-  background:#000;
-}
-
-/* 3:2 stage */
-.ct-hero__stage{
-  position:relative;
-  width:100%;
-  aspect-ratio:3 / 2;
-  overflow:hidden;
-  background:#000;
-}
-
-/* Slides */
-.ct-hero__slide{
-  position:absolute;
-  inset:0;
-  opacity:0;
-  pointer-events:none;
-  transition:opacity 320ms cubic-bezier(.2,.8,.2,1);
-}
-.ct-hero__slide.is-active{
-  opacity:1;
-  pointer-events:auto;
-}
-
-.ct-hero__media{
-  position:absolute;
-  inset:0;
-  display:block;
-}
-
-/* ✅ 取消 hover 变暗：无论哪里写了 hover/filter，这里强制覆盖掉 */
-.ct-hero__media img{
-  width:100%;
-  height:100%;
-  display:block;
-  object-fit:cover;
-  object-position:center;
-  filter:none !important;
-  opacity:1 !important;
-}
-.ct-hero__media:hover img{
-  filter:none !important;
-  opacity:1 !important;
-}
-
-/* subtle shade for caption readability */
-.ct-hero__shade{
-  position:absolute;
-  inset:0;
-  pointer-events:none;
-  background:linear-gradient(to top,
-    rgba(0,0,0,.55) 0%,
-    rgba(0,0,0,.22) 26%,
-    rgba(0,0,0,0) 58%);
-}
-
-/* caption: bottom-left, white */
-.ct-hero__caption{
-  position:absolute;
-  left:clamp(18px, 3vw, 44px);
-  bottom:clamp(18px, 3vw, 44px);
-  max-width:min(720px, calc(100% - 80px));
-  color:#fff;
-  z-index:2;
-}
-
-.ct-hero__kicker{
-  font-size:12px;
-  letter-spacing:.18em;
-  text-transform:uppercase;
-  opacity:.92;
-  margin:0 0 10px;
-  text-shadow:0 10px 26px rgba(0,0,0,.35);
-}
-
-.ct-hero__title{
-  margin:0 0 8px;
-  font-size:clamp(30px, 3.2vw, 52px);
-  line-height:1.05;
-  letter-spacing:-.01em;
-  font-weight:600;
-  text-shadow:0 12px 28px rgba(0,0,0,.38);
-}
-
-.ct-hero__desc{
-  margin:0;
-  font-size:clamp(13px, 1.25vw, 16px);
-  line-height:1.35;
-  opacity:.9;
-  text-shadow:0 12px 28px rgba(0,0,0,.36);
-}
-
-/* arrows */
-.ct-hero__nav{
-  position:absolute;
-  top:50%;
-  transform:translateY(-50%);
-  z-index:3;
-  width:34px;
-  height:34px;
-  border:none;
-  background:transparent;
-  color:#fff;
-  cursor:pointer;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  opacity:.18;
-  transition:opacity 180ms cubic-bezier(.2,.8,.2,1);
-}
-.ct-hero__nav:hover{ opacity:.55; }
-.ct-hero__nav span{
-  font-size:22px;
-  line-height:1;
-  transform:translateY(-1px);
-}
-.ct-hero__nav--prev{ left:12px; }
-.ct-hero__nav--next{ right:12px; }
-
-/* dots */
-.ct-hero__dots{
-  position:absolute;
-  left:50%;
-  bottom:14px;
-  transform:translateX(-50%);
-  z-index:4;
-  display:flex;
-  gap:10px;
-  align-items:center;
-  justify-content:center;
-}
-.ct-hero__dot{
-  width:6px;
-  height:6px;
-  border-radius:999px;
-  border:none;
-  background:rgba(255,255,255,.28);
-  cursor:pointer;
-  padding:0;
-}
-.ct-hero__dot.is-active{
-  background:rgba(255,255,255,.9);
-}
-
-/* ===================================================
-   2) Entry strip below hero (Kith-like)
-   =================================================== */
-
-.entry-strip--below{
-  padding: 22px 0 10px;
-  background:#fff;
-}
-
-.entry-strip__inner{
+/* Page container (content width) */
+.page{
   max-width:1200px;
   margin:0 auto;
-  padding: 0 24px;
-
-  display:grid;
-  grid-template-columns:repeat(5, 1fr);
-  gap:0;
-
-  border-top:1px solid rgba(18,18,18,.10);
-  border-bottom:1px solid rgba(18,18,18,.10);
-  background:#fff;
+  padding:0 24px;
 }
 
-.entry-item{
+/* ===================================================
+   Topbar (Kith-style overlay/solid)
+   Controlled by: html.ct-nav--overlay / html.ct-nav--solid
+   =================================================== */
+
+.topbar{
+  position:fixed;
+  top:0; left:0; right:0;
+  z-index:1000;
+
+  /* 让高度由实际内容决定，JS 会同步回 --navH */
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+
+  padding:18px 24px;
+  box-sizing:border-box;
+
+  background:transparent;
+  border-bottom:1px solid rgba(255,255,255,.08);
+
+  transition:
+    background 180ms cubic-bezier(.2,.8,.2,1),
+    border-color 180ms cubic-bezier(.2,.8,.2,1),
+    color 180ms cubic-bezier(.2,.8,.2,1);
+}
+
+/* Brand */
+.brand-lockup{
   text-decoration:none;
-  color:#121212;
-  padding: 18px 10px 16px;
-  text-align:center;
-
-  border-right:1px solid rgba(18,18,18,.10);
+  color:inherit;
+  display:flex;
+  align-items:center;
+  min-width:0; /* 允许在手机端收缩避免挤压 */
 }
-.entry-item:last-child{ border-right:0; }
+.brand-name{
+  font-size:12px;
+  letter-spacing:.22em;
+  font-weight:600;
+}
+.brand-slogan{
+  margin-top:4px;
+  font-size:10px;
+  letter-spacing:.18em;
+  opacity:.65;
+}
 
-/* ✅ 你说“间距不整齐”：这里统一每一行的 margin/line-height */
-.entry-en{
+/* Nav links */
+.nav{
+  display:flex;
+  gap:20px;
+  align-items:center;
+}
+.nav a{
+  text-decoration:none;
+  color:inherit;
   font-size:11px;
   letter-spacing:.18em;
-  opacity:.75;
-  line-height:1.15;
+  text-transform:uppercase;
+  opacity:.85;
 }
-.entry-cn{
-  margin-top:6px;
-  font-size:13px;
-  letter-spacing:.10em;
-  font-weight:600;
-  opacity:.92;
-  line-height:1.2;
+.nav a:hover{ opacity:1; }
+.nav a.is-active{ opacity:1; }
+
+/* ===================================================
+   States
+   =================================================== */
+
+/* HOME @ top: overlay (transparent, white text) */
+html.ct-nav--overlay .topbar{
+  background:transparent;
+  color:#fff;
+  border-color:rgba(255,255,255,.08);
+}
+html.ct-nav--overlay .brand-slogan{ opacity:.72; }
+html.ct-nav--overlay .nav a{ opacity:.88; }
+
+/* Scrolled / non-home: solid (white bg + dark text) */
+html.ct-nav--solid .topbar{
+  background:rgba(255,255,255,.98);
+  color:#121212;
+  border-color:rgba(18,18,18,.10);
+  backdrop-filter:saturate(180%) blur(10px);
 }
 
-/* ✅ 第三行英文摘要（桌面端显示，字体更小） */
-.entry-desc{
-  margin-top:10px;
-  font-size:10px;
-  letter-spacing:.12em;
-  opacity:.55;
-  line-height:1.15;
-}
-
-/* mobile: 3 cols & hide desc */
-@media (max-width: 720px){
-  .ct-hero__caption{ max-width:calc(100% - 36px); }
-
-  .entry-strip__inner{
-    grid-template-columns: repeat(5, 1fr) !important; /* 关键：手机端也保持 5 列 */
-  }
-   
-  .entry-item{
-     padding: 14px 6px 12px !important; /* 变紧凑，避免被挤爆 */
-     min-width: 0;
-  }
-  .entry-en{
-     font-size: 10px !important;
-     letter-spacing: .16em !important;
-  }
-  .entry-cn{
-     font-size: 12px !important;
-     letter-spacing: .08em !important;
-  }
-  /* 手机端建议隐藏第三行描述（否则每格太挤） */
-  .entry-desc{ display:none; }
+/* 🔥 overlay 强制白字（修复被子元素覆盖） */
+html.ct-nav--overlay .topbar,
+html.ct-nav--overlay .topbar a,
+html.ct-nav--overlay .brand-name,
+html.ct-nav--overlay .brand-slogan{
+  color:#fff !important;
 }
 
 /* ===================================================
-   3) Below fold container back to “white & premium”
+   Body offset for fixed header
+   - 默认所有页面让位（避免内容被压住）
+   - 首页顶部 overlay 不让位（hero 触顶）
    =================================================== */
-.page-home .page{
-  background:#fff; /* ✅ 避免下面区域变黑 */
-}
+
+/* default: no offset */
+body{ padding-top:0; }
+/* 非首页：永远让位 */
+body:not(.page-home){ padding-top:var(--navH); }
+/* 首页：只有在 solid 状态才让位；overlay 时不让位 */
+html.ct-nav--solid body.page-home{ padding-top:var(--navH); }
+html.ct-nav--overlay body.page-home{ padding-top:0; }
 
 /* ===================================================
-   HOME fixes
+   Mobile: simplify topbar + constrain search width
+   - hide nav links (News/Record/Archive)
+   - search width ~ right 1/3
+   - keep brand from being squeezed
    =================================================== */
+@media (max-width: 768px){
 
-/* 1) Cancel any hover-dim on hero images */
-.ct-hero:hover .ct-hero__media img,
-.ct-hero__slide:hover .ct-hero__media img{
-  filter: none !important;
-  opacity: 1 !important;
-}
+  .topbar .nav{
+    display:none !important;
+  }
 
-/* 2) Entry typography spacing (EN / CN / DESC) */
-.entry-en{ margin:0; }
-.entry-cn{ margin:6px 0 0; }
+  .topbar{
+    gap:12px;
+    align-items:center;
+    justify-content:space-between;
+  }
 
-.entry-desc{
-  margin:8px 0 0;
-  font-size:10px;
-  letter-spacing:.14em;
-  opacity:.55;
-}
+  /* Brand text: prevent wrap/overlap */
+  .brand-name,
+  .brand-slogan{
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
 
-/* only show desc on desktop */
-@media (max-width: 900px){
-  .entry-desc{ display:none; }
+  /* Search: keep it "reasonable" (about right 1/3) */
+  .topbar input[type="search"],
+  .topbar .search input,
+  .topbar .search-input{
+    flex:0 0 auto;
+    width:34vw !important;
+    max-width:220px !important;
+    min-width:140px !important;
+  }
 }
