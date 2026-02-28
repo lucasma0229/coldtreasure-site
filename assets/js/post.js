@@ -1,5 +1,5 @@
 // /assets/js/post.js
-(function () {
+(() => {
   const $ = (sel) => document.querySelector(sel);
 
   function escapeHtml(str) {
@@ -11,171 +11,234 @@
       .replaceAll("'", "&#039;");
   }
 
-  function norm(s = "") { return String(s ?? "").trim(); }
-
-  function getParam(name) {
-    try { return new URL(location.href).searchParams.get(name) || ""; }
-    catch { return ""; }
+  // Notion / S3 presigned urls: do NOT append any query params
+  function isSignedUrl(u) {
+    const s = String(u || "");
+    return /[?&]X-Amz-/i.test(s) || /notion\.so\/image/i.test(s);
   }
 
-  // 关键：不要破坏带 query 的 URL
-  function appendCacheBust(url, key = "v") {
-    const u = norm(url);
+  // Only add cache-bust for local static assets (optional).
+  function withBust(url) {
+    const u = String(url || "").trim();
     if (!u) return "";
-    // 已经有 query -> 用 &
-    return u.includes("?") ? `${u}&${key}=${Date.now()}` : `${u}?${key}=${Date.now()}`;
+    if (isSignedUrl(u)) return u; // keep intact
+    const v = `v=${Date.now()}`;
+    return u.includes("?") ? `${u}&${v}` : `${u}?${v}`;
+  }
+
+  function getSlugOrId() {
+    try {
+      const sp = new URL(location.href).searchParams;
+      const slug = (sp.get("slug") || "").trim();
+      const id = (sp.get("id") || "").trim();
+      return { slug, id };
+    } catch {
+      return { slug: "", id: "" };
+    }
+  }
+
+  async function waitModulesLoaded() {
+    await new Promise((resolve) => {
+      let done = false;
+      const finish = () => {
+        if (done) return;
+        done = true;
+        resolve();
+      };
+      document.addEventListener("modules:loaded", finish, { once: true });
+      setTimeout(finish, 1200);
+    });
   }
 
   async function loadPosts() {
     const res = await fetch(`/api/posts?v=${Date.now()}`, { cache: "no-store" });
     const data = await res.json().catch(() => null);
+
     if (!res.ok) throw new Error(data?.error || `Failed to load /api/posts (${res.status})`);
-    return Array.isArray(data) ? data : (Array.isArray(data?.posts) ? data.posts : []);
+
+    if (Array.isArray(data)) return data;
+    if (Array.isArray(data?.posts)) return data.posts; // debug mode compatibility
+    return [];
   }
 
-  // blocks -> HTML（旧文章 content_blocks）
+  // -------- content rendering (fix old "乱码" json blocks) --------
+  function looksLikeBlocks(contentStr) {
+    const s = String(contentStr || "").trim();
+    return (s.startsWith("[") || s.startsWith("{")) && s.includes('"type"');
+  }
+
   function renderBlocks(blocks) {
-    if (!Array.isArray(blocks) || !blocks.length) return "";
-    const out = [];
+    if (!Array.isArray(blocks)) return "";
 
-    for (const b of blocks) {
-      if (!b) continue;
-
-      if (typeof b === "string") {
-        out.push(`<p>${escapeHtml(b)}</p>`);
-        continue;
-      }
-
-      const type = norm(b.type).toLowerCase();
-      if (type === "h2") {
-        out.push(`<h2>${escapeHtml(b.text || "")}</h2>`);
-      } else if (type === "ul") {
-        const items = Array.isArray(b.items) ? b.items : [];
-        if (items.length) {
-          out.push(`<ul>${items.map(it => `<li>${escapeHtml(it)}</li>`).join("")}</ul>`);
+    return blocks
+      .map((b) => {
+        const type = String(b?.type || "").toLowerCase();
+        if (type === "p") {
+          const t = escapeHtml(b?.text || "");
+          return t ? `<p>${t}</p>` : "";
         }
-      } else {
-        const txt = norm(b.text);
-        if (txt) out.push(`<p>${escapeHtml(txt)}</p>`);
+        if (type === "h2") {
+          const t = escapeHtml(b?.text || "");
+          return t ? `<h2>${t}</h2>` : "";
+        }
+        if (type === "ul") {
+          const items = Array.isArray(b?.items) ? b.items : [];
+          const lis = items
+            .map((it) => `<li>${escapeHtml(it || "")}</li>`)
+            .join("");
+          return lis ? `<ul>${lis}</ul>` : "";
+        }
+        // fallback
+        const t = escapeHtml(b?.text || "");
+        return t ? `<p>${t}</p>` : "";
+      })
+      .filter(Boolean)
+      .join("");
+  }
+
+  function renderContent(contentStr) {
+    const s = String(contentStr || "").trim();
+    if (!s) return "";
+
+    // If it's blocks JSON from old static posts.json
+    if (looksLikeBlocks(s)) {
+      try {
+        const parsed = JSON.parse(s);
+        if (Array.isArray(parsed)) return renderBlocks(parsed);
+        // sometimes wrapped object: {content:[...]}
+        if (Array.isArray(parsed?.content)) return renderBlocks(parsed.content);
+      } catch {
+        // fall through
       }
     }
 
-    return out.join("\n");
+    // Plain text: split by blank lines into paragraphs
+    const parts = s.split(/\n{2,}/).map((x) => x.trim()).filter(Boolean);
+    return parts.map((p) => `<p>${escapeHtml(p)}</p>`).join("");
   }
 
-  // 纯文本 content -> HTML
-  function renderTextContent(text) {
-    const t = norm(text);
-    if (!t) return "";
-    const paras = t.split(/\n\s*\n/).map(s => norm(s)).filter(Boolean);
-    return paras.map(p => `<p>${escapeHtml(p).replaceAll("\n", "<br>")}</p>`).join("\n");
-  }
+  // -------- release info rendering --------
+  function renderReleaseInfo(releaseInfo, title) {
+    const s = String(releaseInfo || "").trim();
+    if (!s) return "";
 
-  function renderReleaseInfo(releaseInfo) {
-    const t = norm(releaseInfo);
-    if (!t) return "";
-    const lines = t.split(/\n+/).map(s => norm(s)).filter(Boolean);
-    if (!lines.length) return "";
+    // If user already wrote multiple lines, use them; else split by common separators
+    const lines = s.includes("\n")
+      ? s.split("\n")
+      : s.split(/；|;|\|/);
+
+    const cleaned = lines.map((x) => x.trim()).filter(Boolean);
+
+    // If it looks like a single sentence, keep as one item; else list items
+    const items = cleaned.length ? cleaned : [s];
+
+    const lis = items.map((it) => `<li>${escapeHtml(it)}</li>`).join("");
+
+    // Optional first item: model name
+    const head = title ? `<li>鞋款：${escapeHtml(title)}</li>` : "";
 
     return `
       <h2>发售信息</h2>
       <ul>
-        ${lines.map(x => `<li>${escapeHtml(x)}</li>`).join("")}
+        ${head}
+        ${lis}
       </ul>
     `;
   }
 
-  function renderGallery(gallery, title) {
-    if (!Array.isArray(gallery) || !gallery.length) return "";
-    return `
-      <section class="gallery">
-        <h2>Gallery</h2>
-        <div class="grid">
-          ${gallery.map((src) => `
-            <img src="${escapeHtml(appendCacheBust(src))}" alt="${escapeHtml(title)}" loading="lazy">
-          `).join("")}
-        </div>
-      </section>
-    `;
-  }
-
+  // -------- template --------
   function renderPost(post) {
-    const title = norm(post.title) || "Untitled";
-    const date = norm(post.date);
-    const brand = norm(post.brand);
-    const keywords = Array.isArray(post.keywords) ? post.keywords : [];
+    const title = post?.title || "Untitled";
+    const date = post?.date || "";
+    const brand = post?.brand || "";
+    const keywords = Array.isArray(post?.keywords) ? post.keywords : [];
+    const cover = String(post?.cover || "").trim();
+    const gallery = Array.isArray(post?.gallery) ? post.gallery : [];
 
-    // ✅ 只认 cover 作为文章页封面（Notion/静态都统一）
-    const hero = norm(post.cover);
+    const metaParts = [];
+    if (date) metaParts.push(escapeHtml(date));
+    if (brand) metaParts.push(`@${escapeHtml(brand)}`);
+    for (const k of keywords) metaParts.push(`@${escapeHtml(k)}`);
 
-    // ✅ 正文：优先 blocks（旧文），否则 text（新文）
-    const blocksHtml = renderBlocks(post.content_blocks);
-    const textHtml = blocksHtml ? "" : renderTextContent(post.content);
+    const heroHtml = cover
+      ? `
+        <div class="hero">
+          <img src="${escapeHtml(withBust(cover))}" alt="${escapeHtml(title)}" loading="eager" />
+        </div>
+      `
+      : "";
 
-    const releaseHtml = renderReleaseInfo(post.release_info);
-    const galleryHtml = renderGallery(post.gallery, title);
+    // ✅ summary NOT shown on post page — only content
+    const contentHtml = renderContent(post?.content);
 
-    const metaBits = [];
-    if (date) metaBits.push(escapeHtml(date));
-    if (brand) metaBits.push(`@${escapeHtml(brand)}`);
-    if (keywords.length) metaBits.push(keywords.map(k => `@${escapeHtml(k)}`).join(" "));
+    const releaseHtml = renderReleaseInfo(post?.release_info, title);
+
+    const galleryHtml =
+      gallery.length > 0
+        ? `
+        <section class="gallery">
+          <h2>Gallery</h2>
+          <div class="grid">
+            ${gallery
+              .map((u) => {
+                const src = withBust(u); // will NOT bust for signed urls
+                return `<img src="${escapeHtml(src)}" alt="${escapeHtml(title)}" loading="lazy" />`;
+              })
+              .join("")}
+          </div>
+        </section>
+      `
+        : "";
 
     return `
       <article>
         <h1>${escapeHtml(title)}</h1>
-        <div class="meta">${metaBits.join(" · ")}</div>
-
-        ${hero ? `
-          <div class="hero">
-            <!-- ✅ 不要用 ?v= 覆盖 Notion 的 query，改成安全追加 -->
-            <img src="${escapeHtml(appendCacheBust(hero))}" alt="${escapeHtml(title)}">
-          </div>
-        ` : ""}
-
-        <!-- ✅ 按你的要求：文章页不再显示 summary -->
-
+        <div class="meta">${metaParts.join(" · ")}</div>
+        ${heroHtml}
         <section class="content">
-          ${blocksHtml || textHtml || ""}
-          ${releaseHtml || ""}
+          ${contentHtml || `<p class="muted">No content.</p>`}
+          ${releaseHtml}
         </section>
-
-        ${galleryHtml || ""}
+        ${galleryHtml}
       </article>
     `;
   }
 
-  async function main() {
+  function renderError(msg) {
+    return `<div class="error"><b>Load failed</b><div style="margin-top:8px;">${escapeHtml(msg)}</div></div>`;
+  }
+
+  // -------- main --------
+  (async function main() {
     const app = $("#app");
     if (!app) return;
 
-    await new Promise((resolve) => {
-      let done = false;
-      const finish = () => { if (done) return; done = true; resolve(); };
-      document.addEventListener("modules:loaded", finish, { once: true });
-      setTimeout(finish, 1200);
-    });
+    await waitModulesLoaded();
 
-    const slug = norm(getParam("slug"));
-    const id = norm(getParam("id"));
+    const { slug, id } = getSlugOrId();
+    if (!slug && !id) {
+      app.innerHTML = renderError("Missing ?slug=... or ?id=...");
+      return;
+    }
 
     try {
-      const posts = await loadPosts();
-      const post = posts.find(p =>
-        (slug && norm(p.slug) === slug) ||
-        (id && (norm(p.id) === id || norm(p.slug) === id))
-      );
+      const list = await loadPosts();
 
-      if (!post) {
-        app.innerHTML = `<div class="error"><b>Not found</b><div style="margin-top:8px;">slug=${escapeHtml(slug)} id=${escapeHtml(id)}</div></div>`;
+      const hit = list.find((p) => {
+        const pSlug = String(p?.slug || "").trim();
+        const pId = String(p?.id || "").trim();
+        if (slug) return pSlug === slug;
+        return pId === id;
+      });
+
+      if (!hit) {
+        app.innerHTML = renderError(`Post not found: ${slug || id}`);
         return;
       }
 
-      app.innerHTML = renderPost(post);
-
-    } catch (err) {
-      app.innerHTML = `<div class="error"><b>Load failed</b><div style="margin-top:8px;">${escapeHtml(err.message || err)}</div></div>`;
+      app.innerHTML = renderPost(hit);
+    } catch (e) {
+      app.innerHTML = renderError(e?.message || String(e));
     }
-  }
-
-  main();
+  })();
 })();
