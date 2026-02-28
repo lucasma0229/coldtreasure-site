@@ -1,131 +1,163 @@
 // /assets/js/post.js
-(() => {
-  const $app = document.getElementById("app");
+(function () {
+  const $ = (sel) => document.querySelector(sel);
 
-  const esc = (s = "") =>
-    String(s ?? "").replace(/[&<>"']/g, (m) => ({
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&#39;",
-    }[m]));
+  function escapeHtml(str) {
+    return String(str ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
 
-  const getParam = (name) => {
+  function norm(s = "") { return String(s ?? "").trim(); }
+
+  function getParam(name) {
     try { return new URL(location.href).searchParams.get(name) || ""; }
     catch { return ""; }
-  };
+  }
 
-  const norm = (s = "") => String(s ?? "").trim();
-
-  const addCacheBuster = (url, v) => {
-    const s = String(url || "");
-    if (!s) return "";
-    // 已有 query 就不强加，避免破坏签名 URL（Notion/S3）
-    return s.includes("?") ? s : `${s}?v=${encodeURIComponent(v || "1")}`;
-  };
-
-  const showError = (msg) => {
-    $app.innerHTML = `<div class="error"><b>Load failed</b><div style="margin-top:8px;">${esc(msg)}</div></div>`;
-  };
-
-  // ✅ 从 /api/posts 读取（Notion + 静态已合并）
   async function loadPosts() {
     const res = await fetch(`/api/posts?v=${Date.now()}`, { cache: "no-store" });
     const data = await res.json().catch(() => null);
     if (!res.ok) throw new Error(data?.error || `Failed to load /api/posts (${res.status})`);
-    if (Array.isArray(data)) return data;
-    if (Array.isArray(data?.posts)) return data.posts; // debug=1 兼容
-    return [];
+    return Array.isArray(data) ? data : (Array.isArray(data?.posts) ? data.posts : []);
   }
 
-  // ✅ 旧静态 blocks 渲染
+  // blocks -> HTML（旧文章 content_blocks）
   function renderBlocks(blocks) {
-    if (!Array.isArray(blocks)) return "";
-    return blocks.map((b) => {
-      const type = String(b?.type || "").toLowerCase();
+    if (!Array.isArray(blocks) || !blocks.length) return "";
+    const out = [];
 
-      if (type === "h2") return `<h2>${esc(b?.text || "")}</h2>`;
-      if (type === "p") return `<p>${esc(b?.text || "")}</p>`;
-      if (type === "quote" || type === "blockquote") return `<div style="margin:14px 0;padding:10px 12px;border-left:3px solid rgba(0,0,0,.12);background:rgba(0,0,0,.03);border-radius:10px;">${esc(b?.text || "")}</div>`;
+    for (const b of blocks) {
+      if (!b) continue;
 
-      if (type === "ul") {
-        const items = Array.isArray(b?.items) ? b.items : [];
-        return `<ul>${items.map((it) => `<li>${esc(it)}</li>`).join("")}</ul>`;
+      // 兼容：如果有人把字符串塞进 blocks
+      if (typeof b === "string") {
+        out.push(`<p>${escapeHtml(b)}</p>`);
+        continue;
       }
 
-      if (type === "ol") {
-        const items = Array.isArray(b?.items) ? b.items : [];
-        return `<ol>${items.map((it) => `<li>${esc(it)}</li>`).join("")}</ol>`;
+      const type = norm(b.type).toLowerCase();
+      if (type === "h2") {
+        out.push(`<h2>${escapeHtml(b.text || "")}</h2>`);
+      } else if (type === "ul") {
+        const items = Array.isArray(b.items) ? b.items : [];
+        if (items.length) {
+          out.push(`<ul>${items.map(it => `<li>${escapeHtml(it)}</li>`).join("")}</ul>`);
+        }
+      } else {
+        // 默认段落
+        const txt = norm(b.text);
+        if (txt) out.push(`<p>${escapeHtml(txt)}</p>`);
       }
-
-      // 兜底
-      const t = b?.text != null ? String(b.text) : "";
-      return t ? `<p>${esc(t)}</p>` : "";
-    }).join("");
-  }
-
-  // ✅ 兼容三种 content：
-  // 1) string（Notion）
-  // 2) array（旧静态 blocks）
-  // 3) string but JSON（旧静态被序列化）
-  function renderContent(post) {
-    const c = post?.content;
-
-    if (Array.isArray(c)) return renderBlocks(c);
-
-    const s = String(c ?? "").trim();
-    if (!s) return "";
-
-    // 可能是 JSON 字符串
-    if ((s.startsWith("[") && s.endsWith("]")) || (s.startsWith("{") && s.endsWith("}"))) {
-      try {
-        const parsed = JSON.parse(s);
-        if (Array.isArray(parsed)) return renderBlocks(parsed);
-      } catch { /* ignore */ }
     }
 
-    // 普通文本：按空行分段
-    const parts = s.split(/\n{2,}/).map((x) => x.trim()).filter(Boolean);
-    if (parts.length) return parts.map(p => `<p>${esc(p).replace(/\n/g, "<br>")}</p>`).join("");
-    return `<p>${esc(s)}</p>`;
+    return out.join("\n");
   }
 
-  function pickPost(posts, slug, id) {
-    const s = norm(slug);
-    const i = norm(id);
+  // 纯文本 content -> HTML
+  function renderTextContent(text) {
+    const t = norm(text);
+    if (!t) return "";
 
-    if (s) {
-      const hit = posts.find(p => norm(p?.slug) === s);
-      if (hit) return hit;
-    }
-    if (i) {
-      // 旧文章：很多用 id
-      const hit = posts.find(p => norm(p?.id) === i);
-      if (hit) return hit;
-
-      // 兜底：有时旧数据把 id 放在 slug（或反过来）
-      const hit2 = posts.find(p => norm(p?.slug) === i);
-      if (hit2) return hit2;
-    }
-    return null;
+    // 以空行分段
+    const paras = t.split(/\n\s*\n/).map(s => norm(s)).filter(Boolean);
+    return paras.map(p => `<p>${escapeHtml(p).replaceAll("\n", "<br>")}</p>`).join("\n");
   }
 
-  function renderGallery(urls) {
-    const arr = Array.isArray(urls) ? urls.filter(Boolean) : [];
-    if (!arr.length) return "";
+  function renderReleaseInfo(releaseInfo) {
+    const t = norm(releaseInfo);
+    if (!t) return "";
+
+    // 支持多行（你 Notion 里就是多行）
+    const lines = t.split(/\n+/).map(s => norm(s)).filter(Boolean);
+    if (!lines.length) return "";
+
+    return `
+      <h2>发售信息</h2>
+      <ul>
+        ${lines.map(x => `<li>${escapeHtml(x)}</li>`).join("")}
+      </ul>
+    `;
+  }
+
+  function renderGallery(gallery, title) {
+    if (!Array.isArray(gallery) || !gallery.length) return "";
     return `
       <section class="gallery">
         <h2>Gallery</h2>
         <div class="grid">
-          ${arr.map(u => `<img src="${esc(addCacheBuster(u, "1"))}" alt="" loading="lazy">`).join("")}
+          ${gallery.map((src) => `
+            <img src="${escapeHtml(src)}" alt="${escapeHtml(title)}" loading="lazy">
+          `).join("")}
         </div>
       </section>
     `;
   }
 
+  function pickHero(post) {
+    return norm(post.cover) || "";
+  }
+
+  function pickSummary(post) {
+    const s = norm(post.summary);
+    if (s) return s;
+    // 没 summary 就从 content 截取
+    const c = norm(post.content);
+    if (!c) return "";
+    return c.length > 160 ? (c.slice(0, 160) + "…") : c;
+  }
+
+  function renderPost(post) {
+    const title = norm(post.title) || "Untitled";
+    const date = norm(post.date);
+    const brand = norm(post.brand);
+    const keywords = Array.isArray(post.keywords) ? post.keywords : [];
+    const hero = pickHero(post);
+    const summary = pickSummary(post);
+
+    // ✅ 关键：优先用 content_blocks（旧文），否则用 content（新文）
+    const blocksHtml = renderBlocks(post.content_blocks);
+    const textHtml = blocksHtml ? "" : renderTextContent(post.content);
+
+    const releaseHtml = renderReleaseInfo(post.release_info);
+    const galleryHtml = renderGallery(post.gallery, title);
+
+    const metaBits = [];
+    if (date) metaBits.push(escapeHtml(date));
+    if (brand) metaBits.push(`@${escapeHtml(brand)}`);
+    if (keywords.length) metaBits.push(keywords.map(k => `@${escapeHtml(k)}`).join(" "));
+
+    return `
+      <article>
+        <h1>${escapeHtml(title)}</h1>
+        <div class="meta">${metaBits.join(" · ")}</div>
+
+        ${hero ? `
+          <div class="hero">
+            <img src="${escapeHtml(hero)}?v=${encodeURIComponent(date || "1")}" alt="${escapeHtml(title)}">
+          </div>
+        ` : ""}
+
+        ${summary ? `<p class="summary">${escapeHtml(summary)}</p>` : ""}
+
+        <section class="content">
+          ${blocksHtml || textHtml || ""}
+          ${releaseHtml || ""}
+        </section>
+
+        ${galleryHtml || ""}
+      </article>
+    `;
+  }
+
   async function main() {
-    // 等 header/footer include 注入（避免布局跳）
+    const app = $("#app");
+    if (!app) return;
+
+    // 等 include 模块先注入（避免顶部跳动）
     await new Promise((resolve) => {
       let done = false;
       const finish = () => { if (done) return; done = true; resolve(); };
@@ -133,67 +165,29 @@
       setTimeout(finish, 1200);
     });
 
-    const slug = getParam("slug");
-    const id = getParam("id");
-
-    if (!slug && !id) {
-      showError("Missing slug or id");
-      return;
-    }
+    const slug = norm(getParam("slug"));
+    const id = norm(getParam("id"));
 
     try {
       const posts = await loadPosts();
-      const post = pickPost(posts, slug, id);
+
+      // 兼容：既支持 ?slug= 也支持 ?id=
+      const post = posts.find(p =>
+        (slug && norm(p.slug) === slug) ||
+        (id && (norm(p.id) === id || norm(p.slug) === id))
+      );
 
       if (!post) {
-        showError("Post not found");
+        app.innerHTML = `<div class="error"><b>Not found</b><div style="margin-top:8px;">slug=${escapeHtml(slug)} id=${escapeHtml(id)}</div></div>`;
         return;
       }
 
-      const title = post.title || "Untitled";
-      const date = post.date || "";
-      const brand = post.brand || "";
-      const summary = (post.summary || "").trim();
-      const cover = post.cover || post.hero || post.thumb || post.image || "";
-      const gallery = post.gallery || [];
+      app.innerHTML = renderPost(post);
 
-      // hero focus（可选字段）
-      if (post?.hero_focus) {
-        document.documentElement.style.setProperty("--hero-focus", String(post.hero_focus));
-      }
-
-      const metaBits = [];
-      if (brand) metaBits.push(esc(brand));
-      if (date) metaBits.push(esc(date));
-      if (Array.isArray(post.keywords) && post.keywords.length) {
-        metaBits.push("@ " + esc(post.keywords.slice(0, 4).join(" / ")));
-      }
-
-      const heroHtml = cover
-        ? `<div class="hero"><img src="${esc(addCacheBuster(cover, date || "1"))}" alt="${esc(title)}" loading="lazy"></div>`
-        : "";
-
-      const summaryHtml = summary ? `<div class="summary">${esc(summary)}</div>` : "";
-      const contentHtml = `<div class="content">${renderContent(post)}</div>`;
-      const galleryHtml = renderGallery(gallery);
-
-      $app.innerHTML = `
-        <header>
-          <h1>${esc(title)}</h1>
-          <div class="meta">${metaBits.join(" · ")}</div>
-        </header>
-        ${heroHtml}
-        ${summaryHtml}
-        ${contentHtml}
-        ${galleryHtml}
-      `;
-
-      document.title = `ColdTreasure | ${title}`;
     } catch (err) {
-      showError(err?.message || String(err));
+      app.innerHTML = `<div class="error"><b>Load failed</b><div style="margin-top:8px;">${escapeHtml(err.message || err)}</div></div>`;
     }
   }
 
-  // go
-  if ($app) main();
+  main();
 })();
