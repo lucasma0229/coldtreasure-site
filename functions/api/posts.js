@@ -7,18 +7,17 @@ export async function onRequest(context) {
   const all = url.searchParams.get("all") === "1";
   const debug = url.searchParams.get("debug") === "1";
 
-  const version = "posts-api-merge-2026-02-28-01";
+  const version = "posts-api-merge-2026-02-28-02";
 
   // 你已确认可访问
   const STATIC_PATH = "/assets/data/posts.json";
-
   let staticDebug = null;
 
   // ---------- Safe readers (Notion props) ----------
   const safeText = (prop) => {
     if (!prop) return "";
-    if (prop.type === "title") return prop.title?.map(t => t.plain_text).join("") ?? "";
-    if (prop.type === "rich_text") return prop.rich_text?.map(t => t.plain_text).join("") ?? "";
+    if (prop.type === "title") return prop.title?.map((t) => t.plain_text).join("") ?? "";
+    if (prop.type === "rich_text") return prop.rich_text?.map((t) => t.plain_text).join("") ?? "";
     if (prop.type === "select") return prop.select?.name ?? "";
     if (prop.type === "formula") {
       return (
@@ -41,12 +40,12 @@ export async function onRequest(context) {
 
   const safeFiles = (prop) => {
     const files = prop?.files || [];
-    return files.map(f => f?.file?.url ?? f?.external?.url ?? "").filter(Boolean);
+    return files.map((f) => f?.file?.url ?? f?.external?.url ?? "").filter(Boolean);
   };
 
   const safeMultiSelect = (prop) => {
     const arr = prop?.multi_select || [];
-    return arr.map(x => x?.name).filter(Boolean);
+    return arr.map((x) => x?.name).filter(Boolean);
   };
 
   const safeCheckbox = (prop) => (prop?.type === "checkbox" ? !!prop.checkbox : false);
@@ -81,7 +80,7 @@ export async function onRequest(context) {
       const res = await fetch(`https://api.notion.com/v1/databases/${DATABASE_ID}/query`, {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${NOTION_KEY}`,
+          Authorization: `Bearer ${NOTION_KEY}`,
           "Content-Type": "application/json",
           "Notion-Version": "2022-06-28",
         },
@@ -98,7 +97,7 @@ export async function onRequest(context) {
       start_cursor = data?.next_cursor || undefined;
       pages += 1;
 
-      if (pages > 20) break;
+      if (pages > 20) break; // 防护：最多 2000 条
     } while (has_more);
 
     return { ok: true, results: out, meta: { pages, has_more } };
@@ -127,15 +126,16 @@ export async function onRequest(context) {
       }
 
       if (!res.ok) return [];
+
       const trimmed = text.trim();
       if (!trimmed.startsWith("[") && !trimmed.startsWith("{")) return [];
 
       const data = JSON.parse(trimmed);
-      const arr = Array.isArray(data) ? data : (Array.isArray(data?.posts) ? data.posts : []);
+      const arr = Array.isArray(data) ? data : Array.isArray(data?.posts) ? data.posts : [];
       return Array.isArray(arr) ? arr : [];
     };
 
-    // 1) ASSETS.fetch
+    // 1) ASSETS.fetch（Cloudflare Pages Functions 常见用法）
     try {
       if (context.env.ASSETS?.fetch) {
         const reqUrl = new URL(STATIC_PATH, "https://assets.local");
@@ -167,7 +167,7 @@ export async function onRequest(context) {
   function blocksToText(blocks) {
     if (!Array.isArray(blocks)) return "";
     return blocks
-      .map(b => {
+      .map((b) => {
         if (!b) return "";
         if (typeof b === "string") return b;
         if (Array.isArray(b?.items)) return b.items.join(" ");
@@ -175,6 +175,45 @@ export async function onRequest(context) {
       })
       .filter(Boolean)
       .join("\n");
+  }
+
+  // ✅ 结构化 release：在 API 端先做“去噪/去重复”
+  function normalizeRelease(releaseRaw, title) {
+    const raw = normStr(releaseRaw);
+    if (!raw) return { release_info: "", release_lines: [] };
+
+    const t = normStr(title);
+    const lines = raw
+      .split(/\r?\n/)
+      .map((s) => normStr(s))
+      .filter(Boolean);
+
+    const filtered = [];
+    for (const line of lines) {
+      const low = line.toLowerCase();
+
+      // 过滤掉“发售信息 / Release Info”这类标题行（避免正文/模块重复）
+      if (line === "发售信息" || low === "release info" || low === "release information") continue;
+
+      // 过滤掉 “鞋款：{title}” 这类重复（你截图中的问题）
+      if (line.startsWith("鞋款：") && t) {
+        const val = normStr(line.replace(/^鞋款：/, ""));
+        if (val === t || val.includes(t)) continue;
+      }
+
+      // 额外保险：如果有人写 “标题：xxx”
+      if ((line.startsWith("标题：") || line.startsWith("Title:")) && t) {
+        const val = normStr(line.replace(/^标题：|^Title:/, ""));
+        if (val === t || val.includes(t)) continue;
+      }
+
+      filtered.push(line);
+    }
+
+    return {
+      release_info: filtered.join("\n"), // 兼容旧前端：仍然给 string
+      release_lines: filtered,          // ✅ 新结构：给新版 post.js 使用
+    };
   }
 
   function normalizePost(p, source) {
@@ -195,14 +234,20 @@ export async function onRequest(context) {
     const content_text =
       typeof p.content === "string"
         ? p.content
-        : (contentIsBlocks ? blocksToText(p.content) : (p.content ? JSON.stringify(p.content) : ""));
+        : contentIsBlocks
+          ? blocksToText(p.content)
+          : p.content
+            ? JSON.stringify(p.content)
+            : "";
 
     // summary：静态源常用 summary；Notion 我们会映射 summary
     const summary = normStr(p.summary);
 
     const date = normStr(p.date);
     const brand = normStr(p.brand);
-    const release_info = normStr(p.release_info);
+
+    // ✅ release 标准化
+    const rel = normalizeRelease(p.release_info, rawTitle);
 
     // slug 兜底：没有 slug 的旧文用 id
     const slug = rawSlug || rawId;
@@ -214,15 +259,18 @@ export async function onRequest(context) {
       date,
       brand,
       cover,
-      summary,                // ✅ 首页摘要 / 列表摘要
-      release_info,           // ✅ 发售信息
-      keywords: Array.isArray(p.keywords) ? p.keywords : (Array.isArray(p.tags) ? p.tags : []),
+      summary,                  // ✅ 首页摘要 / 列表摘要
+
+      release_info: rel.release_info,     // ✅ 兼容旧逻辑（string）
+      release_lines: rel.release_lines,   // ✅ 新结构（array）
+
+      keywords: Array.isArray(p.keywords) ? p.keywords : Array.isArray(p.tags) ? p.tags : [],
       gallery: Array.isArray(p.gallery) ? p.gallery : [],
       publish: typeof p.publish === "boolean" ? p.publish : true,
 
       // ✅ 关键：同时给两种 content
-      content: content_text,         // 给旧逻辑/搜索用（string）
-      content_blocks,               // 给新版 post.js 用（结构化数组）
+      content: content_text,    // 给旧逻辑/搜索用（string）
+      content_blocks,           // 给新版 post.js 用（结构化数组）
       source,
     };
   }
@@ -244,9 +292,13 @@ export async function onRequest(context) {
       .map((row) => {
         const props = row.properties || {};
 
-        // ✅ 兼容“首页摘要”字段名（也兼容 summary/home_summary 这种英文命名）
+        // ✅ 兼容“首页摘要”字段名（也兼容 summary/home_summary/excerpt 这种英文命名）
         const summaryProp = pickNotionProp(props, ["首页摘要", "summary", "home_summary", "excerpt"]);
         const summary = safeText(summaryProp);
+
+        // ✅ release_info 字段（仍从 Notion 取文本，但在 normalizePost 内会结构化+去重复）
+        const releaseProp = pickNotionProp(props, ["release_info", "发售信息", "Release", "release"]);
+        const release_info = safeText(releaseProp);
 
         return normalizePost(
           {
@@ -260,19 +312,19 @@ export async function onRequest(context) {
             keywords: safeMultiSelect(props.keywords),
             publish: safeCheckbox(props.publish),
             brand: safeText(props.brand),
-            release_info: safeText(props.release_info),
-            summary, // ✅
+            release_info,
+            summary,
           },
           "notion"
         );
       })
       .filter(Boolean);
 
-    if (!all) notionPosts = notionPosts.filter(p => p.publish === true);
+    if (!all) notionPosts = notionPosts.filter((p) => p.publish === true);
 
     // 2) Static
     const staticRaw = await loadStaticPosts();
-    const staticPosts = staticRaw.map(p => normalizePost(p, "static")).filter(Boolean);
+    const staticPosts = staticRaw.map((p) => normalizePost(p, "static")).filter(Boolean);
 
     // 3) Merge：Notion 覆盖静态（同 slug 认为同一篇）
     const map = new Map();
@@ -311,7 +363,6 @@ export async function onRequest(context) {
     return new Response(JSON.stringify(merged), {
       headers: { "Content-Type": "application/json; charset=utf-8" },
     });
-
   } catch (err) {
     return new Response(JSON.stringify({ error: String(err?.stack || err) }, null, 2), {
       status: 500,
