@@ -1,22 +1,15 @@
-// /functions/post/[[path]].js
-export async function onRequest({ request, env }) {
-  const url = new URL(request.url);
+export async function onRequest(context) {
+  const url = new URL(context.request.url);
 
-  // ✅ 1) 放行真实文件，避免函数对 /post/index.html 再次介入导致递归/1019
-  if (url.pathname === "/post/index.html") {
-    return env.ASSETS.fetch(request);
+  const pathParts = url.pathname.split("/").filter(Boolean);
+  const slug = pathParts[1] || "";
+
+  if (!slug) {
+    return context.env.ASSETS.fetch(new Request(`${url.origin}/post/index.html`));
   }
 
-  // ✅ 2) /post 与 /post/<slug> 都内部改写到 /post/index.html（地址栏不变）
-  // 注意：这里包含 /post/xxx、/post/xxx/、以及你未来可能加的层级
-  if (url.pathname === "/post" || url.pathname.startsWith("/post/")) {
-    const rewrite = new URL(request.url);
-    rewrite.pathname = "/post/index.html";
+  const newUrl = new URL(`${url.origin}/post/index.html`);
+  newUrl.searchParams.set("slug", slug);
 
-    // 关键点：用 env.ASSETS.fetch 读取静态资源，而不是 fetch()，避免再次触发 Functions
-    return env.ASSETS.fetch(new Request(rewrite.toString(), request));
-  }
-
-  // ✅ 3) 兜底：不在 /post 范围内的请求，交给静态资源
-  return env.ASSETS.fetch(request);
+  return context.env.ASSETS.fetch(new Request(newUrl.toString()));
 }
