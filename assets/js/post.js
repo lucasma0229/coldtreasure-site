@@ -41,7 +41,7 @@
     try {
       const u = new URL(location.href);
       slug = (u.searchParams.get("slug") || "").trim();
-      id   = (u.searchParams.get("id") || "").trim();
+      id = (u.searchParams.get("id") || "").trim();
     } catch {}
 
     // 2) path: /post/<slug> 或 /post/<slug>/
@@ -53,6 +53,45 @@
     }
 
     return { slug, id };
+  }
+
+  // -------- canonical / URL normalize (Direction B) --------
+  function setCanonical(cleanPath) {
+    if (!cleanPath) return;
+    const href = `${location.origin}${cleanPath}`;
+    let el = document.querySelector('link[rel="canonical"]');
+    if (!el) {
+      el = document.createElement("link");
+      el.setAttribute("rel", "canonical");
+      document.head.appendChild(el);
+    }
+    el.setAttribute("href", href);
+  }
+
+  // 把 ?slug=xxx / ?id=xxx 规范化为 /post/<slug>（不刷新）
+  // 注意：只有拿到 slug 才做，因为 canonical 目标是 /post/<slug>
+  function normalizeToCleanSlugPath(slug) {
+    const s = String(slug || "").trim();
+    if (!s) return;
+
+    const u = new URL(location.href);
+
+    const alreadyClean =
+      u.pathname.toLowerCase() === "/post/" + s.toLowerCase() ||
+      u.pathname.toLowerCase() === "/post/" + s.toLowerCase() + "/";
+
+    // 如果已经是 /post/<slug> 形态，保持不动（但 canonical 仍设置）
+    const cleanPath = `/post/${encodeURIComponent(s)}`;
+
+    // 只有当当前是 query 形态时，才 replaceState
+    const hasSlugQ = u.searchParams.has("slug");
+    const hasIdQ = u.searchParams.has("id");
+
+    if ((hasSlugQ || hasIdQ) && !alreadyClean) {
+      history.replaceState(null, "", cleanPath);
+    }
+
+    setCanonical(cleanPath);
   }
 
   async function waitModulesLoaded() {
@@ -69,6 +108,7 @@
   }
 
   async function loadPosts() {
+    // 你原本这里是 no-store + v=Date.now()，保留（最稳）
     const res = await fetch(`/api/posts?v=${Date.now()}`, { cache: "no-store" });
     const data = await res.json().catch(() => null);
     if (!res.ok) {
@@ -349,6 +389,74 @@
     return `<div class="error"><b>Load failed</b><div style="margin-top:8px;">${escapeHtml(msg)}</div></div>`;
   }
 
+  // -------- empty state (Direction D) --------
+  function trySortRecent(posts) {
+    // 尽量按 date 倒序（如果能 parse），否则保持原顺序
+    const arr = Array.isArray(posts) ? posts.slice() : [];
+    const scored = arr.map((p, idx) => {
+      const raw = String(p?.date || "").trim();
+      const t = raw ? Date.parse(raw) : NaN;
+      return { p, idx, t: Number.isFinite(t) ? t : NaN };
+    });
+
+    const hasAny = scored.some((x) => Number.isFinite(x.t));
+    if (!hasAny) return arr;
+
+    scored.sort((a, b) => {
+      const at = Number.isFinite(a.t) ? a.t : -Infinity;
+      const bt = Number.isFinite(b.t) ? b.t : -Infinity;
+      if (bt !== at) return bt - at;
+      return a.idx - b.idx;
+    });
+
+    return scored.map((x) => x.p);
+  }
+
+  async function renderEmptyState(app) {
+    app.innerHTML = `
+      <section class="post-empty" style="padding:18px 0;">
+        <h1 style="margin:0 0 8px 0;">Post</h1>
+        <p class="muted" style="margin:0 0 14px 0;">
+          你打开的是文章入口页。可从最新文章开始浏览，或回到 <a href="/news/">News</a>。
+        </p>
+        <div id="recentList" style="display:grid; gap:10px;"></div>
+      </section>
+    `;
+
+    const listEl = $("#recentList", app);
+    if (!listEl) return;
+
+    try {
+      const posts = trySortRecent(await loadPosts());
+      const items = posts.slice(0, 10);
+
+      if (!items.length) {
+        listEl.innerHTML = `<div class="muted">暂无文章。</div>`;
+        return;
+      }
+
+      listEl.innerHTML = items
+        .map((p) => {
+          const slug = String(p?.slug || "").trim();
+          const title = String(p?.title || slug || "Untitled");
+          const date = String(p?.date || "").trim();
+
+          const href = slug ? `/post/${encodeURIComponent(slug)}` : "/news/";
+          const meta = date ? `<div class="muted" style="font-size:13px; margin-top:4px;">${escapeHtml(date)}</div>` : "";
+
+          return `
+            <a class="recent-item" href="${href}" style="display:block; padding:12px 14px; border:1px solid rgba(0,0,0,.08); border-radius:14px; text-decoration:none; color:inherit;">
+              <div style="font-weight:600; line-height:1.2;">${escapeHtml(title)}</div>
+              ${meta}
+            </a>
+          `;
+        })
+        .join("");
+    } catch (e) {
+      listEl.innerHTML = `<a href="/news/">去 News 浏览</a>`;
+    }
+  }
+
   // -------- main --------
   (async function main() {
     const app = $("#app");
@@ -357,14 +465,18 @@
     await waitModulesLoaded();
 
     const { slug, id } = getSlugOrId();
+
+    // ✅ D：/post/ 没有 slug/id 时，给“产品化”的入口页
     if (!slug && !id) {
-      app.innerHTML = renderError("Missing slug in URL. Use ?slug=... or /post/<slug>");
+      await renderEmptyState(app);
+      // canonical 不设置（因为不是具体文章）
       return;
     }
 
     try {
       const list = await loadPosts();
 
+      // 命中：slug 优先，否则 id
       const hit = list.find((p) => {
         const pSlug = String(p?.slug || "").trim();
         const pId = String(p?.id || "").trim();
@@ -375,6 +487,13 @@
       if (!hit) {
         app.innerHTML = renderError(`Post not found: ${slug || id}`);
         return;
+      }
+
+      // ✅ B：规范化 URL + canonical
+      // - 如果当前是 ?slug= 或 ?id= 进来的，只要我们拿到了 hit.slug，就统一成 /post/<slug>
+      const hitSlug = String(hit?.slug || "").trim();
+      if (hitSlug) {
+        normalizeToCleanSlugPath(hitSlug);
       }
 
       app.innerHTML = "";
