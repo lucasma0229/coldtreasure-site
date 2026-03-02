@@ -37,16 +37,17 @@
     let slug = "";
     let id = "";
 
+    // 1) query: ?slug=xxx / ?id=xxx
     try {
       const u = new URL(location.href);
       slug = (u.searchParams.get("slug") || "").trim();
-      id = (u.searchParams.get("id") || "").trim();
+      id   = (u.searchParams.get("id") || "").trim();
     } catch {}
 
-    // path slug 兜底（SEO 友好）
+    // 2) path: /post/<slug> 或 /post/<slug>/
     if (!slug && !id) {
       const path = String(location.pathname || "");
-      // e.g. /post/xxx , /post/xxx/
+      // 匹配 /post/xxx 或 /post/xxx/
       const m = path.match(/^\/post\/([^\/?#]+)\/?$/i);
       if (m && m[1]) slug = decodeURIComponent(m[1]);
     }
