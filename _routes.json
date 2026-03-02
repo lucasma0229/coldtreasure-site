@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "include": ["/post", "/post/*"],
+  "include": ["/post/*", "/post"],
   "exclude": [
     "/post/index.html",
     "/post/*.css",
@@ -13,6 +13,7 @@
     "/post/*.svg",
     "/post/*.ico",
     "/post/*.woff",
-    "/post/*.woff2"
+    "/post/*.woff2",
+    "/assets/*"
   ]
 }
