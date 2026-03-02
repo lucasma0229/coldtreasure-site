@@ -1,5 +1,20 @@
 {
   "version": 1,
-  "include": ["/post", "/post/*"],
-  "exclude": ["/post/index.html"]
+  "include": ["/post", "/post/", "/post/*"],
+  "exclude": [
+    "/post",
+    "/post/",
+    "/post/index.html",
+    "/post/*.css",
+    "/post/*.js",
+    "/post/*.map",
+    "/post/*.png",
+    "/post/*.jpg",
+    "/post/*.jpeg",
+    "/post/*.webp",
+    "/post/*.svg",
+    "/post/*.ico",
+    "/post/*.woff",
+    "/post/*.woff2"
+  ]
 }
