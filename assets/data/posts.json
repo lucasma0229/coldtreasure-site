@@ -82,19 +82,10 @@
     "gallery": ["/assets/img/posts/juju-watkins-lebron-nxxt-silver-lining-2026/nike-lebron-nxxt-gen-juju-watkins-silver-lining-1_结果.jpg"],
     "summary": "JuJu Watkins 参与打造 LeBron NXXT Gen 特别配色。",
     "content": [
-      {
-        "type": "p",
-        "text": "Nike 正在持续扩大新生代球员在产品线中的参与度。2026 年，JuJu Watkins 正式参与 LeBron NXXT Gen 系列设计。"
-      },
-      {
-        "type": "p",
-        "text": "本次 “Silver Lining” 版本以金属银为视觉核心，并融入 JuJu 个人风格与签名细节，象征 Nike 篮球新世代的叙事方向。"
-      },
+      { "type": "p", "text": "Nike 正在持续扩大新生代球员在产品线中的参与度。2026 年，JuJu Watkins 正式参与 LeBron NXXT Gen 系列设计。" },
+      { "type": "p", "text": "本次 “Silver Lining” 版本以金属银为视觉核心，并融入 JuJu 个人风格与签名细节，象征 Nike 篮球新世代的叙事方向。" },
       { "type": "h2", "text": "发售信息" },
-      {
-        "type": "ul",
-        "items": ["LeBron NXXT Gen by JuJu", "预计发售：2026", "定价：$170", "渠道：Nike Basketball"]
-      }
+      { "type": "ul", "items": ["LeBron NXXT Gen by JuJu", "预计发售：2026", "定价：$170", "渠道：Nike Basketball"] }
     ],
     "tags": ["LeBron", "Nike Basketball", "JuJu"]
   },
@@ -121,14 +112,8 @@
     ],
     "summary": "Kith 与 Nike KD18 融合 Air Max 95 语言的 F&F 版本曝光。",
     "content": [
-      {
-        "type": "p",
-        "text": "Ronnie Fieg 再度将 Kith 档案语言注入 Nike 篮球体系。本次 KD18 融入 Air Max 95 经典配色逻辑，并以 Friends & Family 规格呈现。"
-      },
-      {
-        "type": "p",
-        "text": "鞋身采用灰黑渐层与荧光细节组合，同时融入 Kith 标志压纹材质，整体更偏向收藏级项目，目前暂无公开发售计划。"
-      },
+      { "type": "p", "text": "Ronnie Fieg 再度将 Kith 档案语言注入 Nike 篮球体系。本次 KD18 融入 Air Max 95 经典配色逻辑，并以 Friends & Family 规格呈现。" },
+      { "type": "p", "text": "鞋身采用灰黑渐层与荧光细节组合，同时融入 Kith 标志压纹材质，整体更偏向收藏级项目，目前暂无公开发售计划。" },
       { "type": "h2", "text": "发售情报" },
       { "type": "ul", "items": ["Kith x Nike KD18", "规格：Friends & Family", "暂无公开发售"] }
     ],
