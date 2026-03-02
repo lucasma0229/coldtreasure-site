@@ -22,7 +22,6 @@
     const u = String(url || "").trim();
     if (!u) return "";
     if (isSignedUrl(u)) return u; // keep intact
-
     // 对绝对外链不做处理（减少风险）
     if (/^https?:\/\//i.test(u)) return u;
 
@@ -30,15 +29,29 @@
     return u.includes("?") ? `${u}&${v}` : `${u}?${v}`;
   }
 
+  // ✅ 同时支持：
+  // 1) ?slug=xxx
+  // 2) ?id=xxx
+  // 3) /post/<slug> 或 /post/<slug>/  (推荐)
   function getSlugOrId() {
+    let slug = "";
+    let id = "";
+
     try {
-      const sp = new URL(location.href).searchParams;
-      const slug = (sp.get("slug") || "").trim();
-      const id = (sp.get("id") || "").trim();
-      return { slug, id };
-    } catch {
-      return { slug: "", id: "" };
+      const u = new URL(location.href);
+      slug = (u.searchParams.get("slug") || "").trim();
+      id = (u.searchParams.get("id") || "").trim();
+    } catch {}
+
+    // path slug 兜底（SEO 友好）
+    if (!slug && !id) {
+      const path = String(location.pathname || "");
+      // e.g. /post/xxx , /post/xxx/
+      const m = path.match(/^\/post\/([^\/?#]+)\/?$/i);
+      if (m && m[1]) slug = decodeURIComponent(m[1]);
     }
+
+    return { slug, id };
   }
 
   async function waitModulesLoaded() {
@@ -57,8 +70,10 @@
   async function loadPosts() {
     const res = await fetch(`/api/posts?v=${Date.now()}`, { cache: "no-store" });
     const data = await res.json().catch(() => null);
-    if (!res.ok) throw new Error(data?.error || `Failed to load /api/posts (${res.status})`);
-
+    if (!res.ok) {
+      const msg = data?.error || `Failed to load /api/posts (${res.status})`;
+      throw new Error(msg);
+    }
     if (Array.isArray(data)) return data;
     if (Array.isArray(data?.posts)) return data.posts; // debug mode compatibility
     return [];
@@ -86,9 +101,11 @@
         if (!items.length) continue;
         const ul = document.createElement("ul");
         for (const it of items) {
+          const text = String(it || "").trim();
+          if (!text) continue;
           const li = document.createElement("li");
-          li.textContent = String(it || "").trim();
-          if (li.textContent) ul.appendChild(li);
+          li.textContent = text;
+          ul.appendChild(li);
         }
         if (ul.childNodes.length) frag.appendChild(ul);
         continue;
@@ -112,6 +129,7 @@
 
   function setContentInto(container, post) {
     const blocks = Array.isArray(post?.content_blocks) ? post.content_blocks : null;
+
     if (blocks && blocks.length) {
       container.innerHTML = "";
       container.appendChild(renderBlocksToFragment(blocks));
@@ -128,7 +146,12 @@
     if (looksLikeBlocksJson(s)) {
       try {
         const parsed = JSON.parse(s);
-        const arr = Array.isArray(parsed) ? parsed : Array.isArray(parsed?.content) ? parsed.content : null;
+        const arr = Array.isArray(parsed)
+          ? parsed
+          : Array.isArray(parsed?.content)
+            ? parsed.content
+            : null;
+
         if (Array.isArray(arr)) {
           container.innerHTML = "";
           container.appendChild(renderBlocksToFragment(arr));
@@ -159,12 +182,14 @@
     // 兼容旧字段：release_info（string）
     const s = String(post?.release_info || "").trim();
     if (!s) return [];
+
     const lines = s.includes("\n") ? s.split(/\r?\n/) : s.split(/；|;|\|/);
     return lines.map((x) => String(x || "").trim()).filter(Boolean);
   }
 
   function renderReleaseInto(bodyEl, lines) {
     bodyEl.innerHTML = "";
+
     if (!lines || !lines.length) {
       // 没有发售信息则隐藏整个模块（保持页面干净）
       const sec = bodyEl.closest("[data-release]") || bodyEl.closest(".post-release");
@@ -196,7 +221,6 @@
 
     if (!hit) return false;
 
-    // 收集 heading 后面的节点，直到遇到下一个同级 heading
     const collected = [];
     let node = hit.nextSibling;
 
@@ -204,10 +228,7 @@
       const next = node.nextSibling;
 
       // 遇到下一个标题就停
-      if (
-        node.nodeType === 1 &&
-        ["H2", "H3", "H4"].includes(node.tagName)
-      ) break;
+      if (node.nodeType === 1 && ["H2", "H3", "H4"].includes(node.tagName)) break;
 
       // 跳过空白文本
       if (node.nodeType === 3 && !String(node.textContent || "").trim()) {
@@ -219,24 +240,18 @@
       node = next;
     }
 
-    // 如果没收集到内容，不迁移
+    // 如果没收集到内容，不迁移，但移除标题本身
     if (!collected.length) {
-      // 但仍移除标题本身，避免正文出现“发售信息”孤岛
       hit.remove();
       return true;
     }
 
-    // 把收集到的内容迁移到 releaseBody
-    // 规则：如果是 ul/li 结构，保持；否则按段落塞进去
     releaseBodyEl.innerHTML = "";
     const frag = document.createDocumentFragment();
-
-    for (const n of collected) frag.appendChild(n); // 注意：append 会自动从原位置移除
-    hit.remove(); // 再移除标题本身
-
+    for (const n of collected) frag.appendChild(n); // append 会自动从原位置移除
+    hit.remove();
     releaseBodyEl.appendChild(frag);
 
-    // 如果迁移后 body 里不是 ul，也没关系；post.css/内联样式已经兼容 p/ul
     const sec = releaseBodyEl.closest("[data-release]") || releaseBodyEl.closest(".post-release");
     if (sec) sec.hidden = false;
 
@@ -247,7 +262,7 @@
   function buildPostDom(post) {
     const tpl = $("#tpl-post");
     if (!tpl) {
-      // 兜底：没模板就直接写到 #app（不建议，但防止页面空白）
+      // 兜底：没模板就直接写到 #app（防止页面空白）
       const fallback = document.createElement("article");
       fallback.innerHTML = `<h1>${escapeHtml(post?.title || "Untitled")}</h1>`;
       return fallback;
@@ -287,13 +302,11 @@
       heroImg.alt = title;
       heroImg.loading = "eager";
     } else {
-      // 没封面就隐藏 figure
       const fig = heroImg.closest(".hero");
       if (fig) fig.hidden = true;
     }
 
-    // summary：目前你 post 页不展示（你原逻辑是隐藏）
-    // 这里保持为空并隐藏，避免占位
+    // summary：保持隐藏（你原逻辑不展示）
     summaryEl.textContent = "";
     summaryEl.hidden = true;
 
@@ -306,7 +319,6 @@
       renderReleaseInto(releaseBodyEl, releaseLines);
       if (releaseSec) releaseSec.hidden = false;
     } else {
-      // 旧文章：从正文里找“发售信息”标题并迁移
       const moved = extractReleaseFromContent(contentEl, releaseBodyEl);
       if (!moved && releaseSec) releaseSec.hidden = true;
     }
@@ -345,7 +357,7 @@
 
     const { slug, id } = getSlugOrId();
     if (!slug && !id) {
-      app.innerHTML = renderError("Missing ?slug=... or ?id=...");
+      app.innerHTML = renderError("Missing slug in URL. Use ?slug=... or /post/<slug>");
       return;
     }
 
