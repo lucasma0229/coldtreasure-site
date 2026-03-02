@@ -1,5 +1,12 @@
 {
   "version": 1,
-  "include": ["/post/*", "/post"],
-  "exclude": []
+  "include": ["/post", "/post/*"],
+  "exclude": [
+    "/post/index.html",
+    "/assets/*",
+    "/favicon/*",
+    "/img/*",
+    "/modules/*",
+    "/api/*"
+  ]
 }
