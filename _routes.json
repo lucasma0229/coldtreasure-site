@@ -1,9 +1,5 @@
 {
   "version": 1,
-  "include": ["/post/*"],
-  "exclude": [
-    "/post/index.html",
-    "/post/assets/*",
-    "/assets/*"
-  ]
+  "include": ["/post/*", "/api/*"],
+  "exclude": ["/post/index.html"]
 }
