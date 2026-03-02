@@ -1,4 +1,2 @@
 /post     /post/index.html   200
 /post/*   /post/index.html   200
-
-/*        /index.html        200
