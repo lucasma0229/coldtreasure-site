@@ -1,4 +1,4 @@
-// functions/api/posts.js
+// /functions/api/posts.js
 export async function onRequest(context) {
   const NOTION_KEY = context.env.NOTION_KEY;
   const DATABASE_ID = context.env.NOTION_DATABASE_ID;
@@ -8,8 +8,6 @@ export async function onRequest(context) {
   const debug = url.searchParams.get("debug") === "1";
 
   const version = "posts-api-merge-2026-03-02-01-stable";
-
-  // 你已确认可访问
   const STATIC_PATH = "/assets/data/posts.json";
   let staticDebug = null;
 
@@ -54,13 +52,10 @@ export async function onRequest(context) {
     return arr.map((x) => x?.name).filter(Boolean);
   };
 
-  // ✅ 更稳：publish 字段缺失时默认 true（避免你误删字段导致全站文章“全下线”）
+  // publish 字段缺失时默认 true（避免全站文章“全下线”）
   const safePublish = (prop) => {
     if (!prop) return true;
-
     if (prop.type === "checkbox") return !!prop.checkbox;
-
-    // 容错：有人把 publish 设成 select / text / formula
     if (prop.type === "formula" && prop.formula?.boolean != null) return !!prop.formula.boolean;
 
     const text = (safeText(prop) || "").trim().toLowerCase();
@@ -69,11 +64,9 @@ export async function onRequest(context) {
     if (["false", "0", "no", "n", "off", "下线", "否"].includes(text)) return false;
     if (["true", "1", "yes", "y", "on", "上线", "是"].includes(text)) return true;
 
-    // 默认：宁可发布，不要全消失
     return true;
   };
 
-  // 兼容：Notion 字段名可能是中文/英文多版本
   const pickNotionProp = (props, candidates = []) => {
     for (const key of candidates) {
       if (props && props[key]) return props[key];
@@ -83,12 +76,10 @@ export async function onRequest(context) {
 
   // ---------- Notion query with auto pagination ----------
   async function queryNotionAllPages() {
-    // 没配 Notion 也能工作（只返回静态源）
     if (!NOTION_KEY || !DATABASE_ID) {
       return { ok: true, results: [], meta: { pages: 0, has_more: false, skipped: true } };
     }
 
-    // ✅ 更稳：优先按 date 字段排序；如果 date 字段不存在/被改名，fallback 用 created_time
     const tryQuery = async (sorts) => {
       let start_cursor = undefined;
       const out = [];
@@ -113,37 +104,30 @@ export async function onRequest(context) {
         });
 
         const data = await res.json().catch(() => null);
-        if (!res.ok) {
-          return { ok: false, status: res.status || 500, detail: data };
-        }
+        if (!res.ok) return { ok: false, status: res.status || 500, detail: data };
 
         out.push(...(data?.results || []));
         has_more = !!data?.has_more;
         start_cursor = data?.next_cursor || undefined;
         pages += 1;
-
-        if (pages > 20) break; // 防护：最多 2000 条
+        if (pages > 20) break; // 最多 2000 条保护
       } while (has_more);
 
       return { ok: true, results: out, meta: { pages, has_more } };
     };
 
-    // 1) 正常：按 date 排序
     const primarySort = [{ property: "date", direction: "descending" }];
     const r1 = await tryQuery(primarySort);
-
     if (r1.ok) return r1;
 
-    // 2) fallback：created_time（当 date 字段被改名/删除时避免直接挂掉）
     const fallbackSort = [{ timestamp: "created_time", direction: "descending" }];
     const r2 = await tryQuery(fallbackSort);
-
     if (r2.ok) return r2;
 
     return { ok: false, status: 500, error: { error: "Notion API error", detail: r1.detail || r2.detail } };
   }
 
-  // ---------- Load static posts.json (robust) ----------
+  // ---------- Load static posts.json ----------
   async function loadStaticPosts() {
     const origin = url.origin;
     const bust = `v=${Date.now()}`;
@@ -156,7 +140,7 @@ export async function onRequest(context) {
       if (!staticDebug) {
         staticDebug = {
           channel,
-          requested: channel === "ASSETS" ? `https://static${STATIC_PATH}` : absoluteUrl,
+          requested: channel === "ASSETS" ? `ASSETS.fetch(${STATIC_PATH})` : absoluteUrl,
           status: res.status,
           ok: res.ok,
           contentType: ct,
@@ -175,7 +159,7 @@ export async function onRequest(context) {
       return Array.isArray(arr) ? arr : [];
     };
 
-    // 1) ASSETS.fetch（Cloudflare Pages Functions 常见用法）
+    // 1) ASSETS.fetch
     try {
       if (context.env.ASSETS?.fetch) {
         const reqUrl = new URL(STATIC_PATH, "https://assets.local");
@@ -200,10 +184,9 @@ export async function onRequest(context) {
     }
   }
 
-  // ---------- Helpers: normalize / derive ----------
+  // ---------- Helpers ----------
   const normStr = (v) => String(v ?? "").trim();
 
-  // 把静态 content(blocks) 转成可搜索的纯文本（给 Search/News 摘要用）
   function blocksToText(blocks) {
     if (!Array.isArray(blocks)) return "";
     return blocks
@@ -217,7 +200,6 @@ export async function onRequest(context) {
       .join("\n");
   }
 
-  // ✅ 结构化 release：在 API 端先做“去噪/去重复”
   function normalizeRelease(releaseRaw, title) {
     const raw = normStr(releaseRaw);
     if (!raw) return { release_info: "", release_lines: [] };
@@ -232,16 +214,13 @@ export async function onRequest(context) {
     for (const line of lines) {
       const low = line.toLowerCase();
 
-      // 过滤掉“发售信息 / Release Info”这类标题行（避免正文/模块重复）
       if (line === "发售信息" || low === "release info" || low === "release information") continue;
 
-      // 过滤掉 “鞋款：{title}” 这类重复
       if (line.startsWith("鞋款：") && t) {
         const val = normStr(line.replace(/^鞋款：/, ""));
         if (val === t || val.includes(t)) continue;
       }
 
-      // 额外保险：如果有人写 “标题：xxx”
       if ((line.startsWith("标题：") || line.startsWith("Title:")) && t) {
         const val = normStr(line.replace(/^标题：|^Title:/, ""));
         if (val === t || val.includes(t)) continue;
@@ -251,9 +230,15 @@ export async function onRequest(context) {
     }
 
     return {
-      release_info: filtered.join("\n"), // 兼容旧前端：仍然给 string
-      release_lines: filtered,          // 新结构：给新版 post.js 使用
+      release_info: filtered.join("\n"),
+      release_lines: filtered,
     };
+  }
+
+  // brand 统一为 string（前端 meta 用 @brand）
+  function normalizeBrand(b) {
+    if (Array.isArray(b)) return normStr(b[0] || "");
+    return normStr(b);
   }
 
   function normalizePost(p, source) {
@@ -265,30 +250,26 @@ export async function onRequest(context) {
 
     if (!rawId && !rawSlug && !rawTitle) return null;
 
-    // 兼容旧数据：hero/image/thumb
     const cover = normStr(p.cover || p.hero || p.image || p.thumb);
 
-    // content：可能是 string，也可能是 blocks array
     const contentIsBlocks = Array.isArray(p.content);
-    const content_blocks = contentIsBlocks ? p.content : [];
+    const content_blocks = contentIsBlocks ? p.content : Array.isArray(p.content_blocks) ? p.content_blocks : [];
     const content_text =
       typeof p.content === "string"
         ? p.content
         : contentIsBlocks
-          ? blocksToText(p.content)
-          : p.content
-            ? JSON.stringify(p.content)
-            : "";
+        ? blocksToText(p.content)
+        : p.content
+        ? JSON.stringify(p.content)
+        : "";
 
     const summary = normStr(p.summary);
     const date = normStr(p.date);
-    const brand = normStr(p.brand);
+    const brand = normalizeBrand(p.brand);
 
-    // release 标准化
     const rel = normalizeRelease(p.release_info, rawTitle);
 
-    // slug 兜底：没有 slug 的旧文用 id
-    const slug = rawSlug || rawId;
+    const slug = rawSlug || rawId; // ✅ 没 slug 就用 id
 
     return {
       id: rawId || slug || rawTitle,
@@ -308,6 +289,7 @@ export async function onRequest(context) {
 
       content: content_text,
       content_blocks,
+
       source,
     };
   }
@@ -323,10 +305,8 @@ export async function onRequest(context) {
         headers: { "Content-Type": "application/json; charset=utf-8" },
       });
     }
-
     const notionResults = nq.results || [];
 
-    // ✅ 候选字段名（你未来想改中文字段名也不怕）
     const CAND = {
       title: ["title", "标题", "Title"],
       slug: ["slug", "Slug", "短链", "文章ID", "id"],
@@ -357,39 +337,33 @@ export async function onRequest(context) {
         const publishProp = pickNotionProp(props, CAND.publish);
         const releaseProp = pickNotionProp(props, CAND.release);
 
-        const summary = safeText(summaryProp);
-        const release_info = safeText(releaseProp);
-
         return normalizePost(
           {
             id: row.id,
             title: safeText(titleProp),
             slug: safeText(slugProp),
             brand: safeText(brandProp),
-            summary,
-
+            summary: safeText(summaryProp),
             date: safeDate(dateProp),
             cover: safeCover(coverProp),
             content: safeText(contentProp),
             gallery: safeFiles(galleryProp),
             keywords: safeMultiSelect(keywordsProp),
             publish: safePublish(publishProp),
-
-            release_info,
+            release_info: safeText(releaseProp),
           },
           "notion"
         );
       })
       .filter(Boolean);
 
-    // ✅ all=0 时，仅过滤“明确下线”的文章；字段缺失默认发布，避免全站消失
     if (!all) notionPosts = notionPosts.filter((p) => p.publish === true);
 
     // 2) Static
     const staticRaw = await loadStaticPosts();
     const staticPosts = staticRaw.map((p) => normalizePost(p, "static")).filter(Boolean);
 
-    // 3) Merge：Notion 覆盖静态（同 slug 认为同一篇）
+    // 3) Merge：Notion 覆盖静态（同 slug 视为同一篇）
     const map = new Map();
     for (const p of staticPosts) map.set(String(p.slug || p.id), p);
     for (const p of notionPosts) map.set(String(p.slug || p.id), p);
@@ -412,7 +386,6 @@ export async function onRequest(context) {
               has_more: nq.meta?.has_more,
               samplePropertyNames,
               staticDebug,
-              note: "Safe mode: publish defaults to true when missing; sort falls back to created_time if date sort fails.",
             },
             posts: merged,
           },
