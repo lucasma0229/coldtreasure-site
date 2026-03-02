@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "include": ["/*"],
+  "exclude": [
+    "/assets/*",
+    "/modules/*",
+    "/news/*",
+    "/guide/*",
+    "/archive/*",
+    "/record/*",
+    "/search/*",
+    "/tools/*",
+    "/api/*"
+  ]
+}
