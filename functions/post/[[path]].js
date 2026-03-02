@@ -3,27 +3,33 @@ export async function onRequest(context) {
   const req = context.request;
   const url = new URL(req.url);
 
-  // 解析路径：/post/<slug>
+  // 解析 /post/<id>
   const parts = url.pathname.split("/").filter(Boolean);
   const isPostRoot = parts.length === 1 && parts[0] === "post";
-  const pathSlug = (parts[0] === "post" && parts.length >= 2) ? parts[1] : "";
+  const isPostIndex = parts.length === 2 && parts[0] === "post" && parts[1] === "index.html";
+  const pathId = (parts[0] === "post" && parts.length >= 2) ? parts[1] : "";
 
-  // 目标：永远用静态的 /post/（目录页）来渲染，避免 /post/index.html → /post/ 的 301 循环
-  const target = new URL(`${url.origin}/post/`);
+  // 目标永远是静态页
+  const target = new URL(`${url.origin}/post/index.html`);
 
-  // 先把原 query 全部带过去
+  // 先原样保留 query
   for (const [k, v] of url.searchParams.entries()) {
     target.searchParams.set(k, v);
   }
 
-  // 如果 URL 没带 ?slug / ?id，并且是 /post/<slug> 这种路径，就注入 slug
-  const hasSlug = target.searchParams.has("slug");
-  const hasId = target.searchParams.has("id");
-
-  if (!hasSlug && !hasId && !isPostRoot && pathSlug) {
-    target.searchParams.set("slug", pathSlug);
+  // 兼容：如果只有 slug，没有 id，则补 id=slug（你的 posts.json 主键是 id）
+  if (target.searchParams.has("slug") && !target.searchParams.has("id")) {
+    target.searchParams.set("id", target.searchParams.get("slug"));
   }
 
-  // 用 ASSETS.fetch 取静态页面（不做 3xx redirect，避免循环）
+  // 兼容：/post/<xxx> 注入 id=<xxx>
+  if (!isPostRoot && !isPostIndex && pathId) {
+    // 避免 /post/index.html 被当成 id
+    if (pathId !== "index.html") {
+      target.searchParams.set("id", pathId);
+    }
+  }
+
+  // 不做 3xx，直接取静态资源（带上原 request 的 method/headers）
   return context.env.ASSETS.fetch(new Request(target.toString(), req));
 }
