@@ -7,7 +7,7 @@ export async function onRequest(context) {
   const all = url.searchParams.get("all") === "1";
   const debug = url.searchParams.get("debug") === "1";
 
-  const version = "posts-api-merge-2026-02-28-02";
+  const version = "posts-api-merge-2026-03-02-01-stable";
 
   // 你已确认可访问
   const STATIC_PATH = "/assets/data/posts.json";
@@ -19,6 +19,11 @@ export async function onRequest(context) {
     if (prop.type === "title") return prop.title?.map((t) => t.plain_text).join("") ?? "";
     if (prop.type === "rich_text") return prop.rich_text?.map((t) => t.plain_text).join("") ?? "";
     if (prop.type === "select") return prop.select?.name ?? "";
+    if (prop.type === "multi_select") return prop.multi_select?.map((x) => x?.name).filter(Boolean).join(", ") ?? "";
+    if (prop.type === "number") return prop.number != null ? String(prop.number) : "";
+    if (prop.type === "url") return prop.url ?? "";
+    if (prop.type === "email") return prop.email ?? "";
+    if (prop.type === "phone_number") return prop.phone_number ?? "";
     if (prop.type === "formula") {
       return (
         prop.formula?.string ??
@@ -27,6 +32,7 @@ export async function onRequest(context) {
         ""
       );
     }
+    if (prop.type === "checkbox") return String(!!prop.checkbox);
     return "";
   };
 
@@ -48,9 +54,26 @@ export async function onRequest(context) {
     return arr.map((x) => x?.name).filter(Boolean);
   };
 
-  const safeCheckbox = (prop) => (prop?.type === "checkbox" ? !!prop.checkbox : false);
+  // ✅ 更稳：publish 字段缺失时默认 true（避免你误删字段导致全站文章“全下线”）
+  const safePublish = (prop) => {
+    if (!prop) return true;
 
-  // 兼容：Notion 字段名可能是中文“首页摘要”
+    if (prop.type === "checkbox") return !!prop.checkbox;
+
+    // 容错：有人把 publish 设成 select / text / formula
+    if (prop.type === "formula" && prop.formula?.boolean != null) return !!prop.formula.boolean;
+
+    const text = (safeText(prop) || "").trim().toLowerCase();
+    if (!text) return true;
+
+    if (["false", "0", "no", "n", "off", "下线", "否"].includes(text)) return false;
+    if (["true", "1", "yes", "y", "on", "上线", "是"].includes(text)) return true;
+
+    // 默认：宁可发布，不要全消失
+    return true;
+  };
+
+  // 兼容：Notion 字段名可能是中文/英文多版本
   const pickNotionProp = (props, candidates = []) => {
     for (const key of candidates) {
       if (props && props[key]) return props[key];
@@ -65,42 +88,59 @@ export async function onRequest(context) {
       return { ok: true, results: [], meta: { pages: 0, has_more: false, skipped: true } };
     }
 
-    let start_cursor = undefined;
-    const out = [];
-    let has_more = false;
-    let pages = 0;
+    // ✅ 更稳：优先按 date 字段排序；如果 date 字段不存在/被改名，fallback 用 created_time
+    const tryQuery = async (sorts) => {
+      let start_cursor = undefined;
+      const out = [];
+      let has_more = false;
+      let pages = 0;
 
-    do {
-      const body = {
-        page_size: 100,
-        sorts: [{ property: "date", direction: "descending" }],
-        ...(start_cursor ? { start_cursor } : {}),
-      };
+      do {
+        const body = {
+          page_size: 100,
+          ...(sorts ? { sorts } : {}),
+          ...(start_cursor ? { start_cursor } : {}),
+        };
 
-      const res = await fetch(`https://api.notion.com/v1/databases/${DATABASE_ID}/query`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${NOTION_KEY}`,
-          "Content-Type": "application/json",
-          "Notion-Version": "2022-06-28",
-        },
-        body: JSON.stringify(body),
-      });
+        const res = await fetch(`https://api.notion.com/v1/databases/${DATABASE_ID}/query`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${NOTION_KEY}`,
+            "Content-Type": "application/json",
+            "Notion-Version": "2022-06-28",
+          },
+          body: JSON.stringify(body),
+        });
 
-      const data = await res.json().catch(() => null);
-      if (!res.ok) {
-        return { ok: false, status: 500, error: { error: "Notion API error", detail: data } };
-      }
+        const data = await res.json().catch(() => null);
+        if (!res.ok) {
+          return { ok: false, status: res.status || 500, detail: data };
+        }
 
-      out.push(...(data?.results || []));
-      has_more = !!data?.has_more;
-      start_cursor = data?.next_cursor || undefined;
-      pages += 1;
+        out.push(...(data?.results || []));
+        has_more = !!data?.has_more;
+        start_cursor = data?.next_cursor || undefined;
+        pages += 1;
 
-      if (pages > 20) break; // 防护：最多 2000 条
-    } while (has_more);
+        if (pages > 20) break; // 防护：最多 2000 条
+      } while (has_more);
 
-    return { ok: true, results: out, meta: { pages, has_more } };
+      return { ok: true, results: out, meta: { pages, has_more } };
+    };
+
+    // 1) 正常：按 date 排序
+    const primarySort = [{ property: "date", direction: "descending" }];
+    const r1 = await tryQuery(primarySort);
+
+    if (r1.ok) return r1;
+
+    // 2) fallback：created_time（当 date 字段被改名/删除时避免直接挂掉）
+    const fallbackSort = [{ timestamp: "created_time", direction: "descending" }];
+    const r2 = await tryQuery(fallbackSort);
+
+    if (r2.ok) return r2;
+
+    return { ok: false, status: 500, error: { error: "Notion API error", detail: r1.detail || r2.detail } };
   }
 
   // ---------- Load static posts.json (robust) ----------
@@ -195,7 +235,7 @@ export async function onRequest(context) {
       // 过滤掉“发售信息 / Release Info”这类标题行（避免正文/模块重复）
       if (line === "发售信息" || low === "release info" || low === "release information") continue;
 
-      // 过滤掉 “鞋款：{title}” 这类重复（你截图中的问题）
+      // 过滤掉 “鞋款：{title}” 这类重复
       if (line.startsWith("鞋款：") && t) {
         const val = normStr(line.replace(/^鞋款：/, ""));
         if (val === t || val.includes(t)) continue;
@@ -212,7 +252,7 @@ export async function onRequest(context) {
 
     return {
       release_info: filtered.join("\n"), // 兼容旧前端：仍然给 string
-      release_lines: filtered,          // ✅ 新结构：给新版 post.js 使用
+      release_lines: filtered,          // 新结构：给新版 post.js 使用
     };
   }
 
@@ -240,13 +280,11 @@ export async function onRequest(context) {
             ? JSON.stringify(p.content)
             : "";
 
-    // summary：静态源常用 summary；Notion 我们会映射 summary
     const summary = normStr(p.summary);
-
     const date = normStr(p.date);
     const brand = normStr(p.brand);
 
-    // ✅ release 标准化
+    // release 标准化
     const rel = normalizeRelease(p.release_info, rawTitle);
 
     // slug 兜底：没有 slug 的旧文用 id
@@ -259,18 +297,17 @@ export async function onRequest(context) {
       date,
       brand,
       cover,
-      summary,                  // ✅ 首页摘要 / 列表摘要
+      summary,
 
-      release_info: rel.release_info,     // ✅ 兼容旧逻辑（string）
-      release_lines: rel.release_lines,   // ✅ 新结构（array）
+      release_info: rel.release_info,
+      release_lines: rel.release_lines,
 
       keywords: Array.isArray(p.keywords) ? p.keywords : Array.isArray(p.tags) ? p.tags : [],
       gallery: Array.isArray(p.gallery) ? p.gallery : [],
       publish: typeof p.publish === "boolean" ? p.publish : true,
 
-      // ✅ 关键：同时给两种 content
-      content: content_text,    // 给旧逻辑/搜索用（string）
-      content_blocks,           // 给新版 post.js 用（结构化数组）
+      content: content_text,
+      content_blocks,
       source,
     };
   }
@@ -281,45 +318,71 @@ export async function onRequest(context) {
     // 1) Notion
     const nq = await queryNotionAllPages();
     if (!nq.ok) {
-      return new Response(JSON.stringify(nq.error, null, 2), {
+      return new Response(JSON.stringify(nq.error || nq.detail || { error: "Notion query failed" }, null, 2), {
         status: nq.status || 500,
         headers: { "Content-Type": "application/json; charset=utf-8" },
       });
     }
 
     const notionResults = nq.results || [];
+
+    // ✅ 候选字段名（你未来想改中文字段名也不怕）
+    const CAND = {
+      title: ["title", "标题", "Title"],
+      slug: ["slug", "Slug", "短链", "文章ID", "id"],
+      brand: ["brand", "品牌", "Brand"],
+      summary: ["首页摘要", "summary", "home_summary", "excerpt", "摘要", "简介"],
+      content: ["content", "正文", "Content", "文章内容"],
+      date: ["date", "日期", "Date", "发布时间"],
+      cover: ["cover", "封面", "首图", "hero", "thumb", "thumbnail"],
+      gallery: ["gallery", "图集", "相册", "images", "Gallery"],
+      keywords: ["keywords", "关键词", "tags", "标签", "Topics"],
+      publish: ["publish", "published", "发布", "上线", "公开", "Publish"],
+      release: ["release_info", "发售信息", "Release", "release", "Release Info"],
+    };
+
     let notionPosts = notionResults
       .map((row) => {
         const props = row.properties || {};
 
-        // ✅ 兼容“首页摘要”字段名（也兼容 summary/home_summary/excerpt 这种英文命名）
-        const summaryProp = pickNotionProp(props, ["首页摘要", "summary", "home_summary", "excerpt"]);
-        const summary = safeText(summaryProp);
+        const titleProp = pickNotionProp(props, CAND.title);
+        const slugProp = pickNotionProp(props, CAND.slug);
+        const brandProp = pickNotionProp(props, CAND.brand);
+        const summaryProp = pickNotionProp(props, CAND.summary);
+        const contentProp = pickNotionProp(props, CAND.content);
+        const dateProp = pickNotionProp(props, CAND.date);
+        const coverProp = pickNotionProp(props, CAND.cover);
+        const galleryProp = pickNotionProp(props, CAND.gallery);
+        const keywordsProp = pickNotionProp(props, CAND.keywords);
+        const publishProp = pickNotionProp(props, CAND.publish);
+        const releaseProp = pickNotionProp(props, CAND.release);
 
-        // ✅ release_info 字段（仍从 Notion 取文本，但在 normalizePost 内会结构化+去重复）
-        const releaseProp = pickNotionProp(props, ["release_info", "发售信息", "Release", "release"]);
+        const summary = safeText(summaryProp);
         const release_info = safeText(releaseProp);
 
         return normalizePost(
           {
             id: row.id,
-            title: safeText(props.title),
-            slug: safeText(props.slug),
-            cover: safeCover(props.cover),
-            date: safeDate(props.date),
-            content: safeText(props.content),
-            gallery: safeFiles(props.gallery),
-            keywords: safeMultiSelect(props.keywords),
-            publish: safeCheckbox(props.publish),
-            brand: safeText(props.brand),
-            release_info,
+            title: safeText(titleProp),
+            slug: safeText(slugProp),
+            brand: safeText(brandProp),
             summary,
+
+            date: safeDate(dateProp),
+            cover: safeCover(coverProp),
+            content: safeText(contentProp),
+            gallery: safeFiles(galleryProp),
+            keywords: safeMultiSelect(keywordsProp),
+            publish: safePublish(publishProp),
+
+            release_info,
           },
           "notion"
         );
       })
       .filter(Boolean);
 
+    // ✅ all=0 时，仅过滤“明确下线”的文章；字段缺失默认发布，避免全站消失
     if (!all) notionPosts = notionPosts.filter((p) => p.publish === true);
 
     // 2) Static
@@ -349,6 +412,7 @@ export async function onRequest(context) {
               has_more: nq.meta?.has_more,
               samplePropertyNames,
               staticDebug,
+              note: "Safe mode: publish defaults to true when missing; sort falls back to created_time if date sort fails.",
             },
             posts: merged,
           },
