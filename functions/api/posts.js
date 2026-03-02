@@ -1,4 +1,4 @@
-// /functions/api/posts.js
+// functions/api/posts.js
 export async function onRequest(context) {
   const NOTION_KEY = context.env.NOTION_KEY;
   const DATABASE_ID = context.env.NOTION_DATABASE_ID;
@@ -6,12 +6,15 @@ export async function onRequest(context) {
   const url = new URL(context.request.url);
   const all = url.searchParams.get("all") === "1";
   const debug = url.searchParams.get("debug") === "1";
+  const version = "posts-api-merge-2026-03-02-02";
 
-  const version = "posts-api-merge-2026-03-02-01-stable";
   const STATIC_PATH = "/assets/data/posts.json";
   let staticDebug = null;
 
-  // ---------- Safe readers (Notion props) ----------
+  const normStr = (v) => String(v ?? "").trim();
+  const dateKey = (d) => (normStr(d) ? normStr(d) : "0000-00-00");
+
+  // ---------- Notion safe readers ----------
   const safeText = (prop) => {
     if (!prop) return "";
     if (prop.type === "title") return prop.title?.map((t) => t.plain_text).join("") ?? "";
@@ -20,8 +23,6 @@ export async function onRequest(context) {
     if (prop.type === "multi_select") return prop.multi_select?.map((x) => x?.name).filter(Boolean).join(", ") ?? "";
     if (prop.type === "number") return prop.number != null ? String(prop.number) : "";
     if (prop.type === "url") return prop.url ?? "";
-    if (prop.type === "email") return prop.email ?? "";
-    if (prop.type === "phone_number") return prop.phone_number ?? "";
     if (prop.type === "formula") {
       return (
         prop.formula?.string ??
@@ -52,7 +53,6 @@ export async function onRequest(context) {
     return arr.map((x) => x?.name).filter(Boolean);
   };
 
-  // publish 字段缺失时默认 true（避免全站文章“全下线”）
   const safePublish = (prop) => {
     if (!prop) return true;
     if (prop.type === "checkbox") return !!prop.checkbox;
@@ -74,7 +74,7 @@ export async function onRequest(context) {
     return null;
   };
 
-  // ---------- Notion query with auto pagination ----------
+  // ---------- Notion pagination ----------
   async function queryNotionAllPages() {
     if (!NOTION_KEY || !DATABASE_ID) {
       return { ok: true, results: [], meta: { pages: 0, has_more: false, skipped: true } };
@@ -110,18 +110,17 @@ export async function onRequest(context) {
         has_more = !!data?.has_more;
         start_cursor = data?.next_cursor || undefined;
         pages += 1;
-        if (pages > 20) break; // 最多 2000 条保护
+
+        if (pages > 20) break;
       } while (has_more);
 
       return { ok: true, results: out, meta: { pages, has_more } };
     };
 
-    const primarySort = [{ property: "date", direction: "descending" }];
-    const r1 = await tryQuery(primarySort);
+    const r1 = await tryQuery([{ property: "date", direction: "descending" }]);
     if (r1.ok) return r1;
 
-    const fallbackSort = [{ timestamp: "created_time", direction: "descending" }];
-    const r2 = await tryQuery(fallbackSort);
+    const r2 = await tryQuery([{ timestamp: "created_time", direction: "descending" }]);
     if (r2.ok) return r2;
 
     return { ok: false, status: 500, error: { error: "Notion API error", detail: r1.detail || r2.detail } };
@@ -130,8 +129,7 @@ export async function onRequest(context) {
   // ---------- Load static posts.json ----------
   async function loadStaticPosts() {
     const origin = url.origin;
-    const bust = `v=${Date.now()}`;
-    const absoluteUrl = `${origin}${STATIC_PATH}?${bust}`;
+    const absoluteUrl = `${origin}${STATIC_PATH}?v=${Date.now()}`;
 
     const parseJsonArray = async (res, channel) => {
       const ct = res.headers.get("content-type") || "";
@@ -140,7 +138,7 @@ export async function onRequest(context) {
       if (!staticDebug) {
         staticDebug = {
           channel,
-          requested: channel === "ASSETS" ? `ASSETS.fetch(${STATIC_PATH})` : absoluteUrl,
+          requested: channel === "ASSETS" ? STATIC_PATH : absoluteUrl,
           status: res.status,
           ok: res.ok,
           contentType: ct,
@@ -150,7 +148,6 @@ export async function onRequest(context) {
       }
 
       if (!res.ok) return [];
-
       const trimmed = text.trim();
       if (!trimmed.startsWith("[") && !trimmed.startsWith("{")) return [];
 
@@ -159,7 +156,6 @@ export async function onRequest(context) {
       return Array.isArray(arr) ? arr : [];
     };
 
-    // 1) ASSETS.fetch
     try {
       if (context.env.ASSETS?.fetch) {
         const reqUrl = new URL(STATIC_PATH, "https://assets.local");
@@ -168,24 +164,17 @@ export async function onRequest(context) {
         if (arr.length) return arr;
       }
     } catch (e) {
-      if (!staticDebug) staticDebug = { channel: "ASSETS", error: String(e?.message || e), hasASSETS: !!context.env.ASSETS };
+      if (!staticDebug) staticDebug = { channel: "ASSETS", error: String(e?.message || e) };
     }
 
-    // 2) fallback：同源 fetch
     try {
-      const res = await fetch(absoluteUrl, {
-        cache: "no-store",
-        cf: { cacheTtl: 0, cacheEverything: false },
-      });
+      const res = await fetch(absoluteUrl, { cache: "no-store" });
       return await parseJsonArray(res, "ORIGIN_FETCH");
     } catch (e) {
       if (!staticDebug) staticDebug = { channel: "ORIGIN_FETCH", error: String(e?.message || e) };
       return [];
     }
   }
-
-  // ---------- Helpers ----------
-  const normStr = (v) => String(v ?? "").trim();
 
   function blocksToText(blocks) {
     if (!Array.isArray(blocks)) return "";
@@ -213,32 +202,16 @@ export async function onRequest(context) {
     const filtered = [];
     for (const line of lines) {
       const low = line.toLowerCase();
-
       if (line === "发售信息" || low === "release info" || low === "release information") continue;
 
       if (line.startsWith("鞋款：") && t) {
         const val = normStr(line.replace(/^鞋款：/, ""));
         if (val === t || val.includes(t)) continue;
       }
-
-      if ((line.startsWith("标题：") || line.startsWith("Title:")) && t) {
-        const val = normStr(line.replace(/^标题：|^Title:/, ""));
-        if (val === t || val.includes(t)) continue;
-      }
-
       filtered.push(line);
     }
 
-    return {
-      release_info: filtered.join("\n"),
-      release_lines: filtered,
-    };
-  }
-
-  // brand 统一为 string（前端 meta 用 @brand）
-  function normalizeBrand(b) {
-    if (Array.isArray(b)) return normStr(b[0] || "");
-    return normStr(b);
+    return { release_info: filtered.join("\n"), release_lines: filtered };
   }
 
   function normalizePost(p, source) {
@@ -247,38 +220,36 @@ export async function onRequest(context) {
     const rawId = normStr(p.id);
     const rawSlug = normStr(p.slug);
     const rawTitle = normStr(p.title);
-
     if (!rawId && !rawSlug && !rawTitle) return null;
+
+    // ✅ brand：允许 array -> string
+    const brand =
+      Array.isArray(p.brand) ? p.brand.map((x) => normStr(x)).filter(Boolean).join(", ") : normStr(p.brand);
 
     const cover = normStr(p.cover || p.hero || p.image || p.thumb);
 
     const contentIsBlocks = Array.isArray(p.content);
-    const content_blocks = contentIsBlocks ? p.content : Array.isArray(p.content_blocks) ? p.content_blocks : [];
+    const content_blocks = contentIsBlocks ? p.content : [];
     const content_text =
       typeof p.content === "string"
         ? p.content
         : contentIsBlocks
-        ? blocksToText(p.content)
-        : p.content
-        ? JSON.stringify(p.content)
-        : "";
+          ? blocksToText(p.content)
+          : p.content
+            ? JSON.stringify(p.content)
+            : "";
 
-    const summary = normStr(p.summary);
-    const date = normStr(p.date);
-    const brand = normalizeBrand(p.brand);
-
+    const slug = rawSlug || rawId; // ✅ 保证有 slug
     const rel = normalizeRelease(p.release_info, rawTitle);
-
-    const slug = rawSlug || rawId; // ✅ 没 slug 就用 id
 
     return {
       id: rawId || slug || rawTitle,
       slug,
       title: rawTitle,
-      date,
+      date: normStr(p.date),
       brand,
       cover,
-      summary,
+      summary: normStr(p.summary),
 
       release_info: rel.release_info,
       release_lines: rel.release_lines,
@@ -289,12 +260,9 @@ export async function onRequest(context) {
 
       content: content_text,
       content_blocks,
-
       source,
     };
   }
-
-  const dateKey = (d) => (normStr(d) ? normStr(d) : "0000-00-00");
 
   try {
     // 1) Notion
@@ -305,6 +273,7 @@ export async function onRequest(context) {
         headers: { "Content-Type": "application/json; charset=utf-8" },
       });
     }
+
     const notionResults = nq.results || [];
 
     const CAND = {
@@ -363,7 +332,7 @@ export async function onRequest(context) {
     const staticRaw = await loadStaticPosts();
     const staticPosts = staticRaw.map((p) => normalizePost(p, "static")).filter(Boolean);
 
-    // 3) Merge：Notion 覆盖静态（同 slug 视为同一篇）
+    // 3) Merge: Notion 覆盖 Static（同 slug 视为同一篇）
     const map = new Map();
     for (const p of staticPosts) map.set(String(p.slug || p.id), p);
     for (const p of notionPosts) map.set(String(p.slug || p.id), p);
@@ -396,7 +365,6 @@ export async function onRequest(context) {
       );
     }
 
-    // 默认：数组（兼容现有前端）
     return new Response(JSON.stringify(merged), {
       headers: { "Content-Type": "application/json; charset=utf-8" },
     });
