@@ -1,3 +1,4 @@
+// functions/post/[[path]].js
 export async function onRequest(context) {
   const req = context.request;
   const url = new URL(req.url);
@@ -11,11 +12,13 @@ export async function onRequest(context) {
   // - /post
   // - /post/
   // - /post/air-jordan-6-psg-2026
-  // - /post/index.html (虽然我们已在 _routes.json exclude，但这里也兜底)
+  // - /post/index.html
   const parts = url.pathname.split("/").filter(Boolean);
   const isPostRoot = parts.length === 1 && parts[0] === "post";
-  const isPostIndex = parts.length === 2 && parts[0] === "post" && parts[1] === "index.html";
-  const pathSlug = (parts[0] === "post" && parts.length >= 2) ? parts[1] : "";
+  const isPostIndex =
+    parts.length === 2 && parts[0] === "post" && parts[1] === "index.html";
+  const pathSlug =
+    parts[0] === "post" && parts.length >= 2 ? parts[1] : "";
 
   // 3) 目标：永远用静态的 /post/index.html 来渲染
   const target = new URL(`${url.origin}/post/index.html`);
