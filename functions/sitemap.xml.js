@@ -1,7 +1,7 @@
 // /functions/sitemap.xml.js
 export async function onRequest(context) {
   const SITE_URL = (context.env.SITE_URL || "https://coldtreasure.com").replace(/\/$/, "");
-  const NOTION_TOKEN = context.env.NOTION_TOKEN;
+  const NOTION_TOKEN = context.env.NOTION_TOKEN || context.env.NOTION_KEY;
   const NOTION_DATABASE_ID = context.env.NOTION_DATABASE_ID;
 
   const urls = [];
