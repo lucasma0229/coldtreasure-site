@@ -3,7 +3,8 @@
   "include": [
     "/api/",
     "/post/",
-    "/sitemap.xml"
+    "/sitemap.xml",
+    "/robots.txt"
   ],
   "exclude": ["/post", "/post/", "/post/index.html"]
 }
