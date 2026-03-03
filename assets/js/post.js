@@ -294,6 +294,20 @@
     }
   }
 
+  // 判断当前 URL 是否已经是标准 canonical 形式
+  function isAlreadyCanonical(canonPath) {
+    try {
+      const u = new URL(location.href);
+      const cleanPathNow = String(u.pathname || "").replace(/\/+$/, "") || "/";
+      const cleanCanon = String(canonPath || "").replace(/\/+$/, "") || "/";
+      const hasQuery = u.searchParams && Array.from(u.searchParams.keys()).length > 0;
+      // 既要 path 相同，也要求没有 ?id/?slug 之类参数（否则仍然不是标准形态）
+      return cleanPathNow === cleanCanon && !hasQuery;
+    } catch {
+      return false;
+    }
+  }
+
   (async function main() {
     const app = $("#app");
     if (!app) return;
@@ -323,9 +337,23 @@
         return;
       }
 
-      // ✅ 只设置 canonical，不做 replaceState（避免任何“看似重定向”的因素）
+      // ✅ 标准地址：优先 slug，其次 id
       const canonSlug = String(hit?.slug || hit?.id || "").trim();
-      if (canonSlug) setCanonical(`/post/${encodeURIComponent(canonSlug)}`);
+      const canonPath = canonSlug ? `/post/${encodeURIComponent(canonSlug)}` : "";
+
+      // ✅ 先设置 canonical（就算马上跳转也没坏处）
+      if (canonPath) setCanonical(canonPath);
+
+      // ✅ 核心：如果当前不是标准形态，则跳转到标准 URL
+      // 场景覆盖：
+      // - /post/?id=xxx  -> /post/xxx
+      // - /post/?slug=xxx -> /post/xxx
+      // - /post/<id> 但命中后有真正 slug -> /post/<slug>
+      // - /post/<slug>?id=... -> /post/<slug>
+      if (canonPath && !isAlreadyCanonical(canonPath)) {
+        location.replace(canonPath);
+        return; // 终止后续渲染，交给新 URL 重新跑一遍
+      }
 
       app.innerHTML = "";
       app.appendChild(buildPostDom(hit));
