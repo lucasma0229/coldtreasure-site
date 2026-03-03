@@ -314,6 +314,31 @@
 
     await waitModulesLoaded();
 
+    // ✅ URL 标准化：把 /post/?id=xxx 或 /post/?slug=xxx 统一到 /post/xxx
+(function normalizePostUrl() {
+  try {
+    const u = new URL(location.href);
+
+    // 只处理 /post/ 入口页（避免误伤其它页面）
+    if (u.pathname !== "/post/" && u.pathname !== "/post") return;
+
+    const id = (u.searchParams.get("id") || "").trim();
+    const slug = (u.searchParams.get("slug") || "").trim();
+    const key = slug || id;
+
+    // 没有参数就不跳
+    if (!key) return;
+
+    const dest = `/post/${encodeURIComponent(key)}`;
+
+    // 如果已经是目标地址就不跳
+    if (location.pathname === dest) return;
+
+    // 用 replace 避免产生历史记录（体验更干净）
+    location.replace(dest);
+  } catch {}
+})();
+
     const { key } = getKey();
 
     // /post/ 入口页
