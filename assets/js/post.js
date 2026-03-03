@@ -351,8 +351,10 @@
       // - /post/<id> 但命中后有真正 slug -> /post/<slug>
       // - /post/<slug>?id=... -> /post/<slug>
       if (canonPath && !isAlreadyCanonical(canonPath)) {
-        location.replace(canonPath);
-        return; // 终止后续渲染，交给新 URL 重新跑一遍
+        try {
+          history.replaceState(null, "", canonPath);
+        } catch {}
+        // 不 return，继续正常渲染
       }
 
       app.innerHTML = "";
