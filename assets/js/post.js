@@ -314,28 +314,31 @@
 
     await waitModulesLoaded();
 
-    // ✅ URL 标准化：把 /post/?id=xxx 或 /post/?slug=xxx 统一到 /post/xxx
-(function normalizePostUrl() {
+    // ✅ URL 标准化（防循环版）：只在 /post/ 且带 ?id / ?slug 时跳一次
+(function normalizePostUrlOnce() {
   try {
     const u = new URL(location.href);
 
-    // 只处理 /post/ 入口页（避免误伤其它页面）
+    // 只处理 /post/ 入口
     if (u.pathname !== "/post/" && u.pathname !== "/post") return;
 
     const id = (u.searchParams.get("id") || "").trim();
     const slug = (u.searchParams.get("slug") || "").trim();
     const key = slug || id;
-
-    // 没有参数就不跳
     if (!key) return;
 
-    const dest = `/post/${encodeURIComponent(key)}`;
+    const destPath = `/post/${encodeURIComponent(key)}`;
 
-    // 如果已经是目标地址就不跳
-    if (location.pathname === dest) return;
+    // ✅ 如果已经是目标路径（或正在去目标路径），绝不再跳
+    if (location.pathname === destPath) return;
 
-    // 用 replace 避免产生历史记录（体验更干净）
-    location.replace(dest);
+    // ✅ 加一个“跳转锁”，避免任何原因导致的二次执行/二次加载
+    const lockKey = "ct_post_norm_lock";
+    if (sessionStorage.getItem(lockKey) === destPath) return;
+    sessionStorage.setItem(lockKey, destPath);
+
+    // ✅ 跳转
+    location.replace(destPath);
   } catch {}
 })();
 
