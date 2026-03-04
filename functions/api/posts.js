@@ -4,10 +4,10 @@ export async function onRequest(context) {
   const DATABASE_ID = context.env.NOTION_DATABASE_ID;
 
   const url = new URL(context.request.url);
-  const all = url.searchParams.get("all") === "1";     // all=1 可返回草稿/未到时间（用于自查）
+  const all = url.searchParams.get("all") === "1"; // all=1 可返回草稿/未到时间（用于自查）
   const debug = url.searchParams.get("debug") === "1";
-  const version = "posts-api-cms-flow-2026-03-04-01";
 
+  const version = "posts-api-cms-flow-2026-03-04-01";
   const STATIC_PATH = "/assets/data/posts.json";
   let staticDebug = null;
 
@@ -80,6 +80,14 @@ export async function onRequest(context) {
     }
     if (prop.type === "checkbox") return String(!!prop.checkbox);
     return "";
+  };
+
+  // ✅ 关键修复：Notion 的 Status 属性必须从 prop.status.name 读
+  const safeStatusName = (prop) => {
+    if (!prop) return "";
+    if (prop.type === "status") return prop.status?.name ?? "";
+    // 兜底：有些人会用 select 或 rich_text 代替
+    return safeText(prop);
   };
 
   const safeDateStart = (prop) => prop?.date?.start ?? "";
@@ -271,8 +279,12 @@ export async function onRequest(context) {
     const rawTitle = normStr(p.title);
     if (!rawId && !rawSlug && !rawTitle) return null;
 
-    const brand =
-      Array.isArray(p.brand) ? p.brand.map((x) => normStr(x)).filter(Boolean).join(", ") : normStr(p.brand);
+    const brandRaw = Array.isArray(p.brand)
+      ? p.brand.map((x) => normStr(x)).filter(Boolean).join(", ")
+      : normStr(p.brand);
+
+    // 防止出现换行导致的 “Nike\nFragment Design”
+    const brand = brandRaw.replace(/\s*\n+\s*/g, ", ").replace(/\s*,\s*/g, ", ").trim();
 
     const cover = normStr(p.cover || p.hero || p.image || p.thumb);
 
@@ -300,9 +312,11 @@ export async function onRequest(context) {
       id: rawId || slug || rawTitle,
       slug,
       title: rawTitle,
+
       date: normStr(p.date),
-      publishAt,          // ✅ 新统一字段
-      status,             // ✅ 新统一字段
+      publishAt, // ✅ 新统一字段
+      status, // ✅ 新统一字段
+
       brand,
       cover,
 
@@ -346,7 +360,7 @@ export async function onRequest(context) {
   function ensureUniqueSlugs(posts) {
     const used = new Set();
     for (const p of posts) {
-      let base = toSlug(p.slug) || toSlug(p.title) || toSlug(p.id) || "post";
+      const base = toSlug(p.slug) || toSlug(p.title) || toSlug(p.id) || "post";
       let slug = base;
       let i = 2;
       while (used.has(slug)) {
@@ -427,12 +441,15 @@ export async function onRequest(context) {
             title: safeText(titleProp),
             slug: safeText(slugProp),
 
-            status: safeText(statusProp),                 // ✅ Status（select 推荐）
-            publishAt: safeDateStart(publishAtProp) || safeDateStart(dateProp), // ✅ PublishAt（date 推荐）
+            // ✅ 关键修复：Status 用 safeStatusName
+            status: safeStatusName(statusProp),
+
+            // ✅ PublishAt（date 推荐）
+            publishAt: safeDateStart(publishAtProp) || safeDateStart(dateProp),
 
             brand: safeText(brandProp),
             summary: safeText(summaryProp),
-            excerpt: safeText(summaryProp), // summary 也可当 excerpt（你之后可单独加 Excerpt 字段）
+            excerpt: safeText(summaryProp),
             date: safeDateStart(dateProp),
 
             cover: safeCover(coverProp),
@@ -441,7 +458,7 @@ export async function onRequest(context) {
             gallery: safeFiles(galleryProp),
             keywords: safeMultiSelect(keywordsProp),
 
-            publish: safePublishBool(publishProp),        // 旧开关
+            publish: safePublishBool(publishProp),
             release_info: safeText(releaseProp),
           },
           "notion"
