@@ -4,15 +4,62 @@ export async function onRequest(context) {
   const DATABASE_ID = context.env.NOTION_DATABASE_ID;
 
   const url = new URL(context.request.url);
-  const all = url.searchParams.get("all") === "1";
+  const all = url.searchParams.get("all") === "1";     // all=1 可返回草稿/未到时间（用于自查）
   const debug = url.searchParams.get("debug") === "1";
-  const version = "posts-api-merge-2026-03-02-02";
+  const version = "posts-api-cms-flow-2026-03-04-01";
 
   const STATIC_PATH = "/assets/data/posts.json";
   let staticDebug = null;
 
   const normStr = (v) => String(v ?? "").trim();
   const dateKey = (d) => (normStr(d) ? normStr(d) : "0000-00-00");
+
+  // -------- slug / excerpt helpers --------
+  const toSlug = (input) => {
+    const s = normStr(input);
+    if (!s) return "";
+    return s
+      .toLowerCase()
+      .replace(/['"’]/g, "")
+      .replace(/[^a-z0-9\u4e00-\u9fff]+/g, "-")
+      .replace(/-+/g, "-")
+      .replace(/^-|-$/g, "");
+  };
+
+  const stripText = (s) => normStr(s).replace(/\s+/g, " ").trim();
+
+  function pickExcerpt(p, maxLen = 160) {
+    const explicit = stripText(p?.excerpt || p?.summary || "");
+    if (explicit) return explicit.slice(0, maxLen);
+
+    const blocks = Array.isArray(p?.content_blocks) ? p.content_blocks : null;
+    if (blocks && blocks.length) {
+      for (const b of blocks) {
+        const type = String(b?.type || "").toLowerCase();
+        const t = stripText(b?.text || "");
+        if (!t) continue;
+        if (type === "p" || type === "paragraph" || type === "" || !type) return t.slice(0, maxLen);
+      }
+      for (const b of blocks) {
+        const t = stripText(b?.text || "");
+        if (t) return t.slice(0, maxLen);
+      }
+    }
+
+    const raw = stripText(p?.content || "");
+    if (!raw) return "";
+    return raw.slice(0, maxLen);
+  }
+
+  function parseMaybeDate(v) {
+    if (!v) return null;
+    if (typeof v === "object" && v.start) v = v.start; // notion date object
+    const s = normStr(v);
+    if (!s) return null;
+    const d = new Date(s);
+    if (isNaN(d.getTime())) return null;
+    return d;
+  }
 
   // ---------- Notion safe readers ----------
   const safeText = (prop) => {
@@ -35,7 +82,7 @@ export async function onRequest(context) {
     return "";
   };
 
-  const safeDate = (prop) => prop?.date?.start ?? "";
+  const safeDateStart = (prop) => prop?.date?.start ?? "";
 
   const safeCover = (prop) => {
     const f = prop?.files?.[0];
@@ -53,7 +100,8 @@ export async function onRequest(context) {
     return arr.map((x) => x?.name).filter(Boolean);
   };
 
-  const safePublish = (prop) => {
+  // 旧 publish 字段（checkbox / formula / 文本）兼容
+  const safePublishBool = (prop) => {
     if (!prop) return true;
     if (prop.type === "checkbox") return !!prop.checkbox;
     if (prop.type === "formula" && prop.formula?.boolean != null) return !!prop.formula.boolean;
@@ -117,6 +165,7 @@ export async function onRequest(context) {
       return { ok: true, results: out, meta: { pages, has_more } };
     };
 
+    // 你现有 date 排序很好；如果 Notion 无 date 字段，会 fallback created_time
     const r1 = await tryQuery([{ property: "date", direction: "descending" }]);
     if (r1.ok) return r1;
 
@@ -222,7 +271,6 @@ export async function onRequest(context) {
     const rawTitle = normStr(p.title);
     if (!rawId && !rawSlug && !rawTitle) return null;
 
-    // ✅ brand：允许 array -> string
     const brand =
       Array.isArray(p.brand) ? p.brand.map((x) => normStr(x)).filter(Boolean).join(", ") : normStr(p.brand);
 
@@ -239,29 +287,75 @@ export async function onRequest(context) {
             ? JSON.stringify(p.content)
             : "";
 
-    const slug = rawSlug || rawId; // ✅ 保证有 slug
+    // slug 兜底：slug -> title -> id
+    let slug = rawSlug || toSlug(rawTitle) || rawId;
+    slug = toSlug(slug) || slug;
+
     const rel = normalizeRelease(p.release_info, rawTitle);
+
+    const publishAt = normStr(p.publishAt || p.publish_at || p.date); // 兼容旧字段
+    const status = normStr(p.status || p.Status); // 给 static 也兼容
 
     return {
       id: rawId || slug || rawTitle,
       slug,
       title: rawTitle,
       date: normStr(p.date),
+      publishAt,          // ✅ 新统一字段
+      status,             // ✅ 新统一字段
       brand,
       cover,
+
       summary: normStr(p.summary),
+      excerpt: normStr(p.excerpt) || pickExcerpt({ ...p, content: content_text, content_blocks }, 160),
 
       release_info: rel.release_info,
       release_lines: rel.release_lines,
 
       keywords: Array.isArray(p.keywords) ? p.keywords : Array.isArray(p.tags) ? p.tags : [],
       gallery: Array.isArray(p.gallery) ? p.gallery : [],
+
+      // 兼容旧发布开关
       publish: typeof p.publish === "boolean" ? p.publish : true,
 
       content: content_text,
       content_blocks,
       source,
     };
+  }
+
+  // ✅ 真正发布流：Status + PublishAt（兼容旧 publish）
+  function isPublishedFlow(p, hasStatusField) {
+    if (!p) return false;
+
+    // 1) 如果 Notion 表里存在 Status 字段：严格以 Status 为准
+    if (hasStatusField) {
+      const st = normStr(p.status).toLowerCase();
+      if (st !== "published") return false;
+    } else {
+      // 2) 否则：先用旧 publish 开关兜底
+      if (p.publish !== true) return false;
+    }
+
+    // 3) 定时发布：publishAt 存在则必须 <= now
+    const dt = parseMaybeDate(p.publishAt) || parseMaybeDate(p.date);
+    if (!dt) return true;
+    return dt.getTime() <= Date.now();
+  }
+
+  function ensureUniqueSlugs(posts) {
+    const used = new Set();
+    for (const p of posts) {
+      let base = toSlug(p.slug) || toSlug(p.title) || toSlug(p.id) || "post";
+      let slug = base;
+      let i = 2;
+      while (used.has(slug)) {
+        slug = `${base}-${i++}`;
+      }
+      p.slug = slug;
+      used.add(slug);
+    }
+    return posts;
   }
 
   try {
@@ -275,20 +369,37 @@ export async function onRequest(context) {
     }
 
     const notionResults = nq.results || [];
+    const samplePropertyNames = notionResults?.[0]?.properties ? Object.keys(notionResults[0].properties) : [];
 
+    // ✅ 关键：新增 Status / PublishAt 字段候选
     const CAND = {
       title: ["title", "标题", "Title"],
       slug: ["slug", "Slug", "短链", "文章ID", "id"],
+
+      // CMS 发布流字段（建议你 Notion 最终采用这两个）
+      status: ["Status", "status", "状态", "发布状态"],
+      publishAt: ["PublishAt", "publishAt", "发布时间", "发布于", "上线时间", "date", "日期", "Date"],
+
       brand: ["brand", "品牌", "Brand"],
       summary: ["首页摘要", "summary", "home_summary", "excerpt", "摘要", "简介"],
       content: ["content", "正文", "Content", "文章内容"],
-      date: ["date", "日期", "Date", "发布时间"],
+      date: ["date", "日期", "Date"],
+
       cover: ["cover", "封面", "首图", "hero", "thumb", "thumbnail"],
       gallery: ["gallery", "图集", "相册", "images", "Gallery"],
       keywords: ["keywords", "关键词", "tags", "标签", "Topics"],
+
+      // 旧开关仍保留：publish
       publish: ["publish", "published", "发布", "上线", "公开", "Publish"],
+
       release: ["release_info", "发售信息", "Release", "release", "Release Info"],
     };
+
+    const hasStatusField =
+      samplePropertyNames.includes("Status") ||
+      samplePropertyNames.includes("status") ||
+      samplePropertyNames.includes("状态") ||
+      samplePropertyNames.includes("发布状态");
 
     let notionPosts = notionResults
       .map((row) => {
@@ -299,7 +410,11 @@ export async function onRequest(context) {
         const brandProp = pickNotionProp(props, CAND.brand);
         const summaryProp = pickNotionProp(props, CAND.summary);
         const contentProp = pickNotionProp(props, CAND.content);
+
         const dateProp = pickNotionProp(props, CAND.date);
+        const publishAtProp = pickNotionProp(props, CAND.publishAt);
+        const statusProp = pickNotionProp(props, CAND.status);
+
         const coverProp = pickNotionProp(props, CAND.cover);
         const galleryProp = pickNotionProp(props, CAND.gallery);
         const keywordsProp = pickNotionProp(props, CAND.keywords);
@@ -311,14 +426,22 @@ export async function onRequest(context) {
             id: row.id,
             title: safeText(titleProp),
             slug: safeText(slugProp),
+
+            status: safeText(statusProp),                 // ✅ Status（select 推荐）
+            publishAt: safeDateStart(publishAtProp) || safeDateStart(dateProp), // ✅ PublishAt（date 推荐）
+
             brand: safeText(brandProp),
             summary: safeText(summaryProp),
-            date: safeDate(dateProp),
+            excerpt: safeText(summaryProp), // summary 也可当 excerpt（你之后可单独加 Excerpt 字段）
+            date: safeDateStart(dateProp),
+
             cover: safeCover(coverProp),
             content: safeText(contentProp),
+
             gallery: safeFiles(galleryProp),
             keywords: safeMultiSelect(keywordsProp),
-            publish: safePublish(publishProp),
+
+            publish: safePublishBool(publishProp),        // 旧开关
             release_info: safeText(releaseProp),
           },
           "notion"
@@ -326,21 +449,33 @@ export async function onRequest(context) {
       })
       .filter(Boolean);
 
-    if (!all) notionPosts = notionPosts.filter((p) => p.publish === true);
+    // ✅ 发布流过滤（all=1 可跳过过滤用于自查）
+    if (!all) {
+      notionPosts = notionPosts.filter((p) => isPublishedFlow(p, hasStatusField));
+    }
 
     // 2) Static
     const staticRaw = await loadStaticPosts();
-    const staticPosts = staticRaw.map((p) => normalizePost(p, "static")).filter(Boolean);
+    let staticPosts = staticRaw.map((p) => normalizePost(p, "static")).filter(Boolean);
+
+    if (!all) {
+      // static 也走发布流规则：如果你没给 static 写 Status，就用旧 publish=true 兜底
+      staticPosts = staticPosts.filter((p) => isPublishedFlow(p, false));
+    }
 
     // 3) Merge: Notion 覆盖 Static（同 slug 视为同一篇）
     const map = new Map();
     for (const p of staticPosts) map.set(String(p.slug || p.id), p);
     for (const p of notionPosts) map.set(String(p.slug || p.id), p);
 
-    const merged = Array.from(map.values()).sort((a, b) => dateKey(b.date).localeCompare(dateKey(a.date)));
+    const merged = ensureUniqueSlugs(Array.from(map.values())).sort((a, b) => {
+      // publishAt 优先，其次 date
+      const ka = dateKey(a.publishAt || a.date);
+      const kb = dateKey(b.publishAt || b.date);
+      return kb.localeCompare(ka);
+    });
 
     if (debug) {
-      const samplePropertyNames = notionResults?.[0]?.properties ? Object.keys(notionResults[0].properties) : [];
       return new Response(
         JSON.stringify(
           {
@@ -354,6 +489,7 @@ export async function onRequest(context) {
               pages: nq.meta?.pages,
               has_more: nq.meta?.has_more,
               samplePropertyNames,
+              hasStatusField,
               staticDebug,
             },
             posts: merged,
@@ -365,6 +501,7 @@ export async function onRequest(context) {
       );
     }
 
+    // ✅ 保持兼容：仍然返回数组（你前端已兼容数组 / {posts:[]})
     return new Response(JSON.stringify(merged), {
       headers: { "Content-Type": "application/json; charset=utf-8" },
     });
