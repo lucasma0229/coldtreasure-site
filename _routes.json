@@ -1,10 +1,10 @@
 {
   "version": 1,
   "include": [
-    "/api/",
-    "/post/",
+    "/api/*",
+    "/post/*",
     "/*.xml",
     "/robots.txt"
   ],
-  "exclude": ["/post", "/post/", "/post/index.html"]
+  "exclude": ["/post/index.html"]
 }
