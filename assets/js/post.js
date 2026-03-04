@@ -22,6 +22,175 @@
     el.setAttribute("href", href);
   }
 
+  function setMetaTag(selector, createFn, attrs) {
+    let el = document.head.querySelector(selector);
+    if (!el) {
+      el = createFn();
+      document.head.appendChild(el);
+    }
+    for (const [k, v] of Object.entries(attrs || {})) {
+      if (v === undefined || v === null || String(v).trim() === "") continue;
+      el.setAttribute(k, String(v));
+    }
+  }
+
+  function setTitle(t) {
+    const title = String(t || "").trim();
+    if (title) document.title = title;
+  }
+
+  function stripText(s) {
+    return String(s || "")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function pickExcerpt(post, maxLen = 160) {
+    const explicit = stripText(post?.excerpt || post?.summary || "");
+    if (explicit) return explicit.slice(0, maxLen);
+
+    // content_blocks 优先取第一段 p
+    const blocks = Array.isArray(post?.content_blocks) ? post.content_blocks : null;
+    if (blocks && blocks.length) {
+      for (const b of blocks) {
+        const type = String(b?.type || "").toLowerCase();
+        if (type === "p" || type === "paragraph" || type === "" || !type) {
+          const t = stripText(b?.text || "");
+          if (t) return t.slice(0, maxLen);
+        }
+      }
+    }
+
+    const raw = stripText(post?.content || "");
+    if (!raw) return "";
+    return raw.slice(0, maxLen);
+  }
+
+  function applyAutoMeta(post, canonPath) {
+    const pageTitle = String(post?.title || "Post").trim();
+    const brandSuffix = "ColdTreasure";
+    const fullTitle = pageTitle ? `${pageTitle} | ${brandSuffix}` : brandSuffix;
+
+    const desc = pickExcerpt(post, 160);
+    const cover = String(post?.cover || "").trim();
+    const url = canonPath ? `${location.origin}${canonPath}` : location.href;
+
+    setTitle(fullTitle);
+
+    // description
+    setMetaTag(
+      'meta[name="description"]',
+      () => {
+        const m = document.createElement("meta");
+        m.setAttribute("name", "description");
+        return m;
+      },
+      { content: desc }
+    );
+
+    // Open Graph
+    setMetaTag(
+      'meta[property="og:title"]',
+      () => {
+        const m = document.createElement("meta");
+        m.setAttribute("property", "og:title");
+        return m;
+      },
+      { content: pageTitle }
+    );
+
+    setMetaTag(
+      'meta[property="og:description"]',
+      () => {
+        const m = document.createElement("meta");
+        m.setAttribute("property", "og:description");
+        return m;
+      },
+      { content: desc }
+    );
+
+    setMetaTag(
+      'meta[property="og:image"]',
+      () => {
+        const m = document.createElement("meta");
+        m.setAttribute("property", "og:image");
+        return m;
+      },
+      { content: cover }
+    );
+
+    setMetaTag(
+      'meta[property="og:type"]',
+      () => {
+        const m = document.createElement("meta");
+        m.setAttribute("property", "og:type");
+        return m;
+      },
+      { content: "article" }
+    );
+
+    setMetaTag(
+      'meta[property="og:site_name"]',
+      () => {
+        const m = document.createElement("meta");
+        m.setAttribute("property", "og:site_name");
+        return m;
+      },
+      { content: brandSuffix }
+    );
+
+    setMetaTag(
+      'meta[property="og:url"]',
+      () => {
+        const m = document.createElement("meta");
+        m.setAttribute("property", "og:url");
+        return m;
+      },
+      { content: url }
+    );
+
+    // Twitter Card
+    setMetaTag(
+      'meta[name="twitter:card"]',
+      () => {
+        const m = document.createElement("meta");
+        m.setAttribute("name", "twitter:card");
+        return m;
+      },
+      { content: "summary_large_image" }
+    );
+
+    setMetaTag(
+      'meta[name="twitter:title"]',
+      () => {
+        const m = document.createElement("meta");
+        m.setAttribute("name", "twitter:title");
+        return m;
+      },
+      { content: pageTitle }
+    );
+
+    setMetaTag(
+      'meta[name="twitter:description"]',
+      () => {
+        const m = document.createElement("meta");
+        m.setAttribute("name", "twitter:description");
+        return m;
+      },
+      { content: desc }
+    );
+
+    setMetaTag(
+      'meta[name="twitter:image"]',
+      () => {
+        const m = document.createElement("meta");
+        m.setAttribute("name", "twitter:image");
+        return m;
+      },
+      { content: cover }
+    );
+  }
+
   async function waitModulesLoaded() {
     await new Promise((resolve) => {
       let done = false;
@@ -71,6 +240,31 @@
     if (Array.isArray(data)) return data;
     if (Array.isArray(data?.posts)) return data.posts;
     return [];
+  }
+
+  // ✅ 真正 CMS：单篇接口（优先）
+  async function loadPostByKey({ slug, id, key }) {
+    // 你未来会在 functions/api/post.js 里实现这个接口
+    // 当前如果没有，也不会报错，会 fallback
+    const tryUrls = [];
+
+    const s = String(slug || "").trim();
+    const i = String(id || "").trim();
+    const k = String(key || "").trim();
+
+    if (s) tryUrls.push(`/api/post?slug=${encodeURIComponent(s)}`);
+    if (i) tryUrls.push(`/api/post?id=${encodeURIComponent(i)}`);
+    if (k && k !== s && k !== i) tryUrls.push(`/api/post?key=${encodeURIComponent(k)}`);
+
+    for (const url of tryUrls) {
+      try {
+        const res = await fetch(`${url}&v=${Date.now()}`, { cache: "no-store" });
+        const data = await res.json().catch(() => null);
+        if (!res.ok) continue;
+        if (data && typeof data === "object") return data;
+      } catch {}
+    }
+    return null;
   }
 
   function renderBlocks(blocks) {
@@ -212,8 +406,15 @@
       if (fig) fig.hidden = true;
     }
 
-    summaryEl.textContent = "";
-    summaryEl.hidden = true;
+    // summary: 有 excerpt 才显示
+    const ex = pickExcerpt(post, 180);
+    if (ex) {
+      summaryEl.textContent = ex;
+      summaryEl.hidden = false;
+    } else {
+      summaryEl.textContent = "";
+      summaryEl.hidden = true;
+    }
 
     setContent(contentEl, post);
 
@@ -301,7 +502,6 @@
       const cleanPathNow = String(u.pathname || "").replace(/\/+$/, "") || "/";
       const cleanCanon = String(canonPath || "").replace(/\/+$/, "") || "/";
       const hasQuery = u.searchParams && Array.from(u.searchParams.keys()).length > 0;
-      // 既要 path 相同，也要求没有 ?id/?slug 之类参数（否则仍然不是标准形态）
       return cleanPathNow === cleanCanon && !hasQuery;
     } catch {
       return false;
@@ -314,35 +514,30 @@
 
     await waitModulesLoaded();
 
-    // ✅ URL 标准化（防循环版）：只在 /post/ 且带 ?id / ?slug 时跳一次
-(function normalizePostUrlOnce() {
-  try {
-    const u = new URL(location.href);
+    // ✅ 只在 /post/ 且带 ?id / ?slug 时跳一次
+    (function normalizePostUrlOnce() {
+      try {
+        const u = new URL(location.href);
+        if (u.pathname !== "/post/" && u.pathname !== "/post") return;
 
-    // 只处理 /post/ 入口
-    if (u.pathname !== "/post/" && u.pathname !== "/post") return;
+        const id = (u.searchParams.get("id") || "").trim();
+        const slug = (u.searchParams.get("slug") || "").trim();
+        const key = slug || id;
+        if (!key) return;
 
-    const id = (u.searchParams.get("id") || "").trim();
-    const slug = (u.searchParams.get("slug") || "").trim();
-    const key = slug || id;
-    if (!key) return;
+        const destPath = `/post/${encodeURIComponent(key)}`;
+        if (location.pathname === destPath) return;
 
-    const destPath = `/post/${encodeURIComponent(key)}`;
+        const lockKey = "ct_post_norm_lock";
+        if (sessionStorage.getItem(lockKey) === destPath) return;
+        sessionStorage.setItem(lockKey, destPath);
 
-    // ✅ 如果已经是目标路径（或正在去目标路径），绝不再跳
-    if (location.pathname === destPath) return;
+        location.replace(destPath);
+      } catch {}
+    })();
 
-    // ✅ 加一个“跳转锁”，避免任何原因导致的二次执行/二次加载
-    const lockKey = "ct_post_norm_lock";
-    if (sessionStorage.getItem(lockKey) === destPath) return;
-    sessionStorage.setItem(lockKey, destPath);
-
-    // ✅ 跳转
-    location.replace(destPath);
-  } catch {}
-})();
-
-    const { key } = getKey();
+    const keyInfo = getKey();
+    const { key, slug, id } = keyInfo;
 
     // /post/ 入口页
     if (!key) {
@@ -351,14 +546,18 @@
     }
 
     try {
-      const list = await loadPosts();
+      // ✅ 1) 优先单篇接口（真正 CMS）
+      let hit = await loadPostByKey({ slug, id, key });
 
-      // ✅ slug / id 任意命中
-      const hit = list.find((p) => {
-        const pSlug = String(p?.slug || "").trim();
-        const pId = String(p?.id || "").trim();
-        return pSlug === key || pId === key;
-      });
+      // ✅ 2) fallback：旧模式（全量列表 find）
+      if (!hit) {
+        const list = await loadPosts();
+        hit = list.find((p) => {
+          const pSlug = String(p?.slug || "").trim();
+          const pId = String(p?.id || "").trim();
+          return pSlug === key || pId === key;
+        });
+      }
 
       if (!hit) {
         app.innerHTML = renderError(`Post not found: ${key}`);
@@ -369,20 +568,16 @@
       const canonSlug = String(hit?.slug || hit?.id || "").trim();
       const canonPath = canonSlug ? `/post/${encodeURIComponent(canonSlug)}` : "";
 
-      // ✅ 先设置 canonical（就算马上跳转也没坏处）
       if (canonPath) setCanonical(canonPath);
 
-      // ✅ 核心：如果当前不是标准形态，则跳转到标准 URL
-      // 场景覆盖：
-      // - /post/?id=xxx  -> /post/xxx
-      // - /post/?slug=xxx -> /post/xxx
-      // - /post/<id> 但命中后有真正 slug -> /post/<slug>
-      // - /post/<slug>?id=... -> /post/<slug>
+      // ✅ 自动 meta（用于搜索结果 + 分享卡片）
+      applyAutoMeta(hit, canonPath);
+
+      // ✅ 如果当前不是标准形态，强制无刷换到标准 URL
       if (canonPath && !isAlreadyCanonical(canonPath)) {
         try {
           history.replaceState(null, "", canonPath);
         } catch {}
-        // 不 return，继续正常渲染
       }
 
       app.innerHTML = "";
