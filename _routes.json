@@ -8,6 +8,6 @@
     "/robots.txt"
   ],
   "exclude": [
-    "/post/index.html"
+    "/post-template.html"
   ]
 }
