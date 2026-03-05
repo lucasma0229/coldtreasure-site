@@ -5,7 +5,9 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>ColdTreasure | Post</title>
+
 <link rel="stylesheet" href="/assets/css/main.css?v=204" />
+
 <style>
 :root { --w: 980px; --muted:#777; --line:#eee; }
 body{
@@ -41,24 +43,20 @@ h1{ font-size:30px; line-height:1.2; margin:0 0 8px; letter-spacing:.2px; }
   display:block;
 }
 
-/* ✅ 摘要容器保留给 JS，但文章页永远不显示 */
-.post-summary{ display:none !important; }
+/* 摘要样式保留也无所谓：我们用 hidden 隐藏它 */
+.summary{ font-size:16px; line-height:1.7; margin: 16px 0 6px; color:#222; }
 
 .content{ margin-top:18px; font-size:16px; line-height:1.85; }
 .content h2{ font-size:18px; margin: 22px 0 10px; }
 .content p{ margin: 12px 0; }
 .content ul{ margin: 10px 0 14px 18px; }
 
-/* ✅ 发售信息独立区 */
 .post-release{
   margin-top: 22px;
   padding-top: 18px;
   border-top: 1px solid var(--line);
 }
-.post-release h2{
-  font-size:18px;
-  margin: 0 0 10px;
-}
+.post-release h2{ font-size:18px; margin: 0 0 10px; }
 .post-release ul{ margin: 10px 0 0 18px; }
 .post-release p{ margin: 10px 0; }
 
@@ -108,8 +106,8 @@ h1{ font-size:30px; line-height:1.2; margin:0 0 8px; letter-spacing:.2px; }
       <img class="post-hero" alt="" />
     </figure>
 
-    <!-- ✅ 关键：保留给 post.js 用，但会被 CSS 隐藏 -->
-    <div class="post-summary"></div>
+    <!-- ✅ 摘要占位：不显示，但防止 post.js 因找不到节点报错 -->
+    <p class="summary post-summary" hidden></p>
 
     <section class="content post-content"></section>
 
