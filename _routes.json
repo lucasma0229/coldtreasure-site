@@ -6,5 +6,7 @@
     "/*.xml",
     "/robots.txt"
   ],
-  "exclude": ["/post/index.html"]
+  "exclude": [
+    "/post/index.html"
+  ]
 }
