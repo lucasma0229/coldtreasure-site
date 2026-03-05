@@ -7,7 +7,7 @@ export async function onRequest(context) {
   const all = url.searchParams.get("all") === "1"; // all=1 可返回草稿/未到时间（用于自查）
   const debug = url.searchParams.get("debug") === "1";
 
-  const version = "posts-api-cms-flow-2026-03-04-01";
+  const version = "posts-api-cms-flow-shoename-slug-2026-03-05-01";
   const STATIC_PATH = "/assets/data/posts.json";
   let staticDebug = null;
 
@@ -15,15 +15,27 @@ export async function onRequest(context) {
   const dateKey = (d) => (normStr(d) ? normStr(d) : "0000-00-00");
 
   // -------- slug / excerpt helpers --------
+  // ✅ 统一 slugify：自动过滤引号（含中文/英文弯引号）+ 仅保留字母数字中文
   const toSlug = (input) => {
     const s = normStr(input);
     if (!s) return "";
     return s
       .toLowerCase()
-      .replace(/['"’]/g, "")
+      .replace(/['"’‘“”]/g, "") // ✅ 过滤单双引号/中文引号
       .replace(/[^a-z0-9\u4e00-\u9fff]+/g, "-")
       .replace(/-+/g, "-")
       .replace(/^-|-$/g, "");
+  };
+
+  // ✅ ShoeName 预处理：去掉联名连接符 x/×（不保留字符本身）
+  const normalizeShoeNameSeed = (name) => {
+    const s = normStr(name);
+    if (!s) return "";
+    return s
+      .replace(/\s*[x×]\s*/gi, " ") // ✅ “x/×” 只作为连接符，去掉
+      .replace(/['"’‘“”]/g, "")    // ✅ 也过滤引号
+      .replace(/\s+/g, " ")
+      .trim();
   };
 
   const stripText = (s) => normStr(s).replace(/\s+/g, " ").trim();
@@ -299,11 +311,15 @@ export async function onRequest(context) {
             ? JSON.stringify(p.content)
             : "";
 
-    // slug 兜底：slug -> title -> id
-    let slug = rawSlug || toSlug(rawTitle) || rawId;
-    slug = toSlug(slug) || slug;
-
+    // ✅ release normalize
     const rel = normalizeRelease(p.release_info, rawTitle);
+
+    // ✅ 关键：slug 生成优先级：手写 slug -> ShoeName -> title -> id
+    const shoeSeed = normalizeShoeNameSeed(p.shoeName);
+    let slug = rawSlug || toSlug(shoeSeed) || toSlug(rawTitle) || rawId;
+
+    // ✅ 只对自动生成的 slug 做长度限制（手写 rawSlug 不动）
+    if (!rawSlug) slug = toSlug(slug).slice(0, 60).replace(/-$/, "");
 
     const publishAt = normStr(p.publishAt || p.publish_at || p.date); // 兼容旧字段
     const status = normStr(p.status || p.Status); // 给 static 也兼容
@@ -313,9 +329,12 @@ export async function onRequest(context) {
       slug,
       title: rawTitle,
 
+      // ✅ 新增：把 ShoeName 也带回前端（便于你 debug）
+      shoeName: normStr(p.shoeName),
+
       date: normStr(p.date),
       publishAt, // ✅ 新统一字段
-      status, // ✅ 新统一字段
+      status,    // ✅ 新统一字段
 
       brand,
       cover,
@@ -385,12 +404,15 @@ export async function onRequest(context) {
     const notionResults = nq.results || [];
     const samplePropertyNames = notionResults?.[0]?.properties ? Object.keys(notionResults[0].properties) : [];
 
-    // ✅ 关键：新增 Status / PublishAt 字段候选
+    // ✅ 候选字段映射（加入 ShoeName）
     const CAND = {
       title: ["title", "标题", "Title"],
       slug: ["slug", "Slug", "短链", "文章ID", "id"],
 
-      // CMS 发布流字段（建议你 Notion 最终采用这两个）
+      // ✅ 新增：鞋款名（用于稳定生成 slug）
+      shoeName: ["ShoeName", "shoeName", "鞋款名", "鞋款名称", "Model"],
+
+      // CMS 发布流字段
       status: ["Status", "status", "状态", "发布状态"],
       publishAt: ["PublishAt", "publishAt", "发布时间", "发布于", "上线时间", "date", "日期", "Date"],
 
@@ -421,6 +443,8 @@ export async function onRequest(context) {
 
         const titleProp = pickNotionProp(props, CAND.title);
         const slugProp = pickNotionProp(props, CAND.slug);
+        const shoeNameProp = pickNotionProp(props, CAND.shoeName);
+
         const brandProp = pickNotionProp(props, CAND.brand);
         const summaryProp = pickNotionProp(props, CAND.summary);
         const contentProp = pickNotionProp(props, CAND.content);
@@ -441,7 +465,10 @@ export async function onRequest(context) {
             title: safeText(titleProp),
             slug: safeText(slugProp),
 
-            // ✅ 关键修复：Status 用 safeStatusName
+            // ✅ 新增：ShoeName
+            shoeName: safeText(shoeNameProp),
+
+            // ✅ Status（Notion status 类型要用 safeStatusName）
             status: safeStatusName(statusProp),
 
             // ✅ PublishAt（date 推荐）
