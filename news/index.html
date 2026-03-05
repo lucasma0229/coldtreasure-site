@@ -1,129 +1,313 @@
-<!-- /post-template.html -->
 <!doctype html>
 <html lang="zh-CN">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>ColdTreasure | Post</title>
-<link rel="stylesheet" href="/assets/css/main.css?v=204" />
-<style>
-:root { --w: 980px; --muted:#777; --line:#eee; }
-body{
-  margin:0;
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans SC", Arial;
-  background:#fff;
-  color:#111;
-}
-main{ max-width: var(--w); margin: 24px auto 64px; padding: 0 18px; }
-.meta{
-  color:var(--muted);
-  font-size:14px;
-  margin: 8px 0 18px;
-  display:flex;
-  flex-wrap:wrap;
-  gap:10px;
-}
-h1{ font-size:30px; line-height:1.2; margin:0 0 8px; letter-spacing:.2px; }
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>ColdTreasure | News</title>
 
-.hero{
-  width:100%;
-  border-radius:14px;
-  overflow:hidden;
-  background:#f6f6f6;
-  border:1px solid var(--line);
-  aspect-ratio: 3 / 2;
-}
-.hero img{
-  width:100%;
-  height:100%;
-  object-fit:cover;
-  object-position: var(--hero-focus, 50% 50%);
-  display:block;
-}
+  <link rel="stylesheet" href="/assets/css/main.css?v=203" />
 
-/* ✅ 摘要容器保留给 JS，但文章页永远不显示 */
-.post-summary{ display:none !important; }
+  <script>window.CT_PAGE = "news";</script>
+  <script src="/assets/js/include.v3.js?v=3" defer></script>
 
-.content{ margin-top:18px; font-size:16px; line-height:1.85; }
-.content h2{ font-size:18px; margin: 22px 0 10px; }
-.content p{ margin: 12px 0; }
-.content ul{ margin: 10px 0 14px 18px; }
+  <!-- ✅ 你可以保留 app.js（不依赖它渲染 News） -->
+  <script src="/assets/js/app.js?v=204" defer></script>
 
-/* ✅ 发售信息独立区 */
-.post-release{
-  margin-top: 22px;
-  padding-top: 18px;
-  border-top: 1px solid var(--line);
-}
-.post-release h2{
-  font-size:18px;
-  margin: 0 0 10px;
-}
-.post-release ul{ margin: 10px 0 0 18px; }
-.post-release p{ margin: 10px 0; }
+  <style>
+    :root{
+      --ct-w: 1240px;
+      --ct-pad: 26px;
+      --ct-line: #ececec;
+      --ct-muted:#6f6f6f;
+      --ct-shadow: 0 10px 30px rgba(0,0,0,.06);
+      --ct-radius: 18px;
+    }
+    main.page{ max-width: var(--ct-w); margin: 22px auto 0; padding: 0 var(--ct-pad); }
+    .page-head{ margin: 18px 0 18px; }
+    .page-head__top{ display:flex; align-items:flex-end; justify-content:space-between; gap:16px; }
+    .page-title{ margin:0; font-size: 38px; letter-spacing: -0.02em; }
+    .page-head__right{ display:flex; align-items:baseline; gap:10px; color: var(--ct-muted); font-size:13px; letter-spacing: .06em; white-space:nowrap; }
+    .page-kicker{ font-weight:600; text-transform:uppercase; }
+    .page-dot{ opacity:.5; }
+    .page-status{ opacity:.85; }
+    .page-rule{ margin-top:14px; height:1px; background: var(--ct-line); opacity:.9; }
 
-.gallery{ margin-top:26px; }
-.gallery h2{ font-size:18px; margin:0 0 10px; }
-.grid{ display:grid; grid-template-columns: repeat(2, 1fr); gap:10px; }
-.grid img{
-  width:100%;
-  height:auto;
-  border-radius:12px;
-  border:1px solid var(--line);
-  background:#f6f6f6;
-  display:block;
-}
+    .news-list{ display:flex; flex-direction:column; gap: 26px; margin: 18px 0 0; padding: 0; }
 
-.error{ padding:14px; border:1px solid #ffd0d0; background:#fff5f5; border-radius:14px; }
-.muted{ color:var(--muted); }
+    .news-item{
+      display:flex; gap: 18px; align-items: stretch;
+      border: 1px solid var(--ct-line);
+      border-radius: var(--ct-radius);
+      background:#fff; overflow:hidden;
+      box-shadow: 0 6px 18px rgba(0,0,0,.05);
+      transition: box-shadow .18s ease, border-color .18s ease;
+    }
+    .news-item:hover{ box-shadow: 0 10px 30px rgba(0,0,0,.08); border-color: rgba(0,0,0,.08); }
 
-@media (max-width: 720px){
-  .grid{ grid-template-columns: 1fr; }
-  h1{ font-size:26px; }
-}
-</style>
+    .news-media{ flex: 0 0 clamp(380px, 42vw, 520px); display:block; background:#f6f6f6; overflow:hidden; }
+    .news-media img{ width:100%; height:100%; aspect-ratio: 3 / 2; object-fit: cover; display:block; }
 
-<script>window.CT_PAGE = "post";</script>
-<script src="/assets/js/include.v3.js?v=4" defer></script>
-<script src="/assets/js/post.js?v=6" defer></script>
+    .news-body{ flex:1; min-width:0; padding: 16px 16px 16px 0; display:flex; flex-direction:column; justify-content:center; }
+
+    .news-meta{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; font-size:12px; color: var(--ct-muted); margin-bottom: 10px; }
+    .pill{ border:1px solid var(--ct-line); border-radius:999px; padding: 4px 10px; background:#fff; }
+
+    .news-title{ margin:0 0 10px; font-size: 22px; line-height: 1.18; letter-spacing: -0.01em; font-weight: 800; }
+    .news-title a{ color: inherit; text-decoration:none; }
+
+    .news-summary{
+      margin:0; font-size:14px; line-height: 1.65;
+      color:#2b2b2b; opacity:.85;
+      display:-webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+      overflow:hidden; max-width: 68ch;
+    }
+
+    .empty, .error{
+      padding: 14px 16px;
+      border:1px solid var(--ct-line);
+      border-radius: var(--ct-radius);
+      color: var(--ct-muted);
+      background:#fff;
+    }
+    .error{ border-color:#ffd0d0; background:#fff5f5; color:#7a2b2b; }
+
+    @media (max-width: 860px){
+      main.page{ padding: 0 16px; }
+      .page-head__top{ align-items:flex-start; flex-direction:column; gap:10px; }
+      .page-title{ font-size: 34px; }
+      .news-item{ flex-direction:column; gap: 0; }
+      .news-media{ flex: 0 0 auto; width:100%; }
+      .news-media img{ aspect-ratio: 16 / 10; }
+      .news-body{ padding: 14px 16px 16px; }
+      .news-title{ font-size: 20px; }
+    }
+  </style>
 </head>
 
 <body>
-<div data-include="/modules/header/header.html"></div>
+  <div data-include="/modules/header/header.html"></div>
 
-<main id="app">
-  <div class="muted">Loading…</div>
-</main>
-
-<div data-include="/modules/footer/footer.html"></div>
-
-<template id="tpl-post">
-  <article class="post">
-    <header class="post-head">
-      <h1 class="post-title"></h1>
-      <div class="meta post-meta"></div>
+  <main class="page">
+    <header class="page-head">
+      <div class="page-head__top">
+        <h1 class="page-title">News</h1>
+        <div class="page-head__right">
+          <span class="page-kicker">Daily drops</span>
+          <span class="page-dot" aria-hidden="true">•</span>
+          <span class="page-status" id="pageStatus">Loading…</span>
+        </div>
+      </div>
+      <div class="page-rule" aria-hidden="true"></div>
     </header>
 
-    <figure class="hero">
-      <img class="post-hero" alt="" />
-    </figure>
+    <div id="app" class="empty">Loading…</div>
 
-    <!-- ✅ 关键：保留给 post.js 用，但会被 CSS 隐藏 -->
-    <div class="post-summary"></div>
+    <div data-include="/modules/footer/footer.html"></div>
+  </main>
 
-    <section class="content post-content"></section>
+  <script>
+    function escapeHtml(str){
+      return String(str ?? "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
 
-    <section class="post-release" data-release>
-      <h2>发售信息</h2>
-      <div class="post-release__body" data-release-body></div>
-    </section>
+    function getQuery(){
+      try{
+        const q = new URL(location.href).searchParams.get("q") || "";
+        return q.trim();
+      }catch(e){
+        return "";
+      }
+    }
 
-    <section class="gallery post-gallery" hidden>
-      <h2>图集</h2>
-      <div class="grid post-grid"></div>
-    </section>
-  </article>
-</template>
+    function normLoose(s=""){ return String(s ?? "").toLowerCase().trim(); }
 
+    function termsOf(q){
+      return normLoose(q).split(/\s+/).map(s => s.trim()).filter(Boolean);
+    }
+
+    // ✅ 判断“签名/临时图片链接”：一律不能拼 v（否则签名失效 -> 裂图）
+    function isSignedImageUrl(url){
+      const u = String(url || "");
+      if(!u) return false;
+      // Notion / AWS presigned 常见特征
+      return (
+        /[?&]X-Amz-/i.test(u) ||
+        /notion\.so\/image/i.test(u) ||
+        /[?&]signature=/i.test(u) ||
+        /[?&]token=/i.test(u)
+      );
+    }
+
+    // ✅ 统一生成图片 src：签名图原样；静态图才加 ?v=
+    function safeImgSrc(url, v){
+      const u = String(url || "").trim();
+      if(!u) return "";
+      if (isSignedImageUrl(u)) return u;
+
+      // 已经有 query 的静态图：用 &v= 追加
+      if (u.includes("?")) return `${u}&v=${encodeURIComponent(v || Date.now())}`;
+      return `${u}?v=${encodeURIComponent(v || Date.now())}`;
+    }
+
+    // ✅ 把 content（可能是 string，也可能是 blocks array）统一转成可读文本
+    function contentToText(content){
+      if (!content) return "";
+
+      if (typeof content === "string") {
+        const s = content.trim();
+        if ((s.startsWith("[") && s.endsWith("]")) || (s.startsWith("{") && s.endsWith("}"))) {
+          try {
+            const parsed = JSON.parse(s);
+            return contentToText(parsed);
+          } catch (e) {}
+        }
+        return s;
+      }
+
+      if (Array.isArray(content)){
+        const parts = [];
+        for (const b of content){
+          if (!b) continue;
+
+          if (b.type === "p" && b.text) parts.push(String(b.text));
+          else if (b.type === "h2" && b.text) parts.push(String(b.text));
+          else if (b.type === "ul" && Array.isArray(b.items)) parts.push(b.items.join(" "));
+          else if (typeof b === "string") parts.push(b);
+
+          if (parts.join(" ").length > 240) break;
+        }
+        return parts.join(" ").replace(/\s+/g, " ").trim();
+      }
+
+      if (typeof content === "object"){
+        if (content.text) return String(content.text).trim();
+        try { return JSON.stringify(content); } catch(e) {}
+        return "";
+      }
+
+      return String(content).trim();
+    }
+
+    function matchesPost(post, q){
+      const terms = termsOf(q);
+      if(!terms.length) return true;
+
+      const title = post.title || "";
+      const brand = post.brand || "";
+      const keywords = Array.isArray(post.keywords) ? post.keywords.join(" ") : "";
+      const release = post.release_info || "";
+      const content = contentToText(post.content);
+
+      const hay = normLoose([title, brand, keywords, release, content, post.slug || "", post.id || ""].join(" "));
+      return terms.every(t => hay.includes(t));
+    }
+
+    async function loadPosts(){
+      const res = await fetch(`/api/posts?v=${Date.now()}`, { cache:"no-store" });
+      const data = await res.json().catch(() => null);
+
+      if(!res.ok){
+        throw new Error(data?.error || `Failed to load /api/posts (${res.status})`);
+      }
+
+      if (Array.isArray(data)) return data;
+      if (Array.isArray(data?.posts)) return data.posts;
+      return [];
+    }
+
+    // ✅ 摘要：优先 summary；否则从 contentToText() 抽取可读文本（避免显示 JSON）
+    function getSummary(post){
+      const s = String(post.summary || "").trim();
+      if (s) return s;
+
+      const c = contentToText(post.content);
+      if (!c) return "";
+      return c.length > 120 ? (c.slice(0, 120) + "…") : c;
+    }
+
+    function renderItem(post){
+      const title = post.title || "Untitled";
+      const summary = getSummary(post);
+      const date = post.date || "";
+      const brand = post.brand || "";
+
+      const brandHtml = brand ? `<span class="pill">${escapeHtml(brand)}</span>` : "";
+      const dateHtml  = date  ? `<span class="date">${escapeHtml(date)}</span>` : "";
+
+      const slug = String(post.slug || "").trim();
+      const href = `/post/?slug=${encodeURIComponent(slug)}`;
+
+      const hero = String(post.cover || "").trim();
+      const imgSrc = hero ? safeImgSrc(hero, (date || Date.now())) : "";
+
+      return `
+        <article class="news-item">
+          <a class="news-media" href="${href}" aria-label="${escapeHtml(title)}">
+            ${imgSrc ? `<img src="${escapeHtml(imgSrc)}" alt="${escapeHtml(title)}" loading="lazy">` : ``}
+          </a>
+
+          <div class="news-body">
+            <div class="news-meta">${brandHtml}${dateHtml}</div>
+            <h2 class="news-title"><a href="${href}">${escapeHtml(title)}</a></h2>
+            ${summary ? `<p class="news-summary">${escapeHtml(summary)}</p>` : ``}
+          </div>
+        </article>
+      `;
+    }
+
+    (async function main(){
+      const app = document.getElementById("app");
+      const statusEl = document.getElementById("pageStatus");
+
+      await new Promise((resolve) => {
+        let done = false;
+        const finish = () => { if(done) return; done = true; resolve(); };
+        document.addEventListener("modules:loaded", finish, { once: true });
+        setTimeout(finish, 1200);
+      });
+
+      const q = getQuery();
+
+      try{
+        const listAll = await loadPosts();
+
+        const filtered = q ? listAll.filter(p => matchesPost(p, q)) : listAll;
+
+        const sorted = [...filtered].sort((a,b)=>{
+          const da = String(a?.date || "");
+          const db = String(b?.date || "");
+          return db.localeCompare(da);
+        });
+
+        if (statusEl){
+          if(q){
+            statusEl.textContent = `${sorted.length} results · “${q}”`;
+          }else{
+            statusEl.textContent = `${sorted.length} posts`;
+          }
+        }
+
+        if(!sorted.length){
+          app.className = "empty";
+          app.innerHTML = q
+            ? `No results for <b>${escapeHtml(q)}</b>.`
+            : `No posts yet.`;
+          return;
+        }
+
+        app.className = "";
+        app.innerHTML = `<section class="news-list">${sorted.map(renderItem).join("")}</section>`;
+      }catch(err){
+        if (statusEl) statusEl.textContent = "Error";
+        app.className = "error";
+        app.innerHTML = `<b>Load failed</b><div style="margin-top:8px;">${escapeHtml(err.message || err)}</div>`;
+      }
+    })();
+  </script>
 </body>
 </html>
