@@ -6,16 +6,31 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>ColdTreasure | Post</title>
 
+  <link rel="icon" href="/assets/favicon/favicon.ico?v=6">
   <link rel="stylesheet" href="/assets/css/main.css?v=204" />
+
+  <!-- ColdTreasure Organization Schema -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "ColdTreasure",
+    "url": "https://coldtreasure.com",
+    "logo": "https://coldtreasure.com/CT_TRUE_16.png",
+    "description": "ColdTreasure is an independent sneaker archive and news platform documenting basketball footwear culture, releases, and design evolution."
+  }
+  </script>
 
   <style>
     :root { --w: 980px; --muted:#777; --line:#eee; }
+
     body{
       margin:0;
       font-family: system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans SC", Arial;
       background:#fff;
       color:#111;
     }
+
     main{ max-width: var(--w); margin: 24px auto 64px; padding: 0 18px; }
 
     .meta{
@@ -37,6 +52,7 @@
       border:1px solid var(--line);
       aspect-ratio: 3 / 2;
     }
+
     .hero img{
       width:100%;
       height:100%;
@@ -94,7 +110,6 @@
   <script src="/assets/js/include.v3.js?v=4" defer></script>
   <script src="/assets/js/post.js?v=6" defer></script>
 </head>
-
 <body>
   <div data-include="/modules/header/header.html"></div>
 
