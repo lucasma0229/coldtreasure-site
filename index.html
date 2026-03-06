@@ -20,6 +20,21 @@
   }
   </script>
 
+  <!-- ColdTreasure WebSite Schema + SearchAction -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "ColdTreasure",
+    "url": "https://coldtreasure.com/",
+    "potentialAction": {
+      "@type": "SearchAction",
+      "target": "https://coldtreasure.com/news/?q={search_term_string}",
+      "query-input": "required name=search_term_string"
+    }
+  }
+  </script>
+
   <!-- ✅ 更稳：在任何 defer 脚本加载前声明页面类型 -->
   <script>window.CT_PAGE = "home";</script>
   <script src="/assets/js/include.v3.js?v=13" defer></script>
