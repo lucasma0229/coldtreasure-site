@@ -7,8 +7,9 @@ export async function onRequest(context) {
   const all = url.searchParams.get("all") === "1"; // all=1 可返回草稿/未到时间（用于自查）
   const debug = url.searchParams.get("debug") === "1";
 
-  const version = "posts-api-cms-flow-shoename-slug-2026-03-05-01";
+  const version = "posts-api-cms-flow-author-2026-03-06-01";
   const STATIC_PATH = "/assets/data/posts.json";
+
   let staticDebug = null;
 
   const normStr = (v) => String(v ?? "").trim();
@@ -33,7 +34,7 @@ export async function onRequest(context) {
     if (!s) return "";
     return s
       .replace(/\s*[x×]\s*/gi, " ") // ✅ “x/×” 只作为连接符，去掉
-      .replace(/['"’‘“”]/g, "")    // ✅ 也过滤引号
+      .replace(/['"’‘“”]/g, "") // ✅ 也过滤引号
       .replace(/\s+/g, " ")
       .trim();
   };
@@ -50,7 +51,9 @@ export async function onRequest(context) {
         const type = String(b?.type || "").toLowerCase();
         const t = stripText(b?.text || "");
         if (!t) continue;
-        if (type === "p" || type === "paragraph" || type === "" || !type) return t.slice(0, maxLen);
+        if (type === "p" || type === "paragraph" || type === "" || !type) {
+          return t.slice(0, maxLen);
+        }
       }
       for (const b of blocks) {
         const t = stripText(b?.text || "");
@@ -79,7 +82,9 @@ export async function onRequest(context) {
     if (prop.type === "title") return prop.title?.map((t) => t.plain_text).join("") ?? "";
     if (prop.type === "rich_text") return prop.rich_text?.map((t) => t.plain_text).join("") ?? "";
     if (prop.type === "select") return prop.select?.name ?? "";
-    if (prop.type === "multi_select") return prop.multi_select?.map((x) => x?.name).filter(Boolean).join(", ") ?? "";
+    if (prop.type === "multi_select") {
+      return prop.multi_select?.map((x) => x?.name).filter(Boolean).join(", ") ?? "";
+    }
     if (prop.type === "number") return prop.number != null ? String(prop.number) : "";
     if (prop.type === "url") return prop.url ?? "";
     if (prop.type === "formula") {
@@ -145,7 +150,11 @@ export async function onRequest(context) {
   // ---------- Notion pagination ----------
   async function queryNotionAllPages() {
     if (!NOTION_KEY || !DATABASE_ID) {
-      return { ok: true, results: [], meta: { pages: 0, has_more: false, skipped: true } };
+      return {
+        ok: true,
+        results: [],
+        meta: { pages: 0, has_more: false, skipped: true },
+      };
     }
 
     const tryQuery = async (sorts) => {
@@ -192,7 +201,11 @@ export async function onRequest(context) {
     const r2 = await tryQuery([{ timestamp: "created_time", direction: "descending" }]);
     if (r2.ok) return r2;
 
-    return { ok: false, status: 500, error: { error: "Notion API error", detail: r1.detail || r2.detail } };
+    return {
+      ok: false,
+      status: 500,
+      error: { error: "Notion API error", detail: r1.detail || r2.detail },
+    };
   }
 
   // ---------- Load static posts.json ----------
@@ -291,6 +304,8 @@ export async function onRequest(context) {
     const rawTitle = normStr(p.title);
     if (!rawId && !rawSlug && !rawTitle) return null;
 
+    const rawAuthor = normStr(p.author);
+
     const brandRaw = Array.isArray(p.brand)
       ? p.brand.map((x) => normStr(x)).filter(Boolean).join(", ")
       : normStr(p.brand);
@@ -329,12 +344,13 @@ export async function onRequest(context) {
       slug,
       title: rawTitle,
 
-      // ✅ 新增：把 ShoeName 也带回前端（便于你 debug）
+      // ✅ 调试/结构字段
       shoeName: normStr(p.shoeName),
+      author: rawAuthor,
 
       date: normStr(p.date),
-      publishAt, // ✅ 新统一字段
-      status,    // ✅ 新统一字段
+      publishAt,
+      status,
 
       brand,
       cover,
@@ -378,16 +394,20 @@ export async function onRequest(context) {
 
   function ensureUniqueSlugs(posts) {
     const used = new Set();
+
     for (const p of posts) {
       const base = toSlug(p.slug) || toSlug(p.title) || toSlug(p.id) || "post";
       let slug = base;
       let i = 2;
+
       while (used.has(slug)) {
         slug = `${base}-${i++}`;
       }
+
       p.slug = slug;
       used.add(slug);
     }
+
     return posts;
   }
 
@@ -395,22 +415,30 @@ export async function onRequest(context) {
     // 1) Notion
     const nq = await queryNotionAllPages();
     if (!nq.ok) {
-      return new Response(JSON.stringify(nq.error || nq.detail || { error: "Notion query failed" }, null, 2), {
-        status: nq.status || 500,
-        headers: { "Content-Type": "application/json; charset=utf-8" },
-      });
+      return new Response(
+        JSON.stringify(nq.error || nq.detail || { error: "Notion query failed" }, null, 2),
+        {
+          status: nq.status || 500,
+          headers: { "Content-Type": "application/json; charset=utf-8" },
+        }
+      );
     }
 
     const notionResults = nq.results || [];
-    const samplePropertyNames = notionResults?.[0]?.properties ? Object.keys(notionResults[0].properties) : [];
+    const samplePropertyNames = notionResults?.[0]?.properties
+      ? Object.keys(notionResults[0].properties)
+      : [];
 
-    // ✅ 候选字段映射（加入 ShoeName）
+    // ✅ 候选字段映射（加入 ShoeName / Author）
     const CAND = {
       title: ["title", "标题", "Title"],
       slug: ["slug", "Slug", "短链", "文章ID", "id"],
 
-      // ✅ 新增：鞋款名（用于稳定生成 slug）
+      // ✅ 鞋款名（用于稳定生成 slug）
       shoeName: ["ShoeName", "shoeName", "鞋款名", "鞋款名称", "Model"],
+
+      // ✅ 作者
+      author: ["Author", "author", "作者", "Byline"],
 
       // CMS 发布流字段
       status: ["Status", "status", "状态", "发布状态"],
@@ -444,6 +472,7 @@ export async function onRequest(context) {
         const titleProp = pickNotionProp(props, CAND.title);
         const slugProp = pickNotionProp(props, CAND.slug);
         const shoeNameProp = pickNotionProp(props, CAND.shoeName);
+        const authorProp = pickNotionProp(props, CAND.author);
 
         const brandProp = pickNotionProp(props, CAND.brand);
         const summaryProp = pickNotionProp(props, CAND.summary);
@@ -465,8 +494,9 @@ export async function onRequest(context) {
             title: safeText(titleProp),
             slug: safeText(slugProp),
 
-            // ✅ 新增：ShoeName
+            // ✅ ShoeName / Author
             shoeName: safeText(shoeNameProp),
+            author: safeText(authorProp),
 
             // ✅ Status（Notion status 类型要用 safeStatusName）
             status: safeStatusName(statusProp),
@@ -545,7 +575,7 @@ export async function onRequest(context) {
       );
     }
 
-    // ✅ 保持兼容：仍然返回数组（你前端已兼容数组 / {posts:[]})
+    // ✅ 保持兼容：仍然返回数组（前端已兼容数组 / {posts:[]})
     return new Response(JSON.stringify(merged), {
       headers: { "Content-Type": "application/json; charset=utf-8" },
     });
