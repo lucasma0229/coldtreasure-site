@@ -188,15 +188,15 @@
 
   function setJsonLd(id, schemaObject) {
     let el = document.getElementById(id);
-    
+
     if (!el) {
       el = document.createElement("script");
       el.type = "application/ld+json";
       el.id = id;
     }
-    
+
     el.textContent = JSON.stringify(schemaObject, null, 2);
-    
+
     if (!document.head.contains(el)) {
       document.head.appendChild(el);
     }
@@ -239,6 +239,38 @@
     };
 
     setJsonLd("ld-json-article", schema);
+  }
+
+  function setBreadcrumbSchema(post, canonPath) {
+    const title = String(post?.title || "").trim() || "Post";
+    const articleUrl = canonPath ? `${location.origin}${canonPath}` : location.href;
+
+    const schema = {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        {
+          "@type": "ListItem",
+          position: 1,
+          name: "Home",
+          item: "https://coldtreasure.com/",
+        },
+        {
+          "@type": "ListItem",
+          position: 2,
+          name: "News",
+          item: "https://coldtreasure.com/news/",
+        },
+        {
+          "@type": "ListItem",
+          position: 3,
+          name: title,
+          item: articleUrl,
+        },
+      ],
+    };
+
+    setJsonLd("ld-json-breadcrumb", schema);
   }
 
   async function waitModulesLoaded() {
@@ -623,6 +655,7 @@
 
       applyAutoMeta(hit, canonPath);
       setArticleSchema(hit, canonPath);
+      setBreadcrumbSchema(hit, canonPath);
 
       if (canonPath && !isAlreadyCanonical(canonPath)) {
         try {
