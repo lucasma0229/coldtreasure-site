@@ -13,6 +13,7 @@
   function setCanonical(path) {
     if (!path) return;
     const href = `${location.origin}${path}`;
+
     let el = document.querySelector('link[rel="canonical"]');
     if (!el) {
       el = document.createElement("link");
@@ -28,6 +29,7 @@
       el = createFn();
       document.head.appendChild(el);
     }
+
     for (const [k, v] of Object.entries(attrs || {})) {
       if (v === undefined || v === null || String(v).trim() === "") continue;
       el.setAttribute(k, String(v));
@@ -40,16 +42,13 @@
   }
 
   function stripText(s) {
-    return String(s || "")
-      .replace(/\s+/g, " ")
-      .trim();
+    return String(s || "").replace(/\s+/g, " ").trim();
   }
 
   function pickExcerpt(post, maxLen = 160) {
     const explicit = stripText(post?.excerpt || post?.summary || "");
     if (explicit) return explicit.slice(0, maxLen);
 
-    // content_blocks 优先取第一段 p
     const blocks = Array.isArray(post?.content_blocks) ? post.content_blocks : null;
     if (blocks && blocks.length) {
       for (const b of blocks) {
@@ -76,7 +75,6 @@
 
     setTitle(fullTitle);
 
-    // description
     setMetaTag(
       'meta[name="description"]',
       () => {
@@ -87,7 +85,6 @@
       { content: desc }
     );
 
-    // Open Graph
     setMetaTag(
       'meta[property="og:title"]',
       () => {
@@ -148,7 +145,6 @@
       { content: url }
     );
 
-    // Twitter Card
     setMetaTag(
       'meta[name="twitter:card"]',
       () => {
@@ -190,25 +186,38 @@
     );
   }
 
-  function setArticleSchema(post, canonPath) {
-    const el = document.getElementById("ld-json-article");
-    if (!el) return;
+  function setJsonLd(id, schemaObject) {
+    let el = document.getElementById(id);
+    if (!el) {
+      el = document.createElement("script");
+      el.type = "application/ld+json";
+      el.id = id;
+      document.head.appendChild(el);
+    }
+    el.textContent = JSON.stringify(schemaObject, null, 2);
+  }
 
+  function setArticleSchema(post, canonPath) {
     const title = String(post?.title || "").trim();
     const image = String(post?.cover || "").trim();
     const datePublished = String(post?.publishAt || post?.date || "").trim();
     const authorName = String(post?.author || "").trim() || "ColdTreasure";
+    const description = pickExcerpt(post, 160);
     const url = canonPath ? `${location.origin}${canonPath}` : location.href;
 
     const schema = {
       "@context": "https://schema.org",
       "@type": "Article",
       headline: title,
-      mainEntityOfPage: url,
+      mainEntityOfPage: {
+        "@type": "WebPage",
+        "@id": url,
+      },
       url,
       ...(image ? { image: [image] } : {}),
       ...(datePublished ? { datePublished } : {}),
       ...(datePublished ? { dateModified: datePublished } : {}),
+      ...(description ? { description } : {}),
       author: {
         "@type": "Person",
         name: authorName,
@@ -216,10 +225,15 @@
       publisher: {
         "@type": "Organization",
         name: "ColdTreasure",
+        url: "https://coldtreasure.com",
+        logo: {
+          "@type": "ImageObject",
+          url: "https://coldtreasure.com/CT_TRUE_16.png",
+        },
       },
     };
 
-    el.textContent = JSON.stringify(schema, null, 2);
+    setJsonLd("ld-json-article", schema);
   }
 
   async function waitModulesLoaded() {
@@ -235,7 +249,7 @@
     });
   }
 
-  // ✅ 支持：
+  // 支持：
   // - /post/<slugOrId>
   // - /post/?slug=xxx
   // - /post/?id=xxx
@@ -250,7 +264,7 @@
     } catch {}
 
     if (!slug && !id) {
-      const m = String(location.pathname || "").match(/^\/post\/([^\/?#]+)\/?$/i);
+      const m = String(location.pathname || "").match(/^\/post\/([^/?#]+)\/?$/i);
       if (m && m[1]) slug = decodeURIComponent(m[1]);
     }
 
@@ -267,15 +281,13 @@
       throw new Error(msg);
     }
 
-    // 兼容两种返回：数组 or {posts:[]}
     if (Array.isArray(data)) return data;
     if (Array.isArray(data?.posts)) return data.posts;
     return [];
   }
 
-  // ✅ 真正 CMS：单篇接口（优先）
+  // 真正 CMS：单篇接口（优先）
   async function loadPostByKey({ slug, id, key }) {
-    // 当前如果没有，也不会报错，会 fallback
     const tryUrls = [];
     const s = String(slug || "").trim();
     const i = String(id || "").trim();
@@ -339,7 +351,6 @@
   }
 
   function setContent(container, post) {
-    // 优先 blocks
     const blocks = Array.isArray(post?.content_blocks) ? post.content_blocks : null;
     if (blocks && blocks.length) {
       container.innerHTML = "";
@@ -347,7 +358,6 @@
       return;
     }
 
-    // 次选 content（纯文本）
     const s = String(post?.content || "").trim();
     if (!s) {
       container.innerHTML = `<p class="muted">No content.</p>`;
@@ -380,8 +390,9 @@
   }
 
   function renderRelease(releaseBodyEl, lines) {
-    releaseBodyEl.innerHTML = "";
+    if (!releaseBodyEl) return;
 
+    releaseBodyEl.innerHTML = "";
     const sec =
       releaseBodyEl.closest("[data-release]") || releaseBodyEl.closest(".post-release");
 
@@ -421,7 +432,7 @@
     const gridEl = $(".post-grid", node);
 
     const title = String(post?.title || "Untitled");
-    titleEl.textContent = title;
+    if (titleEl) titleEl.textContent = title;
 
     const metaParts = [];
 
@@ -439,31 +450,30 @@
       }
     }
 
-    metaEl.innerHTML = metaParts.join(" · ");
+    if (metaEl) metaEl.innerHTML = metaParts.join(" · ");
 
     const cover = String(post?.cover || "").trim();
-    if (cover) {
+    if (cover && heroImg) {
       heroImg.src = cover;
       heroImg.alt = title;
       heroImg.loading = "eager";
-    } else {
+    } else if (heroImg) {
       const fig = heroImg.closest(".hero");
       if (fig) fig.hidden = true;
     }
 
-    // summary：文章页不显示摘要，但保留节点避免脚本报错
     if (summaryEl) {
       summaryEl.textContent = "";
       summaryEl.hidden = true;
     }
 
-    setContent(contentEl, post);
+    if (contentEl) setContent(contentEl, post);
 
     const releaseLines = normalizeReleaseLines(post);
     renderRelease(releaseBodyEl, releaseLines);
 
     const gallery = Array.isArray(post?.gallery) ? post.gallery : [];
-    if (gallery.length) {
+    if (gallery.length && gridEl && gallerySec) {
       gridEl.innerHTML = "";
       for (const u of gallery) {
         const src = String(u || "").trim();
@@ -475,7 +485,7 @@
         gridEl.appendChild(img);
       }
       gallerySec.hidden = false;
-    } else {
+    } else if (gallerySec) {
       gallerySec.hidden = true;
     }
 
@@ -537,7 +547,6 @@
     }
   }
 
-  // 判断当前 URL 是否已经是标准 canonical 形式
   function isAlreadyCanonical(canonPath) {
     try {
       const u = new URL(location.href);
@@ -556,7 +565,6 @@
 
     await waitModulesLoaded();
 
-    // ✅ 只在 /post/ 且带 ?id / ?slug 时跳一次
     (function normalizePostUrlOnce() {
       try {
         const u = new URL(location.href);
@@ -581,17 +589,14 @@
     const keyInfo = getKey();
     const { key, slug, id } = keyInfo;
 
-    // /post/ 入口页
     if (!key) {
       await renderEmptyState(app);
       return;
     }
 
     try {
-      // ✅ 1) 优先单篇接口（真正 CMS）
       let hit = await loadPostByKey({ slug, id, key });
 
-      // ✅ 2) fallback：旧模式（全量列表 find）
       if (!hit) {
         const list = await loadPosts();
         hit = list.find((p) => {
@@ -606,19 +611,14 @@
         return;
       }
 
-      // ✅ 标准地址：优先 slug，其次 id
       const canonSlug = String(hit?.slug || hit?.id || "").trim();
       const canonPath = canonSlug ? `/post/${encodeURIComponent(canonSlug)}` : "";
 
       if (canonPath) setCanonical(canonPath);
 
-      // ✅ 自动 meta（用于搜索结果 + 分享卡片）
       applyAutoMeta(hit, canonPath);
-
-      // ✅ Article Schema（真实作者 SEO）
       setArticleSchema(hit, canonPath);
 
-      // ✅ 如果当前不是标准形态，强制无刷换到标准 URL
       if (canonPath && !isAlreadyCanonical(canonPath)) {
         try {
           history.replaceState(null, "", canonPath);
