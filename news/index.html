@@ -5,11 +5,23 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>ColdTreasure | News</title>
 
+  <link rel="icon" href="/assets/favicon/favicon.ico?v=6">
   <link rel="stylesheet" href="/assets/css/main.css?v=203" />
+
+  <!-- ColdTreasure Organization Schema -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "ColdTreasure",
+    "url": "https://coldtreasure.com",
+    "logo": "https://coldtreasure.com/CT_TRUE_16.png",
+    "description": "ColdTreasure is an independent sneaker archive and news platform documenting basketball footwear culture, releases, and design evolution."
+  }
+  </script>
 
   <script>window.CT_PAGE = "news";</script>
   <script src="/assets/js/include.v3.js?v=3" defer></script>
-
   <!-- ✅ 你可以保留 app.js（不依赖它渲染 News） -->
   <script src="/assets/js/app.js?v=204" defer></script>
 
@@ -22,6 +34,7 @@
       --ct-shadow: 0 10px 30px rgba(0,0,0,.06);
       --ct-radius: 18px;
     }
+
     main.page{ max-width: var(--ct-w); margin: 22px auto 0; padding: 0 var(--ct-pad); }
     .page-head{ margin: 18px 0 18px; }
     .page-head__top{ display:flex; align-items:flex-end; justify-content:space-between; gap:16px; }
@@ -31,7 +44,6 @@
     .page-dot{ opacity:.5; }
     .page-status{ opacity:.85; }
     .page-rule{ margin-top:14px; height:1px; background: var(--ct-line); opacity:.9; }
-
     .news-list{ display:flex; flex-direction:column; gap: 26px; margin: 18px 0 0; padding: 0; }
 
     .news-item{
@@ -83,7 +95,6 @@
     }
   </style>
 </head>
-
 <body>
   <div data-include="/modules/header/header.html"></div>
 
@@ -108,11 +119,11 @@
   <script>
     function escapeHtml(str){
       return String(str ?? "")
-        .replaceAll("&","&amp;")
-        .replaceAll("<","&lt;")
-        .replaceAll(">","&gt;")
-        .replaceAll('"',"&quot;")
-        .replaceAll("'","&#039;");
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;");
     }
 
     function getQuery(){
@@ -134,7 +145,6 @@
     function isSignedImageUrl(url){
       const u = String(url || "");
       if(!u) return false;
-      // Notion / AWS presigned 常见特征
       return (
         /[?&]X-Amz-/i.test(u) ||
         /notion\.so\/image/i.test(u) ||
@@ -149,7 +159,6 @@
       if(!u) return "";
       if (isSignedImageUrl(u)) return u;
 
-      // 已经有 query 的静态图：用 &v= 追加
       if (u.includes("?")) return `${u}&v=${encodeURIComponent(v || Date.now())}`;
       return `${u}?v=${encodeURIComponent(v || Date.now())}`;
     }
