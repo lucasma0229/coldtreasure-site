@@ -406,12 +406,8 @@
       if (fig) fig.hidden = true;
     }
 
-    // summary: 有 excerpt 才显示
-    const ex = pickExcerpt(post, 180);
-    if (ex) {
-      summaryEl.textContent = ex;
-      summaryEl.hidden = false;
-    } else {
+    // summary：文章页不显示摘要，但保留节点避免脚本报错
+    if (summaryEl) {
       summaryEl.textContent = "";
       summaryEl.hidden = true;
     }
