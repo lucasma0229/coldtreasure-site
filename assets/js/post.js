@@ -386,14 +386,21 @@
     titleEl.textContent = title;
 
     const metaParts = [];
+    
     if (post?.date) metaParts.push(escapeHtml(post.date));
+
+    const author = String(post?.author || "").trim();
+    if (author) metaParts.push(`By ${escapeHtml(author)}`);
+
     if (post?.brand) metaParts.push(`@${escapeHtml(post.brand)}`);
+    
     if (Array.isArray(post?.keywords)) {
       for (const k of post.keywords) {
         const kk = String(k || "").trim();
         if (kk) metaParts.push(`@${escapeHtml(kk)}`);
       }
     }
+    
     metaEl.innerHTML = metaParts.join(" · ");
 
     const cover = String(post?.cover || "").trim();
