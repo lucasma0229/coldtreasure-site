@@ -287,10 +287,10 @@
 
         const filtered = q ? listAll.filter(p => matchesPost(p, q)) : listAll;
 
-        const sorted = [...filtered].sort((a,b)=>{
-          const da = String(a?.date || "");
-          const db = String(b?.date || "");
-          return db.localeCompare(da);
+        const sorted = [...filtered].sort((a, b) => {
+          const da = new Date(a?.publishAt || 0).getTime();
+          const db = new Date(b?.publishAt || 0).getTime();
+          return db - da;
         });
 
         if (statusEl){
