@@ -242,7 +242,7 @@
     function renderItem(post){
       const title = post.title || "Untitled";
       const summary = getSummary(post);
-      const date = post.date || "";
+      const date = post.publishAt || "";
       const brand = post.brand || "";
 
       const brandHtml = brand ? `<span class="pill">${escapeHtml(brand)}</span>` : "";
