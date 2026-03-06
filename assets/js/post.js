@@ -70,7 +70,6 @@
     const pageTitle = String(post?.title || "Post").trim();
     const brandSuffix = "ColdTreasure";
     const fullTitle = pageTitle ? `${pageTitle} | ${brandSuffix}` : brandSuffix;
-
     const desc = pickExcerpt(post, 160);
     const cover = String(post?.cover || "").trim();
     const url = canonPath ? `${location.origin}${canonPath}` : location.href;
@@ -191,6 +190,38 @@
     );
   }
 
+  function setArticleSchema(post, canonPath) {
+    const el = document.getElementById("ld-json-article");
+    if (!el) return;
+
+    const title = String(post?.title || "").trim();
+    const image = String(post?.cover || "").trim();
+    const datePublished = String(post?.publishAt || post?.date || "").trim();
+    const authorName = String(post?.author || "").trim() || "ColdTreasure";
+    const url = canonPath ? `${location.origin}${canonPath}` : location.href;
+
+    const schema = {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      headline: title,
+      mainEntityOfPage: url,
+      url,
+      ...(image ? { image: [image] } : {}),
+      ...(datePublished ? { datePublished } : {}),
+      ...(datePublished ? { dateModified: datePublished } : {}),
+      author: {
+        "@type": "Person",
+        name: authorName,
+      },
+      publisher: {
+        "@type": "Organization",
+        name: "ColdTreasure",
+      },
+    };
+
+    el.textContent = JSON.stringify(schema, null, 2);
+  }
+
   async function waitModulesLoaded() {
     await new Promise((resolve) => {
       let done = false;
@@ -244,10 +275,8 @@
 
   // ✅ 真正 CMS：单篇接口（优先）
   async function loadPostByKey({ slug, id, key }) {
-    // 你未来会在 functions/api/post.js 里实现这个接口
     // 当前如果没有，也不会报错，会 fallback
     const tryUrls = [];
-
     const s = String(slug || "").trim();
     const i = String(id || "").trim();
     const k = String(key || "").trim();
@@ -264,6 +293,7 @@
         if (data && typeof data === "object") return data;
       } catch {}
     }
+
     return null;
   }
 
@@ -325,7 +355,11 @@
     }
 
     container.innerHTML = "";
-    const parts = s.split(/\n{2,}/).map((x) => x.trim()).filter(Boolean);
+    const parts = s
+      .split(/\n{2,}/)
+      .map((x) => x.trim())
+      .filter(Boolean);
+
     for (const part of parts) {
       const p = document.createElement("p");
       p.textContent = part;
@@ -337,14 +371,17 @@
     if (Array.isArray(post?.release_lines) && post.release_lines.length) {
       return post.release_lines.map((x) => String(x || "").trim()).filter(Boolean);
     }
+
     const s = String(post?.release_info || "").trim();
     if (!s) return [];
+
     const lines = s.includes("\n") ? s.split(/\r?\n/) : s.split(/；|;|\|/);
     return lines.map((x) => String(x || "").trim()).filter(Boolean);
   }
 
   function renderRelease(releaseBodyEl, lines) {
     releaseBodyEl.innerHTML = "";
+
     const sec =
       releaseBodyEl.closest("[data-release]") || releaseBodyEl.closest(".post-release");
 
@@ -359,6 +396,7 @@
       li.textContent = line;
       ul.appendChild(li);
     }
+
     releaseBodyEl.appendChild(ul);
     if (sec) sec.hidden = false;
   }
@@ -386,21 +424,21 @@
     titleEl.textContent = title;
 
     const metaParts = [];
-    
+
     if (post?.date) metaParts.push(escapeHtml(post.date));
 
     const author = String(post?.author || "").trim();
     if (author) metaParts.push(`By ${escapeHtml(author)}`);
 
     if (post?.brand) metaParts.push(`@${escapeHtml(post.brand)}`);
-    
+
     if (Array.isArray(post?.keywords)) {
       for (const k of post.keywords) {
         const kk = String(k || "").trim();
         if (kk) metaParts.push(`@${escapeHtml(kk)}`);
       }
     }
-    
+
     metaEl.innerHTML = metaParts.join(" · ");
 
     const cover = String(post?.cover || "").trim();
@@ -485,6 +523,7 @@
           const meta = date
             ? `<div class="muted" style="font-size:13px; margin-top:4px;">${escapeHtml(date)}</div>`
             : "";
+
           return `
             <a href="${href}" style="display:block; padding:12px 14px; border:1px solid rgba(0,0,0,.08); border-radius:14px; text-decoration:none; color:inherit;">
               <div style="font-weight:600; line-height:1.2;">${escapeHtml(title)}</div>
@@ -575,6 +614,9 @@
 
       // ✅ 自动 meta（用于搜索结果 + 分享卡片）
       applyAutoMeta(hit, canonPath);
+
+      // ✅ Article Schema（真实作者 SEO）
+      setArticleSchema(hit, canonPath);
 
       // ✅ 如果当前不是标准形态，强制无刷换到标准 URL
       if (canonPath && !isAlreadyCanonical(canonPath)) {
