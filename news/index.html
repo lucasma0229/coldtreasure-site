@@ -231,7 +231,7 @@
 
     // ✅ 摘要：优先 summary；否则从 contentToText() 抽取可读文本（避免显示 JSON）
     function getSummary(post){
-      const s = String(post.summary || "").trim();
+      const s = String(post.excerpt || post.summary || "").trim();
       if (s) return s;
 
       const c = contentToText(post.content);
