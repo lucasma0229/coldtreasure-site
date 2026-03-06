@@ -188,13 +188,18 @@
 
   function setJsonLd(id, schemaObject) {
     let el = document.getElementById(id);
+    
     if (!el) {
       el = document.createElement("script");
       el.type = "application/ld+json";
       el.id = id;
+    }
+    
+    el.textContent = JSON.stringify(schemaObject, null, 2);
+    
+    if (!document.head.contains(el)) {
       document.head.appendChild(el);
     }
-    el.textContent = JSON.stringify(schemaObject, null, 2);
   }
 
   function setArticleSchema(post, canonPath) {
