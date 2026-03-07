@@ -22,7 +22,6 @@
 
   <script>window.CT_PAGE = "news";</script>
   <script src="/assets/js/include.v3.js?v=3" defer></script>
-  <!-- ✅ 你可以保留 app.js（不依赖它渲染 News） -->
   <script src="/assets/js/app.js?v=204" defer></script>
 
   <style>
@@ -33,6 +32,7 @@
       --ct-muted:#6f6f6f;
       --ct-shadow: 0 10px 30px rgba(0,0,0,.06);
       --ct-radius: 18px;
+      --ct-ink:#111;
     }
 
     main.page{ max-width: var(--ct-w); margin: 22px auto 0; padding: 0 var(--ct-pad); }
@@ -44,6 +44,7 @@
     .page-dot{ opacity:.5; }
     .page-status{ opacity:.85; }
     .page-rule{ margin-top:14px; height:1px; background: var(--ct-line); opacity:.9; }
+
     .news-list{ display:flex; flex-direction:column; gap: 26px; margin: 18px 0 0; padding: 0; }
 
     .news-item{
@@ -83,6 +84,101 @@
     }
     .error{ border-color:#ffd0d0; background:#fff5f5; color:#7a2b2b; }
 
+    .pagination{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:18px;
+      margin: 34px 0 10px;
+      padding-top: 18px;
+      border-top: 1px solid var(--ct-line);
+    }
+
+    .pagination__side{
+      flex:1 1 0;
+      min-width:0;
+    }
+
+    .pagination__side--right{
+      display:flex;
+      justify-content:flex-end;
+    }
+
+    .pagination__center{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    .page-link,
+    .page-index,
+    .page-current{
+      text-decoration:none;
+      color:var(--ct-ink);
+      transition: opacity .18s ease, border-color .18s ease, background .18s ease;
+    }
+
+    .page-link{
+      display:inline-flex;
+      align-items:baseline;
+      gap:6px;
+      opacity:.88;
+      white-space:nowrap;
+    }
+    .page-link:hover{ opacity:.58; }
+
+    .page-link__zh{
+      font-size:15px;
+      letter-spacing:.04em;
+    }
+    .page-link__en{
+      font-size:12px;
+      letter-spacing:.08em;
+      opacity:.66;
+      text-transform:uppercase;
+    }
+
+    .page-link.is-disabled{
+      pointer-events:none;
+      opacity:.28;
+    }
+
+    .page-index,
+    .page-current{
+      min-width:40px;
+      height:40px;
+      padding:0 12px;
+      border-radius:999px;
+      border:1px solid var(--ct-line);
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      font-size:13px;
+      letter-spacing:.04em;
+      background:#fff;
+    }
+
+    .page-index:hover{
+      border-color:rgba(0,0,0,.12);
+      opacity:.7;
+    }
+
+    .page-current{
+      border-color:#d7d7d7;
+      background:#fafafa;
+      font-weight:600;
+    }
+
+    .page-summary{
+      text-align:center;
+      margin-top:10px;
+      font-size:12px;
+      color:var(--ct-muted);
+      letter-spacing:.05em;
+    }
+
     @media (max-width: 860px){
       main.page{ padding: 0 16px; }
       .page-head__top{ align-items:flex-start; flex-direction:column; gap:10px; }
@@ -92,6 +188,21 @@
       .news-media img{ aspect-ratio: 16 / 10; }
       .news-body{ padding: 14px 16px 16px; }
       .news-title{ font-size: 20px; }
+
+      .pagination{
+        flex-direction:column;
+        align-items:stretch;
+      }
+
+      .pagination__side,
+      .pagination__side--right{
+        display:flex;
+        justify-content:center;
+      }
+
+      .pagination__center{
+        order:-1;
+      }
     }
   </style>
 </head>
@@ -112,11 +223,14 @@
     </header>
 
     <div id="app" class="empty">Loading…</div>
+    <div id="paginationMount"></div>
 
     <div data-include="/modules/footer/footer.html"></div>
   </main>
 
   <script>
+    const PAGE_SIZE = 10;
+
     function escapeHtml(str){
       return String(str ?? "")
         .replaceAll("&", "&amp;")
@@ -135,13 +249,30 @@
       }
     }
 
+    function getPage(){
+      try{
+        const raw = new URL(location.href).searchParams.get("page") || "1";
+        const n = Number.parseInt(raw, 10);
+        return Number.isFinite(n) && n > 0 ? n : 1;
+      }catch(e){
+        return 1;
+      }
+    }
+
+    function buildNewsUrl(page, q){
+      const url = new URL("/news/", location.origin);
+      if (page > 1) url.searchParams.set("page", String(page));
+      if (q) url.searchParams.set("q", q);
+      const qs = url.searchParams.toString();
+      return qs ? `${url.pathname}?${qs}` : url.pathname;
+    }
+
     function normLoose(s=""){ return String(s ?? "").toLowerCase().trim(); }
 
     function termsOf(q){
       return normLoose(q).split(/\s+/).map(s => s.trim()).filter(Boolean);
     }
 
-    // ✅ 判断“签名/临时图片链接”：一律不能拼 v（否则签名失效 -> 裂图）
     function isSignedImageUrl(url){
       const u = String(url || "");
       if(!u) return false;
@@ -153,7 +284,6 @@
       );
     }
 
-    // ✅ 统一生成图片 src：签名图原样；静态图才加 ?v=
     function safeImgSrc(url, v){
       const u = String(url || "").trim();
       if(!u) return "";
@@ -163,7 +293,6 @@
       return `${u}?v=${encodeURIComponent(v || Date.now())}`;
     }
 
-    // ✅ 把 content（可能是 string，也可能是 blocks array）统一转成可读文本
     function contentToText(content){
       if (!content) return "";
 
@@ -207,7 +336,7 @@
       if(!terms.length) return true;
 
       const title = post.title || "";
-      const brand = post.brand || "";
+      const brand = Array.isArray(post.brand) ? post.brand.join(" ") : (post.brand || "");
       const keywords = Array.isArray(post.keywords) ? post.keywords.join(" ") : "";
       const release = post.release_info || "";
       const content = contentToText(post.content);
@@ -229,7 +358,6 @@
       return [];
     }
 
-    // ✅ 摘要：优先 summary；否则从 contentToText() 抽取可读文本（避免显示 JSON）
     function getSummary(post){
       const s = String(post.excerpt || post.summary || "").trim();
       if (s) return s;
@@ -243,7 +371,7 @@
       const title = post.title || "Untitled";
       const summary = getSummary(post);
       const date = post.publishAt || "";
-      const brand = post.brand || "";
+      const brand = Array.isArray(post.brand) ? post.brand.join(", ") : (post.brand || "");
 
       const brandHtml = brand ? `<span class="pill">${escapeHtml(brand)}</span>` : "";
       const dateHtml  = date  ? `<span class="date">${escapeHtml(date)}</span>` : "";
@@ -269,6 +397,71 @@
       `;
     }
 
+    function renderPagination(totalItems, currentPage, totalPages, q){
+      const mount = document.getElementById("paginationMount");
+      if (!mount) return;
+
+      if (totalPages <= 1){
+        mount.innerHTML = "";
+        return;
+      }
+
+      const prevPage = currentPage - 1;
+      const nextPage = currentPage + 1;
+
+      let start = Math.max(1, currentPage - 2);
+      let end = Math.min(totalPages, currentPage + 2);
+
+      if (currentPage <= 2) end = Math.min(totalPages, 5);
+      if (currentPage >= totalPages - 1) start = Math.max(1, totalPages - 4);
+
+      const nums = [];
+      for (let i = start; i <= end; i++) {
+        if (i === currentPage) {
+          nums.push(`<span class="page-current" aria-current="page">${i}</span>`);
+        } else {
+          nums.push(`<a class="page-index" href="${escapeHtml(buildNewsUrl(i, q))}">${i}</a>`);
+        }
+      }
+
+      mount.innerHTML = `
+        <nav class="pagination" aria-label="News pagination">
+          <div class="pagination__side">
+            ${
+              currentPage > 1
+                ? `<a class="page-link" href="${escapeHtml(buildNewsUrl(prevPage, q))}">
+                    <span class="page-link__zh">上一页</span>
+                    <span class="page-link__en">Prev</span>
+                  </a>`
+                : `<span class="page-link is-disabled">
+                    <span class="page-link__zh">上一页</span>
+                    <span class="page-link__en">Prev</span>
+                  </span>`
+            }
+          </div>
+
+          <div class="pagination__center">
+            ${nums.join("")}
+          </div>
+
+          <div class="pagination__side pagination__side--right">
+            ${
+              currentPage < totalPages
+                ? `<a class="page-link" href="${escapeHtml(buildNewsUrl(nextPage, q))}">
+                    <span class="page-link__zh">下一页</span>
+                    <span class="page-link__en">Next</span>
+                  </a>`
+                : `<span class="page-link is-disabled">
+                    <span class="page-link__zh">下一页</span>
+                    <span class="page-link__en">Next</span>
+                  </span>`
+            }
+          </div>
+        </nav>
+        <div class="page-summary">Page ${currentPage} / ${totalPages} · ${totalItems} Posts</div>
+      `;
+    }
+
     (async function main(){
       const app = document.getElementById("app");
       const statusEl = document.getElementById("pageStatus");
@@ -281,6 +474,7 @@
       });
 
       const q = getQuery();
+      const requestedPage = getPage();
 
       try{
         const listAll = await loadPosts();
@@ -293,28 +487,37 @@
           return db - da;
         });
 
+        const totalItems = sorted.length;
+        const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
+        const currentPage = Math.min(requestedPage, totalPages);
+        const start = (currentPage - 1) * PAGE_SIZE;
+        const pageItems = sorted.slice(start, start + PAGE_SIZE);
+
         if (statusEl){
           if(q){
-            statusEl.textContent = `${sorted.length} results · “${q}”`;
+            statusEl.textContent = `${totalItems} results · Page ${currentPage}/${totalPages} · “${q}”`;
           }else{
-            statusEl.textContent = `${sorted.length} posts`;
+            statusEl.textContent = `${totalItems} posts · Page ${currentPage}/${totalPages}`;
           }
         }
 
-        if(!sorted.length){
+        if(!totalItems){
           app.className = "empty";
           app.innerHTML = q
             ? `No results for <b>${escapeHtml(q)}</b>.`
             : `No posts yet.`;
+          document.getElementById("paginationMount").innerHTML = "";
           return;
         }
 
         app.className = "";
-        app.innerHTML = `<section class="news-list">${sorted.map(renderItem).join("")}</section>`;
+        app.innerHTML = `<section class="news-list">${pageItems.map(renderItem).join("")}</section>`;
+        renderPagination(totalItems, currentPage, totalPages, q);
       }catch(err){
         if (statusEl) statusEl.textContent = "Error";
         app.className = "error";
         app.innerHTML = `<b>Load failed</b><div style="margin-top:8px;">${escapeHtml(err.message || err)}</div>`;
+        document.getElementById("paginationMount").innerHTML = "";
       }
     })();
   </script>
