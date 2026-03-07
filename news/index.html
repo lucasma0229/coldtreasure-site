@@ -191,10 +191,6 @@
       pointer-events:none;
     }
 
-    .news-more.is-hidden{
-      display:none;
-    }
-
     .news-meta-line{
       margin-top:12px;
       text-align:center;
@@ -244,7 +240,6 @@
     </header>
 
     <div id="app" class="empty">Loading…</div>
-
     <div id="moreMount"></div>
 
     <div data-include="/modules/footer/footer.html"></div>
@@ -474,15 +469,10 @@
         const totalItems = sorted.length;
         let visibleCount = Math.min(PAGE_SIZE, totalItems);
 
-        if (statusEl){
-          if(q){
-            statusEl.textContent = `${totalItems} results · Showing ${visibleCount} · “${q}”`;
-          }else{
-            statusEl.textContent = `${totalItems} posts · Showing ${visibleCount}`;
-          }
-        }
-
         if(!totalItems){
+          if (statusEl){
+            statusEl.textContent = q ? `0 results · “${q}”` : `0 posts`;
+          }
           app.className = "empty";
           app.innerHTML = q
             ? `No results for <b>${escapeHtml(q)}</b>.`
@@ -490,6 +480,8 @@
           document.getElementById("moreMount").innerHTML = "";
           return;
         }
+
+        renderLoadMore(true);
 
         function renderVisible(){
           const visibleItems = sorted.slice(0, visibleCount);
@@ -509,14 +501,9 @@
             }
           }
 
-          if (visibleItems.length >= totalItems) {
-            setEndingState();
-          } else {
-            setLoadMoreState();
-          }
+          setLoadMoreState();
         }
 
-        renderLoadMore(totalItems > 0);
         renderVisible();
 
         const btn = document.getElementById("newsMoreBtn");
@@ -527,8 +514,19 @@
               return;
             }
 
-            visibleCount = Math.min(visibleCount + PAGE_SIZE, totalItems);
+            const nextVisibleCount = Math.min(visibleCount + PAGE_SIZE, totalItems);
+
+            if (nextVisibleCount === visibleCount) {
+              setEndingState();
+              return;
+            }
+
+            visibleCount = nextVisibleCount;
             renderVisible();
+
+            if (visibleCount >= totalItems) {
+              setEndingState();
+            }
           });
         }
       }catch(err){
