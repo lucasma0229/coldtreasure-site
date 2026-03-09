@@ -1,166 +1,275 @@
 /* ===================================================
-   LAYOUT (Topbar / Page container)
-   Clean version (dedup)
-   =================================================== */
-
-:root{
-  --navH: 72px; /* JS 会写入真实值；这里兜底 */
+Search Overlay v1
+=================================================== */
+.ct-search-overlay{
+  position:fixed;
+  inset:0;
+  z-index:1400;
+  pointer-events:none;
 }
 
-/* Global base */
-html,body{ height:100%; }
-body{
-  margin:0;
+.ct-search-overlay__backdrop{
+  position:absolute;
+  inset:0;
+  border:0;
+  background:rgba(0,0,0,.28);
+  opacity:0;
+  pointer-events:none;
+  transition:opacity 180ms cubic-bezier(.2,.8,.2,1);
+}
+
+.ct-search-panel{
+  position:absolute;
+  top:var(--navH);
+  left:0;
+  right:0;
+  background:#fff;
+  border-bottom:1px solid rgba(18,18,18,.10);
+  transform:translateY(-18px);
+  opacity:0;
+  pointer-events:none;
+  transition:
+    transform 180ms cubic-bezier(.2,.8,.2,1),
+    opacity 180ms cubic-bezier(.2,.8,.2,1);
+  box-shadow:0 12px 28px rgba(0,0,0,.06);
+}
+
+.ct-search-panel__inner{
+  max-width:1240px;
+  margin:0 auto;
+  padding:22px 24px 18px;
+}
+
+.ct-search-panel__bar{
+  display:flex;
+  align-items:center;
+  gap:16px;
+}
+
+.ct-search-panel__form{
+  flex:1 1 auto;
+  display:flex;
+  align-items:center;
+  height:44px;
+  border:1px solid rgba(18,18,18,.16);
   background:#fff;
 }
 
-/* Page container (content width) */
-.page{
-  max-width:1200px;
-  margin:0 auto;
-  padding:0 24px;
-}
-
-/* ===================================================
-   Topbar (Kith-style overlay/solid)
-   Controlled by: html.ct-nav--overlay / html.ct-nav--solid
-   =================================================== */
-
-.topbar{
-  position:fixed;
-  top:0; left:0; right:0;
-  z-index:1000;
-
-  /* 让高度由实际内容决定，JS 会同步回 --navH */
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-
-  padding:18px 24px;
-  box-sizing:border-box;
-
+.ct-search-panel__form input{
+  flex:1 1 auto;
+  height:100%;
+  border:0;
+  outline:none;
   background:transparent;
-  border-bottom:1px solid rgba(255,255,255,.08);
-
-  transition:
-    background 180ms cubic-bezier(.2,.8,.2,1),
-    border-color 180ms cubic-bezier(.2,.8,.2,1),
-    color 180ms cubic-bezier(.2,.8,.2,1);
-}
-
-/* Brand */
-.brand-lockup{
-  text-decoration:none;
-  color:inherit;
-  display:flex;
-  align-items:center;
-  min-width:0; /* 允许在手机端收缩避免挤压 */
-}
-.brand-name{
-  font-size:12px;
-  letter-spacing:.22em;
-  font-weight:600;
-}
-.brand-slogan{
-  margin-top:4px;
-  font-size:10px;
-  letter-spacing:.18em;
-  opacity:.65;
-}
-
-/* Nav links */
-.nav{
-  display:flex;
-  gap:20px;
-  align-items:center;
-}
-.nav a{
-  text-decoration:none;
-  color:inherit;
-  font-size:11px;
-  letter-spacing:.18em;
-  text-transform:uppercase;
-  opacity:.85;
-}
-.nav a:hover{ opacity:1; }
-.nav a.is-active{ opacity:1; }
-
-/* ===================================================
-   States
-   =================================================== */
-
-/* HOME @ top: overlay (transparent, white text) */
-html.ct-nav--overlay .topbar{
-  background:transparent;
-  color:#fff;
-  border-color:rgba(255,255,255,.08);
-}
-html.ct-nav--overlay .brand-slogan{ opacity:.72; }
-html.ct-nav--overlay .nav a{ opacity:.88; }
-
-/* Scrolled / non-home: solid (white bg + dark text) */
-html.ct-nav--solid .topbar{
-  background:rgba(255,255,255,.98);
+  padding:0 14px;
+  font-size:14px;
   color:#121212;
-  border-color:rgba(18,18,18,.10);
-  backdrop-filter:saturate(180%) blur(10px);
+  letter-spacing:.01em;
 }
 
-/* 🔥 overlay 强制白字（修复被子元素覆盖） */
-html.ct-nav--overlay .topbar,
-html.ct-nav--overlay .topbar a,
-html.ct-nav--overlay .brand-name,
-html.ct-nav--overlay .brand-slogan{
-  color:#fff !important;
+.ct-search-panel__form input::placeholder{
+  color:rgba(18,18,18,.45);
 }
 
-/* ===================================================
-   Body offset for fixed header
-   - 默认所有页面让位（避免内容被压住）
-   - 首页顶部 overlay 不让位（hero 触顶）
-   =================================================== */
+.ct-search-panel__submit{
+  flex:0 0 44px;
+  width:44px;
+  height:44px;
+  border:0;
+  background:transparent;
+  color:#121212;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+}
 
-/* default: no offset */
-body{ padding-top:0; }
-/* 非首页：永远让位 */
-body:not(.page-home){ padding-top:var(--navH); }
-/* 首页：只有在 solid 状态才让位；overlay 时不让位 */
-html.ct-nav--solid body.page-home{ padding-top:var(--navH); }
-html.ct-nav--overlay body.page-home{ padding-top:0; }
+.ct-search-panel__submit svg{
+  width:22px;
+  height:22px;
+  display:block;
+}
 
-/* ===================================================
-   Mobile: simplify topbar + constrain search width
-   - hide nav links (News/Record/Archive)
-   - search width ~ right 1/3
-   - keep brand from being squeezed
-   =================================================== */
-@media (max-width: 768px){
+.ct-search-panel__close{
+  flex:0 0 auto;
+  border:0;
+  background:transparent;
+  color:#121212;
+  font-size:34px;
+  line-height:1;
+  padding:0 4px;
+  cursor:pointer;
+}
 
-  .topbar .nav{
-    display:none !important;
+.ct-search-results{
+  padding-top:18px;
+}
+
+.ct-search-results__list{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+.ct-search-card{
+  display:grid;
+  grid-template-columns:168px 1fr;
+  gap:16px;
+  align-items:stretch;
+  text-decoration:none;
+  color:inherit;
+  padding:8px 0;
+}
+
+.ct-search-card + .ct-search-card{
+  border-top:1px solid rgba(18,18,18,.08);
+}
+
+.ct-search-card__media{
+  width:168px;
+  aspect-ratio:1.52 / 1;
+  overflow:hidden;
+  background:#f2f2f2;
+}
+
+.ct-search-card__media img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  display:block;
+}
+
+.ct-search-card__placeholder{
+  width:100%;
+  height:100%;
+  background:#f2f2f2;
+}
+
+.ct-search-card__body{
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+}
+
+.ct-search-card__title{
+  font-size:18px;
+  line-height:1.24;
+  font-weight:600;
+  color:#121212;
+  display:-webkit-box;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+  overflow:hidden;
+}
+
+.ct-search-card__summary{
+  margin-top:6px;
+  font-size:13px;
+  line-height:1.5;
+  color:rgba(18,18,18,.72);
+  display:-webkit-box;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+  overflow:hidden;
+}
+
+.ct-search-card__meta{
+  margin-top:8px;
+  font-size:12px;
+  line-height:1.4;
+  color:rgba(18,18,18,.54);
+  letter-spacing:.01em;
+}
+
+.ct-search-results__footer{
+  padding-top:18px;
+  text-align:center;
+}
+
+.ct-search-results__more{
+  display:inline-block;
+  text-decoration:none;
+  color:#3d3d3d;
+  font-size:13px;
+  letter-spacing:.02em;
+}
+
+.ct-search-results__more:hover{
+  color:#121212;
+}
+
+.ct-search-empty{
+  padding:18px 0 10px;
+  text-align:center;
+}
+
+.ct-search-empty__title{
+  font-size:16px;
+  font-weight:600;
+  color:#121212;
+}
+
+.ct-search-empty__text{
+  margin-top:6px;
+  font-size:13px;
+  color:rgba(18,18,18,.56);
+}
+
+body.ct-search-open{
+  overflow:hidden;
+}
+
+body.ct-search-open .ct-search-overlay{
+  pointer-events:auto;
+}
+
+body.ct-search-open .ct-search-overlay__backdrop{
+  opacity:1;
+  pointer-events:auto;
+}
+
+body.ct-search-open .ct-search-panel{
+  transform:translateY(0);
+  opacity:1;
+  pointer-events:auto;
+}
+
+@media (max-width: 860px){
+  .ct-search-panel__inner{
+    padding:16px 16px 14px;
   }
 
-  .topbar{
+  .ct-search-panel__bar{
+    gap:10px;
+  }
+
+  .ct-search-panel__form{
+    height:42px;
+  }
+
+  .ct-search-card{
+    grid-template-columns:110px 1fr;
     gap:12px;
-    align-items:center;
-    justify-content:space-between;
   }
 
-  /* Brand text: prevent wrap/overlap */
-  .brand-name,
-  .brand-slogan{
-    white-space:nowrap;
-    overflow:hidden;
-    text-overflow:ellipsis;
+  .ct-search-card__media{
+    width:110px;
   }
 
-  /* Search: keep it "reasonable" (about right 1/3) */
-  .topbar input[type="search"],
-  .topbar .search input,
-  .topbar .search-input{
-    flex:0 0 auto;
-    width:34vw !important;
-    max-width:220px !important;
-    min-width:140px !important;
+  .ct-search-card__title{
+    font-size:15px;
+  }
+
+  .ct-search-card__summary{
+    font-size:12px;
+  }
+
+  .ct-search-card__meta{
+    font-size:11px;
+  }
+
+  .ct-search-panel__close{
+    font-size:28px;
   }
 }
