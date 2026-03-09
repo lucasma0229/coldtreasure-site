@@ -15,6 +15,7 @@
 /* Hero */
 .page-post .hero,
 .post .hero{
+  margin:0;
   overflow:hidden;
   border-radius:var(--radius, 14px);
 }
