@@ -1,0 +1,44 @@
+<div class="ct-search-overlay" id="ctSearchOverlay" aria-hidden="true">
+  <button
+    class="ct-search-overlay__backdrop"
+    type="button"
+    aria-label="Close search"
+    data-search-close
+  ></button>
+
+  <section class="ct-search-panel" role="dialog" aria-modal="true" aria-label="Search">
+    <div class="ct-search-panel__inner">
+      <div class="ct-search-panel__bar">
+        <form class="ct-search-panel__form" action="/news/" method="GET" role="search">
+          <input
+            id="ctSearchOverlayInput"
+            name="q"
+            type="search"
+            placeholder="Search For..."
+            autocomplete="off"
+            aria-label="Search for news"
+          />
+          <button class="ct-search-panel__submit" type="submit" aria-label="Search">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M10.5 4.5a6 6 0 1 0 3.79 10.65l4.28 4.28 1.42-1.42-4.28-4.28A6 6 0 0 0 10.5 4.5Zm0 2a4 4 0 1 1 0 8 4 4 0 0 1 0-8Z" fill="currentColor"></path>
+            </svg>
+          </button>
+        </form>
+
+        <button class="ct-search-panel__close" type="button" aria-label="Close search" data-search-close>
+          ×
+        </button>
+      </div>
+
+      <div class="ct-search-results">
+        <div class="ct-search-results__list" id="ctSearchResults"></div>
+
+        <div class="ct-search-results__footer">
+          <a class="ct-search-results__more" id="ctSearchMoreNews" href="/news/">
+            更多资讯 · More News
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
