@@ -12,47 +12,76 @@
     <a href="/archive/">Archive</a>
   </nav>
 
-  <!-- ✅ Search：用 form 提交，Enter 必跳转（不依赖 JS） -->
-  <form class="ct-search" role="search" action="/news/" method="GET" aria-label="Site search">
+  <!-- Search Trigger Bar -->
+  <form
+    class="ct-search"
+    role="search"
+    action="/news/"
+    method="GET"
+    aria-label="Site search"
+    data-search-trigger-form
+  >
     <input
-      id="ctSearchInput"
+      id="ctSearchTrigger"
       name="q"
       type="search"
       placeholder="Search…"
       autocomplete="off"
+      data-search-trigger
     />
   </form>
 </header>
 
+<div data-include="/modules/search/search-overlay.html"></div>
+<script src="/assets/js/search-overlay.js?v=1" defer></script>
+
 <style>
-  /* ✅ 极小样式：不依赖 news.css，也不碰 main.css，避免误伤 */
-  .ct-search{ margin-left:14px; display:flex; align-items:center; }
-  .ct-search input{
-    width: 180px;
-    max-width: 42vw;
-    height: 34px;
-    padding: 0 12px;
-    border: 1px solid rgba(18,18,18,.14);
-    border-radius: 999px;
-    background: rgba(255,255,255,.9);
-    color: #121212;
-    font-size: 13px;
-    letter-spacing: .02em;
-    outline: none;
-  }
-  .ct-search input::placeholder{ color: rgba(18,18,18,.55); }
-  .ct-search input:focus{
-    border-color: rgba(18,18,18,.28);
-    background: #fff;
-  }
-  @media (max-width: 860px){
-    .ct-search input{ width: 130px; }
-  }
+/* Search trigger */
+.ct-search{
+  margin-left:14px;
+  display:flex;
+  align-items:center;
+}
+.ct-search input{
+  width:180px;
+  max-width:42vw;
+  height:34px;
+  padding:0 12px;
+  border:1px solid rgba(18,18,18,.14);
+  border-radius:999px;
+  background:rgba(255,255,255,.9);
+  color:#121212;
+  font-size:13px;
+  letter-spacing:.02em;
+  outline:none;
+  cursor:text;
+}
+.ct-search input::placeholder{ color:rgba(18,18,18,.55); }
+.ct-search input:focus{
+  border-color:rgba(18,18,18,.28);
+  background:#fff;
+}
+
+html.ct-nav--overlay .ct-search input{
+  background:rgba(255,255,255,.12);
+  border-color:rgba(255,255,255,.18);
+  color:#fff;
+}
+html.ct-nav--overlay .ct-search input::placeholder{
+  color:rgba(255,255,255,.68);
+}
+html.ct-nav--overlay .ct-search input:focus{
+  background:rgba(255,255,255,.16);
+  border-color:rgba(255,255,255,.28);
+}
+
+@media (max-width:860px){
+  .ct-search input{ width:130px; }
+}
 </style>
 
 <script>
 (function(){
-  // 防止 include 重复插入导致重复绑定
   if (window.CT_HEADER_INITED) return;
   window.CT_HEADER_INITED = true;
 
@@ -68,12 +97,12 @@
     if (isNews || isSection) a.classList.add("is-active");
   });
 
-  // ======== Search: 回填 q（可选，但很实用） ========
-  const input = document.getElementById("ctSearchInput");
-  if (input) {
+  // ======== Search trigger q backfill ========
+  const trigger = document.getElementById("ctSearchTrigger");
+  if (trigger) {
     try{
       const q = new URL(location.href).searchParams.get("q") || "";
-      if (q) input.value = q;
+      if (q) trigger.value = q;
     }catch(e){}
   }
 
@@ -101,7 +130,7 @@
     if (y <= 8){
       document.documentElement.classList.add("ct-nav--overlay");
       document.documentElement.classList.remove("ct-nav--solid");
-    }else{
+    } else {
       document.documentElement.classList.remove("ct-nav--overlay");
       document.documentElement.classList.add("ct-nav--solid");
     }
