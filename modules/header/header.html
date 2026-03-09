@@ -12,7 +12,6 @@
     <a href="/archive/">Archive</a>
   </nav>
 
-  <!-- Search Trigger Bar -->
   <form
     class="ct-search"
     role="search"
@@ -25,7 +24,7 @@
       id="ctSearchTrigger"
       name="q"
       type="search"
-      placeholder="Search…"
+      placeholder="Search..."
       autocomplete="off"
       data-search-trigger
     />
@@ -33,111 +32,3 @@
 </header>
 
 <div data-include="/modules/search/search-overlay.html"></div>
-<script src="/assets/js/search-overlay.js?v=1" defer></script>
-
-<style>
-/* Search trigger */
-.ct-search{
-  margin-left:14px;
-  display:flex;
-  align-items:center;
-}
-.ct-search input{
-  width:180px;
-  max-width:42vw;
-  height:34px;
-  padding:0 12px;
-  border:1px solid rgba(18,18,18,.14);
-  border-radius:999px;
-  background:rgba(255,255,255,.9);
-  color:#121212;
-  font-size:13px;
-  letter-spacing:.02em;
-  outline:none;
-  cursor:text;
-}
-.ct-search input::placeholder{ color:rgba(18,18,18,.55); }
-.ct-search input:focus{
-  border-color:rgba(18,18,18,.28);
-  background:#fff;
-}
-
-html.ct-nav--overlay .ct-search input{
-  background:rgba(255,255,255,.12);
-  border-color:rgba(255,255,255,.18);
-  color:#fff;
-}
-html.ct-nav--overlay .ct-search input::placeholder{
-  color:rgba(255,255,255,.68);
-}
-html.ct-nav--overlay .ct-search input:focus{
-  background:rgba(255,255,255,.16);
-  border-color:rgba(255,255,255,.28);
-}
-
-@media (max-width:860px){
-  .ct-search input{ width:130px; }
-}
-</style>
-
-<script>
-(function(){
-  if (window.CT_HEADER_INITED) return;
-  window.CT_HEADER_INITED = true;
-
-  const path = (location.pathname || "/").toLowerCase();
-  const topbar = document.querySelector("[data-topbar]");
-  if (!topbar) return;
-
-  // ======== Nav active ========
-  document.querySelectorAll(".nav a").forEach(a => {
-    const href = (a.getAttribute("href") || "").toLowerCase();
-    const isNews = (href === "/news/") && (path.startsWith("/news") || path.startsWith("/post"));
-    const isSection = (href !== "/news/") && href !== "/" && path.startsWith(href);
-    if (isNews || isSection) a.classList.add("is-active");
-  });
-
-  // ======== Search trigger q backfill ========
-  const trigger = document.getElementById("ctSearchTrigger");
-  if (trigger) {
-    try{
-      const q = new URL(location.href).searchParams.get("q") || "";
-      if (q) trigger.value = q;
-    }catch(e){}
-  }
-
-  // ======== Home detection ========
-  const isHome =
-    (String(window.CT_PAGE || "").toLowerCase() === "home") ||
-    document.body.classList.contains("page-home") ||
-    path === "/" || path === "/index.html";
-
-  function syncNavH(){
-    const h = Math.round(topbar.getBoundingClientRect().height || 72);
-    document.documentElement.style.setProperty("--navH", h + "px");
-  }
-
-  function applyState(){
-    syncNavH();
-    const y = window.scrollY || document.documentElement.scrollTop || 0;
-
-    if (!isHome){
-      document.documentElement.classList.remove("ct-nav--overlay");
-      document.documentElement.classList.add("ct-nav--solid");
-      return;
-    }
-
-    if (y <= 8){
-      document.documentElement.classList.add("ct-nav--overlay");
-      document.documentElement.classList.remove("ct-nav--solid");
-    } else {
-      document.documentElement.classList.remove("ct-nav--overlay");
-      document.documentElement.classList.add("ct-nav--solid");
-    }
-  }
-
-  requestAnimationFrame(applyState);
-  window.addEventListener("scroll", applyState, { passive:true });
-  window.addEventListener("resize", applyState);
-})();
-</script>
