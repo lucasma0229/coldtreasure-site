@@ -1,14 +1,44 @@
-// assets/js/post.js
 (() => {
   const $ = (sel, root = document) => root.querySelector(sel);
 
   const escapeHtml = (s) =>
-    String(s ?? "")
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;")
-      .replaceAll("'", "&#39;");
+    String(s ?? "").replace(/[&<>"']/g, (m) => {
+      const map = {
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;",
+      };
+      return map[m];
+    });
+
+  function cfImage(url, opts = {}) {
+    const src = String(url || "").trim();
+    if (!src) return "";
+
+    // 本站静态资源不走远程优化
+    if (src.startsWith("/assets/")) return src;
+
+    // 避免重复包装
+    if (src.includes("/cdn-cgi/image/")) return src;
+
+    const {
+      width = 1400,
+      quality = 85,
+      fit = "cover",
+      format = "auto",
+    } = opts;
+
+    const params = [
+      `width=${width}`,
+      `quality=${quality}`,
+      `fit=${fit}`,
+      `format=${format}`,
+    ].join(",");
+
+    return `${location.origin}/cdn-cgi/image/${params}/${src}`;
+  }
 
   function setCanonical(path) {
     if (!path) return;
@@ -53,7 +83,7 @@
     if (blocks && blocks.length) {
       for (const b of blocks) {
         const type = String(b?.type || "").toLowerCase();
-        if (type === "p" || type === "paragraph" || type === "" || !type) {
+        if (type === "p" || type === "paragraph" || !type) {
           const t = stripText(b?.text || "");
           if (t) return t.slice(0, maxLen);
         }
@@ -71,6 +101,7 @@
     const fullTitle = pageTitle ? `${pageTitle} | ${brandSuffix}` : brandSuffix;
     const desc = pickExcerpt(post, 160);
     const cover = String(post?.cover || "").trim();
+    const optimizedCover = cover ? cfImage(cover, { width: 1200, quality: 85, fit: "cover", format: "auto" }) : "";
     const url = canonPath ? `${location.origin}${canonPath}` : location.href;
 
     setTitle(fullTitle);
@@ -112,7 +143,7 @@
         m.setAttribute("property", "og:image");
         return m;
       },
-      { content: cover }
+      { content: optimizedCover || cover }
     );
 
     setMetaTag(
@@ -182,13 +213,12 @@
         m.setAttribute("name", "twitter:image");
         return m;
       },
-      { content: cover }
+      { content: optimizedCover || cover }
     );
   }
 
   function setJsonLd(id, schemaObject) {
     let el = document.getElementById(id);
-
     if (!el) {
       el = document.createElement("script");
       el.type = "application/ld+json";
@@ -205,6 +235,7 @@
   function setArticleSchema(post, canonPath) {
     const title = String(post?.title || "").trim();
     const image = String(post?.cover || "").trim();
+    const optimizedImage = image ? cfImage(image, { width: 1200, quality: 85, fit: "cover", format: "auto" }) : "";
     const datePublished = String(post?.publishAt || post?.date || "").trim();
     const authorName = String(post?.author || "").trim() || "ColdTreasure";
     const description = pickExcerpt(post, 160);
@@ -219,7 +250,7 @@
         "@id": url,
       },
       url,
-      ...(image ? { image: [image] } : {}),
+      ...(optimizedImage || image ? { image: [optimizedImage || image] } : {}),
       ...(datePublished ? { datePublished } : {}),
       ...(datePublished ? { dateModified: datePublished } : {}),
       ...(description ? { description } : {}),
@@ -365,6 +396,7 @@
       if (type === "ul") {
         const items = Array.isArray(b?.items) ? b.items : [];
         if (!items.length) continue;
+
         const ul = document.createElement("ul");
         for (const it of items) {
           const text = String(it || "").trim();
@@ -373,12 +405,14 @@
           li.textContent = text;
           ul.appendChild(li);
         }
+
         if (ul.childNodes.length) frag.appendChild(ul);
         continue;
       }
 
       const t = String(b?.text || "").trim();
       if (!t) continue;
+
       const p = document.createElement("p");
       p.textContent = t;
       frag.appendChild(p);
@@ -472,8 +506,8 @@
     if (titleEl) titleEl.textContent = title;
 
     const metaParts = [];
-
-    if (post?.date) metaParts.push(escapeHtml(post.date));
+    const publishDate = String(post?.publishAt || post?.date || "").trim();
+    if (publishDate) metaParts.push(escapeHtml(publishDate));
 
     const author = String(post?.author || "").trim();
     if (author) metaParts.push(`By ${escapeHtml(author)}`);
@@ -491,7 +525,12 @@
 
     const cover = String(post?.cover || "").trim();
     if (cover && heroImg) {
-      heroImg.src = cover;
+      heroImg.src = cfImage(cover, {
+        width: 1400,
+        quality: 85,
+        fit: "cover",
+        format: "auto",
+      });
       heroImg.alt = title;
       heroImg.loading = "eager";
     } else if (heroImg) {
@@ -512,15 +551,23 @@
     const gallery = Array.isArray(post?.gallery) ? post.gallery : [];
     if (gallery.length && gridEl && gallerySec) {
       gridEl.innerHTML = "";
+
       for (const u of gallery) {
         const src = String(u || "").trim();
         if (!src) continue;
+
         const img = document.createElement("img");
-        img.src = src;
+        img.src = cfImage(src, {
+          width: 1200,
+          quality: 85,
+          fit: "cover",
+          format: "auto",
+        });
         img.alt = title;
         img.loading = "lazy";
         gridEl.appendChild(img);
       }
+
       gallerySec.hidden = false;
     } else if (gallerySec) {
       gallerySec.hidden = true;
@@ -565,7 +612,7 @@
         .map((p) => {
           const slug = String(p?.slug || p?.id || "").trim();
           const title = String(p?.title || slug || "Untitled");
-          const date = String(p?.date || "").trim();
+          const date = String(p?.publishAt || p?.date || "").trim();
           const href = slug ? `/post/${encodeURIComponent(slug)}` : "/news/";
           const meta = date
             ? `<div class="muted" style="font-size:13px; margin-top:4px;">${escapeHtml(date)}</div>`
