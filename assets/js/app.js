@@ -2,10 +2,10 @@
 ColdTreasure app.js (CMS Core) - Full Replace
 - Primary data source: /api/posts
 - Fallback data source: /assets/data/posts.json
-- One detail page: /post/?id=<id>
+- One detail page: /post/<slug>
 - List pages render by CT_PAGE: news / record / archive / guide / feature
 - Home latest cards (#homeNews) + home carousel init
-- Auto-load /assets/js/header.js so you don't bump every page
+- Auto-load /assets/js/header.js
 =================================================== */
 
 /* 1) Page identity -> body class */
@@ -29,13 +29,16 @@ ColdTreasure app.js (CMS Core) - Full Replace
 
   /* ---------- utils ---------- */
   function esc(s = "") {
-    return String(s).replace(/[&<>"']/g, (m) => ({
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&#39;",
-    }[m]));
+    return String(s).replace(/[&<>"']/g, (m) => {
+      const map = {
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;",
+      };
+      return map[m];
+    });
   }
 
   function asText(v) {
@@ -48,27 +51,56 @@ ColdTreasure app.js (CMS Core) - Full Replace
     return [v];
   }
 
-  // 单文章链接：兼容 id / slug
-  function postUrl(p) {
-    const raw = asText(p.id || p.slug).trim();
-    return raw ? `/post/?id=${encodeURIComponent(raw)}` : `/post/`;
+  function cfImage(url, opts = {}) {
+    const src = asText(url).trim();
+    if (!src) return "";
+
+    // 本站静态资源不走远程优化
+    if (src.startsWith("/assets/")) return src;
+
+    // 避免重复包装
+    if (src.includes("/cdn-cgi/image/")) return src;
+
+    const {
+      width = 1200,
+      quality = 85,
+      fit = "cover",
+      format = "auto",
+    } = opts;
+
+    const params = [
+      `width=${width}`,
+      `quality=${quality}`,
+      `fit=${fit}`,
+      `format=${format}`,
+    ].join(",");
+
+    return `${location.origin}/cdn-cgi/image/${params}/${src}`;
   }
 
-  function pickCover(p) {
-    return (
+  // 单文章链接：兼容 id / slug
+  function postUrl(p) {
+    const raw = asText(p.slug || p.id).trim();
+    return raw ? `/post/${encodeURIComponent(raw)}` : "/post/";
+  }
+
+  function pickCover(p, opts = {}) {
+    const raw =
       p.thumb ||
       p.cover ||
       p.image ||
       p.hero ||
       p.coverImage ||
       p.cover_image ||
-      "/assets/img/cover.jpg"
-    );
+      "/assets/img/cover.jpg";
+
+    return cfImage(raw, opts);
   }
 
   function parseDateKey(v) {
     const s = asText(v).trim();
     if (!s) return NaN;
+
     const normalized = /^\d{4}$/.test(s) ? `${s}-01-01` : s;
     const t = Date.parse(normalized);
     return Number.isFinite(t) ? t : NaN;
@@ -85,6 +117,7 @@ ColdTreasure app.js (CMS Core) - Full Replace
     const slug = asText(raw.slug || raw.id).trim();
     const title = asText(raw.title || raw.name).trim();
     const summary = asText(raw.summary || raw.desc || raw.excerpt).trim();
+
     const brand = Array.isArray(raw.brand)
       ? raw.brand
       : Array.isArray(raw.brands)
@@ -92,7 +125,10 @@ ColdTreasure app.js (CMS Core) - Full Replace
       : raw.brand
       ? [raw.brand]
       : [];
-    const date = asText(raw.date || raw.release_date || raw.publishedAt || raw.publish_date).trim();
+
+    const date = asText(
+      raw.date || raw.publishAt || raw.release_date || raw.publishedAt || raw.publish_date
+    ).trim();
 
     return {
       ...raw,
@@ -111,8 +147,8 @@ ColdTreasure app.js (CMS Core) - Full Replace
 
   function sortPostsDesc(posts) {
     return posts.slice().sort((a, b) => {
-      const ak = parseDateKey(a.date || a.release_date);
-      const bk = parseDateKey(b.date || b.release_date);
+      const ak = parseDateKey(a.date || a.release_date || a.publishAt);
+      const bk = parseDateKey(b.date || b.release_date || b.publishAt);
 
       if (Number.isFinite(ak) && Number.isFinite(bk)) return bk - ak;
       if (Number.isFinite(bk)) return 1;
@@ -141,6 +177,7 @@ ColdTreasure app.js (CMS Core) - Full Replace
   async function fetchJsonArray(url) {
     const res = await fetch(url, { cache: "no-store" });
     if (!res.ok) throw new Error(`${url} HTTP ${res.status}`);
+
     const json = await res.json();
     if (!Array.isArray(json)) throw new Error(`${url} is not an array`);
     return json;
@@ -152,13 +189,11 @@ ColdTreasure app.js (CMS Core) - Full Replace
       const apiPosts = await fetchJsonArray("/api/posts");
       const normalized = apiPosts.map(normalizePost);
 
-      // API 只要有数据，就直接用 API
       if (normalized.length > 0) {
         console.log("[ColdTreasure] using /api/posts");
         return normalized;
       }
 
-      // API 正常但为空，则继续尝试静态兜底
       console.warn("[ColdTreasure] /api/posts is empty, fallback to posts.json");
     } catch (e) {
       console.warn("[ColdTreasure] failed to load /api/posts, fallback to posts.json", e);
@@ -177,10 +212,9 @@ ColdTreasure app.js (CMS Core) - Full Replace
 
   /* ---------- header.js auto-loader ---------- */
   async function ensureHeaderJS() {
-    if (window.CT_HEADER_INITED) return;
+    if (window.CT_HEADER_RUNTIME_INITED) return;
 
-    const url = "/assets/js/header.js?v=1";
-
+    const url = "/assets/js/header.js?v=4";
     await new Promise((resolve) => {
       const s = document.createElement("script");
       s.src = url;
@@ -198,9 +232,8 @@ ColdTreasure app.js (CMS Core) - Full Replace
     const summary = esc(p.summary || "");
     const date = esc(p.date || p.release_date || "");
     const brandText = esc(asArray(p.brand).join(" / "));
-    const hero = pickCover(p);
+    const hero = pickCover(p, { width: 960, quality: 85, fit: "cover", format: "auto" });
     const v = encodeURIComponent((p.date || p.release_date || "1").toString());
-
     const brandHtml = brandText ? `<span class="pill">${brandText}</span>` : "";
     const dateHtml = date ? `<span class="date">${date}</span>` : "";
 
@@ -220,7 +253,7 @@ ColdTreasure app.js (CMS Core) - Full Replace
 
   function tplListItem(p) {
     const href = postUrl(p);
-    const cover = pickCover(p);
+    const cover = pickCover(p, { width: 640, quality: 85, fit: "cover", format: "auto" });
     const title = esc(p.title || "");
     const summary = esc(p.summary || "");
     const brand = esc(asArray(p.brand).join(", "));
@@ -242,7 +275,7 @@ ColdTreasure app.js (CMS Core) - Full Replace
     `;
   }
 
-  /* ---------- list rendering (news / record / archive / guide / feature) ---------- */
+  /* ---------- list rendering ---------- */
   function renderList(posts) {
     const listEl = $("#list");
     const emptyEl = $("#listEmpty");
@@ -269,7 +302,7 @@ ColdTreasure app.js (CMS Core) - Full Replace
             p.model,
             Array.isArray(p.tags) ? p.tags.join(" ") : p.tags,
             p.id,
-            p.slug
+            p.slug,
           ]
             .filter(Boolean)
             .join(" ")
@@ -301,7 +334,7 @@ ColdTreasure app.js (CMS Core) - Full Replace
     }
   }
 
-  /* ---------- HOME: Latest 3 posts cards (#homeNews) ---------- */
+  /* ---------- HOME: Latest 3 posts cards ---------- */
   function renderHomeLatest(posts) {
     const homeNews = document.getElementById("homeNews");
     if (!homeNews) return;
@@ -318,23 +351,27 @@ ColdTreasure app.js (CMS Core) - Full Replace
       return;
     }
 
-    homeNews.innerHTML = latest.map((p) => `
-      <a class="news-card" href="${postUrl(p)}">
-        <div class="card-media">
-          <img src="${esc(pickCover(p))}" alt="${esc(p.title || "")}" loading="lazy">
-        </div>
-        <div class="card-body">
-          <div class="card-meta">
-            ${esc(p.date || p.release_date || "")}
-            ${asArray(p.brand).length ? ` · ${esc(asArray(p.brand).join(", "))}` : ``}
+    homeNews.innerHTML = latest
+      .map((p) => `
+        <a class="news-card" href="${postUrl(p)}">
+          <div class="card-media">
+            <img src="${esc(
+              pickCover(p, { width: 720, quality: 85, fit: "cover", format: "auto" })
+            )}" alt="${esc(p.title || "")}" loading="lazy">
           </div>
-          <div class="card-title">${esc(p.title || "")}</div>
-        </div>
-      </a>
-    `).join("");
+          <div class="card-body">
+            <div class="card-meta">
+              ${esc(p.date || p.release_date || "")}
+              ${asArray(p.brand).length ? ` · ${esc(asArray(p.brand).join(", "))}` : ``}
+            </div>
+            <div class="card-title">${esc(p.title || "")}</div>
+          </div>
+        </a>
+      `)
+      .join("");
   }
 
-  /* ---------- HOME: Carousel init (NEW structure + legacy fallback) ---------- */
+  /* ---------- HOME: Carousel init ---------- */
   function initHomeCarousel() {
     if (CT_PAGE !== "home") return;
 
@@ -385,25 +422,29 @@ ColdTreasure app.js (CMS Core) - Full Replace
         if (timer) clearInterval(timer);
         timer = null;
       }
+
       function start() {
         stop();
         if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
         timer = setInterval(() => go(i + 1), 6500);
       }
+
       function restart() {
         stop();
         start();
       }
 
-      prev && prev.addEventListener("click", () => {
-        go(i - 1);
-        restart();
-      });
+      prev &&
+        prev.addEventListener("click", () => {
+          go(i - 1);
+          restart();
+        });
 
-      next && next.addEventListener("click", () => {
-        go(i + 1);
-        restart();
-      });
+      next &&
+        next.addEventListener("click", () => {
+          go(i + 1);
+          restart();
+        });
 
       root.addEventListener("mouseenter", stop);
       root.addEventListener("mouseleave", start);
@@ -446,6 +487,7 @@ ColdTreasure app.js (CMS Core) - Full Replace
       if (timer) clearInterval(timer);
       timer = null;
     }
+
     function start() {
       stop();
       if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
@@ -469,6 +511,7 @@ ColdTreasure app.js (CMS Core) - Full Replace
     posts = await loadPosts();
   } catch (e) {
     console.error("[ColdTreasure] failed to load all post sources:", e);
+
     const listEl = $("#list");
     const homeNews = document.getElementById("homeNews");
 
@@ -487,11 +530,11 @@ ColdTreasure app.js (CMS Core) - Full Replace
 })();
 
 /* ===================================================
-   CT Hero Autoplay (safe for include injection)
+CT Hero Autoplay (safe for include injection)
 =================================================== */
 (function () {
-  if (window.__CT_HERO_AUTOPLAY__) return;
-  window.__CT_HERO_AUTOPLAY__ = true;
+  if (window.CT_HERO_AUTOPLAY) return;
+  window.CT_HERO_AUTOPLAY = true;
 
   const ROOT_SEL = ".ct-hero";
   const SLIDE_SEL = ".ct-hero__slide";
@@ -545,7 +588,6 @@ ColdTreasure app.js (CMS Core) - Full Replace
   function bind() {
     root.addEventListener("pointerenter", stop, { passive: true });
     root.addEventListener("pointerleave", start, { passive: true });
-
     document.addEventListener("visibilitychange", () => {
       if (document.hidden) stop();
       else start();
@@ -556,7 +598,6 @@ ColdTreasure app.js (CMS Core) - Full Replace
     if (root) return true;
     root = document.querySelector(ROOT_SEL);
     if (!root) return false;
-
     bind();
     start();
     return true;
