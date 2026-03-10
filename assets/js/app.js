@@ -51,50 +51,21 @@ ColdTreasure app.js (CMS Core) - Full Replace
     return [v];
   }
 
-  function cfImage(url, opts = {}) {
-    const src = asText(url).trim();
-    if (!src) return "";
-
-    // 本站静态资源不走远程优化
-    if (src.startsWith("/assets/")) return src;
-
-    // 避免重复包装
-    if (src.includes("/cdn-cgi/image/")) return src;
-
-    const {
-      width = 1200,
-      quality = 85,
-      fit = "cover",
-      format = "auto",
-    } = opts;
-
-    const params = [
-      `width=${width}`,
-      `quality=${quality}`,
-      `fit=${fit}`,
-      `format=${format}`,
-    ].join(",");
-
-    return `${location.origin}/cdn-cgi/image/${params}/${src}`;
-  }
-
-  // 单文章链接：兼容 id / slug
   function postUrl(p) {
     const raw = asText(p.slug || p.id).trim();
     return raw ? `/post/${encodeURIComponent(raw)}` : "/post/";
   }
 
-  function pickCover(p, opts = {}) {
-    const raw =
+  function pickCover(p) {
+    return (
       p.thumb ||
       p.cover ||
       p.image ||
       p.hero ||
       p.coverImage ||
       p.cover_image ||
-      "/assets/img/cover.jpg";
-
-    return cfImage(raw, opts);
+      "/assets/img/cover.jpg"
+    );
   }
 
   function parseDateKey(v) {
@@ -160,7 +131,6 @@ ColdTreasure app.js (CMS Core) - Full Replace
     });
   }
 
-  // wait modules injected (include.v3.js emits modules:loaded)
   function waitForModulesLoaded(timeoutMs = 2500) {
     return new Promise((resolve) => {
       let done = false;
@@ -184,7 +154,6 @@ ColdTreasure app.js (CMS Core) - Full Replace
   }
 
   async function loadPosts() {
-    // 1) 优先读 CMS API
     try {
       const apiPosts = await fetchJsonArray("/api/posts");
       const normalized = apiPosts.map(normalizePost);
@@ -199,7 +168,6 @@ ColdTreasure app.js (CMS Core) - Full Replace
       console.warn("[ColdTreasure] failed to load /api/posts, fallback to posts.json", e);
     }
 
-    // 2) 兜底读旧静态文件
     try {
       const staticPosts = await fetchJsonArray("/assets/data/posts.json");
       console.log("[ColdTreasure] using /assets/data/posts.json");
@@ -210,7 +178,6 @@ ColdTreasure app.js (CMS Core) - Full Replace
     }
   }
 
-  /* ---------- header.js auto-loader ---------- */
   async function ensureHeaderJS() {
     if (window.CT_HEADER_RUNTIME_INITED) return;
 
@@ -225,14 +192,13 @@ ColdTreasure app.js (CMS Core) - Full Replace
     });
   }
 
-  /* ---------- templates ---------- */
   function tplNewsItem(p) {
     const href = postUrl(p);
     const title = esc(p.title || "Untitled");
     const summary = esc(p.summary || "");
     const date = esc(p.date || p.release_date || "");
     const brandText = esc(asArray(p.brand).join(" / "));
-    const hero = pickCover(p, { width: 960, quality: 85, fit: "cover", format: "auto" });
+    const hero = pickCover(p);
     const v = encodeURIComponent((p.date || p.release_date || "1").toString());
     const brandHtml = brandText ? `<span class="pill">${brandText}</span>` : "";
     const dateHtml = date ? `<span class="date">${date}</span>` : "";
@@ -253,7 +219,7 @@ ColdTreasure app.js (CMS Core) - Full Replace
 
   function tplListItem(p) {
     const href = postUrl(p);
-    const cover = pickCover(p, { width: 640, quality: 85, fit: "cover", format: "auto" });
+    const cover = pickCover(p);
     const title = esc(p.title || "");
     const summary = esc(p.summary || "");
     const brand = esc(asArray(p.brand).join(", "));
@@ -275,7 +241,6 @@ ColdTreasure app.js (CMS Core) - Full Replace
     `;
   }
 
-  /* ---------- list rendering ---------- */
   function renderList(posts) {
     const listEl = $("#list");
     const emptyEl = $("#listEmpty");
@@ -334,7 +299,6 @@ ColdTreasure app.js (CMS Core) - Full Replace
     }
   }
 
-  /* ---------- HOME: Latest 3 posts cards ---------- */
   function renderHomeLatest(posts) {
     const homeNews = document.getElementById("homeNews");
     if (!homeNews) return;
@@ -355,9 +319,7 @@ ColdTreasure app.js (CMS Core) - Full Replace
       .map((p) => `
         <a class="news-card" href="${postUrl(p)}">
           <div class="card-media">
-            <img src="${esc(
-              pickCover(p, { width: 720, quality: 85, fit: "cover", format: "auto" })
-            )}" alt="${esc(p.title || "")}" loading="lazy">
+            <img src="${esc(pickCover(p))}" alt="${esc(p.title || "")}" loading="lazy">
           </div>
           <div class="card-body">
             <div class="card-meta">
@@ -371,7 +333,6 @@ ColdTreasure app.js (CMS Core) - Full Replace
       .join("");
   }
 
-  /* ---------- HOME: Carousel init ---------- */
   function initHomeCarousel() {
     if (CT_PAGE !== "home") return;
 
@@ -454,7 +415,6 @@ ColdTreasure app.js (CMS Core) - Full Replace
       return;
     }
 
-    // legacy fallback
     const legacyRoot = document.querySelector("[data-hero]");
     if (!legacyRoot) return;
     if (legacyRoot.dataset.inited === "1") return;
@@ -501,7 +461,6 @@ ColdTreasure app.js (CMS Core) - Full Replace
     start();
   }
 
-  /* ---------- boot ---------- */
   await waitForModulesLoaded();
   await ensureHeaderJS();
   initHomeCarousel();
