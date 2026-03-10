@@ -13,33 +13,6 @@
       return map[m];
     });
 
-  function cfImage(url, opts = {}) {
-    const src = String(url || "").trim();
-    if (!src) return "";
-
-    // 本站静态资源不走远程优化
-    if (src.startsWith("/assets/")) return src;
-
-    // 避免重复包装
-    if (src.includes("/cdn-cgi/image/")) return src;
-
-    const {
-      width = 1400,
-      quality = 85,
-      fit = "cover",
-      format = "auto",
-    } = opts;
-
-    const params = [
-      `width=${width}`,
-      `quality=${quality}`,
-      `fit=${fit}`,
-      `format=${format}`,
-    ].join(",");
-
-    return `${location.origin}/cdn-cgi/image/${params}/${src}`;
-  }
-
   function setCanonical(path) {
     if (!path) return;
     const href = `${location.origin}${path}`;
@@ -101,7 +74,6 @@
     const fullTitle = pageTitle ? `${pageTitle} | ${brandSuffix}` : brandSuffix;
     const desc = pickExcerpt(post, 160);
     const cover = String(post?.cover || "").trim();
-    const optimizedCover = cover ? cfImage(cover, { width: 1200, quality: 85, fit: "cover", format: "auto" }) : "";
     const url = canonPath ? `${location.origin}${canonPath}` : location.href;
 
     setTitle(fullTitle);
@@ -143,7 +115,7 @@
         m.setAttribute("property", "og:image");
         return m;
       },
-      { content: optimizedCover || cover }
+      { content: cover }
     );
 
     setMetaTag(
@@ -213,7 +185,7 @@
         m.setAttribute("name", "twitter:image");
         return m;
       },
-      { content: optimizedCover || cover }
+      { content: cover }
     );
   }
 
@@ -235,7 +207,6 @@
   function setArticleSchema(post, canonPath) {
     const title = String(post?.title || "").trim();
     const image = String(post?.cover || "").trim();
-    const optimizedImage = image ? cfImage(image, { width: 1200, quality: 85, fit: "cover", format: "auto" }) : "";
     const datePublished = String(post?.publishAt || post?.date || "").trim();
     const authorName = String(post?.author || "").trim() || "ColdTreasure";
     const description = pickExcerpt(post, 160);
@@ -250,7 +221,7 @@
         "@id": url,
       },
       url,
-      ...(optimizedImage || image ? { image: [optimizedImage || image] } : {}),
+      ...(image ? { image: [image] } : {}),
       ...(datePublished ? { datePublished } : {}),
       ...(datePublished ? { dateModified: datePublished } : {}),
       ...(description ? { description } : {}),
@@ -317,10 +288,6 @@
     });
   }
 
-  // 支持：
-  // - /post/<slugOrId>
-  // - /post/?slug=xxx
-  // - /post/?id=xxx
   function getKey() {
     let slug = "";
     let id = "";
@@ -354,7 +321,6 @@
     return [];
   }
 
-  // 真正 CMS：单篇接口（优先）
   async function loadPostByKey({ slug, id, key }) {
     const tryUrls = [];
     const s = String(slug || "").trim();
@@ -525,12 +491,7 @@
 
     const cover = String(post?.cover || "").trim();
     if (cover && heroImg) {
-      heroImg.src = cfImage(cover, {
-        width: 1400,
-        quality: 85,
-        fit: "cover",
-        format: "auto",
-      });
+      heroImg.src = cover;
       heroImg.alt = title;
       heroImg.loading = "eager";
     } else if (heroImg) {
@@ -557,12 +518,7 @@
         if (!src) continue;
 
         const img = document.createElement("img");
-        img.src = cfImage(src, {
-          width: 1200,
-          quality: 85,
-          fit: "cover",
-          format: "auto",
-        });
+        img.src = src;
         img.alt = title;
         img.loading = "lazy";
         gridEl.appendChild(img);
