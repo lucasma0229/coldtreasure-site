@@ -104,17 +104,49 @@ export async function onRequest(context) {
   };
 
   const safeDateStart = (prop) => prop?.date?.start ?? "";
+  const safeUrl = (prop) => {
+    if (!prop) return "";
+    if (prop.type === "url") return normStr(prop.url);
+    return "";
+  };
 
-  const safeCover = (prop) => {
+  const safeFilesOrUrl = (prop) => {
+    if (!prop) return "";
+
+    // 新结构：URL
+    if (prop.type === "url") return normStr(prop.url);
+
+    // 旧结构：Files
     const f = prop?.files?.[0];
     if (!f) return "";
-    return f.file?.url ?? f.external?.url ?? "";
+    return normStr(f.file?.url ?? f.external?.url ?? "");
   };
 
-  const safeFiles = (prop) => {
-    const files = prop?.files || [];
-    return files.map((f) => f?.file?.url ?? f?.external?.url ?? "").filter(Boolean);
-  };
+  const safeGallery = (prop) => {
+    if (!prop) return [];
+
+    // 方案 A：旧的 files 类型
+    if (prop.type === "files") {
+      const files = prop.files || [];
+      return files
+        .map((f) => normStr(f?.file?.url ?? f?.external?.url ?? ""))
+        .filter(Boolean);
+    }
+
+    // 方案 B：新的 rich_text / 文本，一行一个 URL
+    if (prop.type === "rich_text") {
+      const raw = (prop.rich_text || []).map((t) => t.plain_text || "").join("");
+      return raw
+        .split(/\r?\n/)
+        .map((s) => normStr(s))
+        .filter(Boolean);
+    }
+
+    // 方案 C：如果误用了 url，也兼容成单图数组
+    if (prop.type === "url") {
+      const one = normStr(prop.url);
+      return one ? [one] : [];
+    }
 
   const safeMultiSelect = (prop) => {
     const arr = prop?.multi_select || [];
@@ -506,10 +538,10 @@ export async function onRequest(context) {
 
             date: safeDateStart(dateProp),
 
-            cover: safeCover(coverProp),
-            content: safeText(contentProp),
-
-            gallery: safeFiles(galleryProp),
+            cover: safeFilesOrUrl(coverProp),
+            cover: safeFilesOrUrl(coverProp),
+            
+            gallery: safeGallery(galleryProp),
             keywords: safeMultiSelect(keywordsProp),
 
             publish: safePublishBool(publishProp),
