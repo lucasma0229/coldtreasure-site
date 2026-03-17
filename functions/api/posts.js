@@ -7,7 +7,7 @@ export async function onRequest(context) {
   const all = url.searchParams.get("all") === "1";
   const debug = url.searchParams.get("debug") === "1";
 
-  const version = "posts-api-cms-flow-author-excerpt-publishAt-2026-03-06-02";
+  const version = "posts-api-cms-flow-author-excerpt-publishAt-2026-03-17-01";
   const STATIC_PATH = "/assets/data/posts.json";
 
   let staticDebug = null;
@@ -77,23 +77,42 @@ export async function onRequest(context) {
   // ---------- Notion safe readers ----------
   const safeText = (prop) => {
     if (!prop) return "";
-    if (prop.type === "title") return prop.title?.map((t) => t.plain_text).join("") ?? "";
-    if (prop.type === "rich_text") return prop.rich_text?.map((t) => t.plain_text).join("") ?? "";
-    if (prop.type === "select") return prop.select?.name ?? "";
+
+    if (prop.type === "title") {
+      return prop.title?.map((t) => t.plain_text).join("") ?? "";
+    }
+
+    if (prop.type === "rich_text") {
+      return prop.rich_text?.map((t) => t.plain_text).join("") ?? "";
+    }
+
+    if (prop.type === "select") {
+      return prop.select?.name ?? "";
+    }
+
     if (prop.type === "multi_select") {
       return prop.multi_select?.map((x) => x?.name).filter(Boolean).join(", ") ?? "";
     }
-    if (prop.type === "number") return prop.number != null ? String(prop.number) : "";
-    if (prop.type === "url") return prop.url ?? "";
-    if (prop.type === "formula") {
-      return (
-        prop.formula?.string ??
-        (prop.formula?.number != null ? String(prop.formula.number) : "") ??
-        (prop.formula?.boolean != null ? String(prop.formula.boolean) : "") ??
-        ""
-      );
+
+    if (prop.type === "number") {
+      return prop.number != null ? String(prop.number) : "";
     }
-    if (prop.type === "checkbox") return String(!!prop.checkbox);
+
+    if (prop.type === "url") {
+      return prop.url ?? "";
+    }
+
+    if (prop.type === "formula") {
+      if (prop.formula?.string != null) return prop.formula.string;
+      if (prop.formula?.number != null) return String(prop.formula.number);
+      if (prop.formula?.boolean != null) return String(prop.formula.boolean);
+      return "";
+    }
+
+    if (prop.type === "checkbox") {
+      return String(!!prop.checkbox);
+    }
+
     return "";
   };
 
@@ -104,6 +123,7 @@ export async function onRequest(context) {
   };
 
   const safeDateStart = (prop) => prop?.date?.start ?? "";
+
   const safeUrl = (prop) => {
     if (!prop) return "";
     if (prop.type === "url") return normStr(prop.url);
@@ -147,6 +167,9 @@ export async function onRequest(context) {
       const one = normStr(prop.url);
       return one ? [one] : [];
     }
+
+    return [];
+  };
 
   const safeMultiSelect = (prop) => {
     const arr = prop?.multi_select || [];
@@ -536,11 +559,10 @@ export async function onRequest(context) {
             // 新字段优先；没有时再回退旧字段
             excerpt: safeText(excerptProp) || safeText(summaryProp),
 
+            content: safeText(contentProp),
             date: safeDateStart(dateProp),
 
             cover: safeFilesOrUrl(coverProp),
-            cover: safeFilesOrUrl(coverProp),
-            
             gallery: safeGallery(galleryProp),
             keywords: safeMultiSelect(keywordsProp),
 
