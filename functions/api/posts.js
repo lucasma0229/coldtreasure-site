@@ -7,13 +7,14 @@ export async function onRequest(context) {
   const all = url.searchParams.get("all") === "1";
   const debug = url.searchParams.get("debug") === "1";
 
-  const version = "posts-api-cms-flow-author-excerpt-publishAt-2026-03-17-01";
+  const version = "posts-api-cms-flow-auto-image-first-2026-03-17-01";
   const STATIC_PATH = "/assets/data/posts.json";
+  const IMAGE_BASE = "https://images.coldtreasure.com";
+  const AUTO_GALLERY_MAX = 8;
 
   let staticDebug = null;
 
   const normStr = (v) => String(v ?? "").trim();
-  const dateKey = (d) => (normStr(d) ? normStr(d) : "0000-00-00");
 
   // -------- slug / excerpt helpers --------
   const toSlug = (input) => {
@@ -74,6 +75,35 @@ export async function onRequest(context) {
     return d;
   }
 
+  function pad2(n) {
+    return String(n).padStart(2, "0");
+  }
+
+  function inferImageFolder(p) {
+    const slug = normStr(p?.slug);
+    const dt = parseMaybeDate(p?.publishAt || p?.date);
+
+    if (!slug || !dt) return "";
+
+    const year = String(dt.getUTCFullYear());
+    const month = pad2(dt.getUTCMonth() + 1);
+    const day = pad2(dt.getUTCDate());
+
+    return `${IMAGE_BASE}/news/${year}/${month}/${day}/${slug}`;
+  }
+
+  function inferCoverUrl(p) {
+    const folder = inferImageFolder(p);
+    if (!folder) return "";
+    return `${folder}/cover.webp`;
+  }
+
+  function inferGalleryUrls(p, maxCount = AUTO_GALLERY_MAX) {
+    const folder = inferImageFolder(p);
+    if (!folder) return [];
+    return Array.from({ length: maxCount }, (_, i) => `${folder}/${i + 1}.webp`);
+  }
+
   // ---------- Notion safe readers ----------
   const safeText = (prop) => {
     if (!prop) return "";
@@ -124,19 +154,11 @@ export async function onRequest(context) {
 
   const safeDateStart = (prop) => prop?.date?.start ?? "";
 
-  const safeUrl = (prop) => {
-    if (!prop) return "";
-    if (prop.type === "url") return normStr(prop.url);
-    return "";
-  };
-
   const safeFilesOrUrl = (prop) => {
     if (!prop) return "";
 
-    // 新结构：URL
     if (prop.type === "url") return normStr(prop.url);
 
-    // 旧结构：Files
     const f = prop?.files?.[0];
     if (!f) return "";
     return normStr(f.file?.url ?? f.external?.url ?? "");
@@ -145,7 +167,6 @@ export async function onRequest(context) {
   const safeGallery = (prop) => {
     if (!prop) return [];
 
-    // 方案 A：旧的 files 类型
     if (prop.type === "files") {
       const files = prop.files || [];
       return files
@@ -153,7 +174,6 @@ export async function onRequest(context) {
         .filter(Boolean);
     }
 
-    // 方案 B：新的 rich_text / 文本，一行一个 URL
     if (prop.type === "rich_text") {
       const raw = (prop.rich_text || []).map((t) => t.plain_text || "").join("");
       return raw
@@ -162,7 +182,6 @@ export async function onRequest(context) {
         .filter(Boolean);
     }
 
-    // 方案 C：如果误用了 url，也兼容成单图数组
     if (prop.type === "url") {
       const one = normStr(prop.url);
       return one ? [one] : [];
@@ -374,8 +393,6 @@ export async function onRequest(context) {
 
     const brand = brandRaw.replace(/\s*\n+\s*/g, ", ").replace(/\s*,\s*/g, ", ").trim();
 
-    const cover = normStr(p.cover || p.hero || p.image || p.thumb);
-
     const contentIsBlocks = Array.isArray(p.content);
     const content_blocks = contentIsBlocks ? p.content : [];
     const content_text =
@@ -397,7 +414,10 @@ export async function onRequest(context) {
     const publishAt = normStr(p.publishAt || p.publish_at || p.date);
     const status = normStr(p.status || p.Status);
 
-    return {
+    const notionCover = normStr(p.cover || p.hero || p.image || p.thumb);
+    const notionGallery = Array.isArray(p.gallery) ? p.gallery.filter(Boolean) : [];
+
+    const draft = {
       id: rawId || slug || rawTitle,
       slug,
       title: rawTitle,
@@ -410,7 +430,6 @@ export async function onRequest(context) {
       status,
 
       brand,
-      cover,
 
       summary: normStr(p.summary),
       excerpt: normStr(p.excerpt) || pickExcerpt({ ...p, content: content_text, content_blocks }, 160),
@@ -419,13 +438,24 @@ export async function onRequest(context) {
       release_lines: rel.release_lines,
 
       keywords: Array.isArray(p.keywords) ? p.keywords : Array.isArray(p.tags) ? p.tags : [],
-      gallery: Array.isArray(p.gallery) ? p.gallery : [],
 
       publish: typeof p.publish === "boolean" ? p.publish : true,
 
       content: content_text,
       content_blocks,
       source,
+    };
+
+    const inferredCover = inferCoverUrl(draft);
+    const inferredGallery = inferGalleryUrls(draft, AUTO_GALLERY_MAX);
+
+    return {
+      ...draft,
+      cover: inferredCover || notionCover,
+      gallery: inferredGallery.length ? inferredGallery : notionGallery,
+      cover_fallback: notionCover || "",
+      gallery_fallback: notionGallery,
+      image_folder: inferImageFolder(draft) || "",
     };
   }
 
@@ -492,10 +522,7 @@ export async function onRequest(context) {
 
       brand: ["brand", "品牌", "Brand"],
 
-      // 旧摘要字段
       summary: ["首页摘要", "summary", "home_summary"],
-
-      // 新正式摘要字段
       excerpt: ["excerpt", "Excerpt"],
 
       content: ["content", "正文", "Content", "文章内容"],
@@ -553,10 +580,7 @@ export async function onRequest(context) {
 
             brand: safeText(brandProp),
 
-            // 旧字段仍保留输出
             summary: safeText(summaryProp),
-
-            // 新字段优先；没有时再回退旧字段
             excerpt: safeText(excerptProp) || safeText(summaryProp),
 
             content: safeText(contentProp),
@@ -611,6 +635,8 @@ export async function onRequest(context) {
               samplePropertyNames,
               hasStatusField,
               staticDebug,
+              imageBase: IMAGE_BASE,
+              autoGalleryMax: AUTO_GALLERY_MAX,
             },
             posts: merged,
           },
