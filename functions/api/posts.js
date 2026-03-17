@@ -7,10 +7,9 @@ export async function onRequest(context) {
   const all = url.searchParams.get("all") === "1";
   const debug = url.searchParams.get("debug") === "1";
 
-  const version = "posts-api-cms-flow-auto-image-first-2026-03-17-01";
+  const version = "posts-api-cms-flow-auto-image-gallerycount-2026-03-17-01";
   const STATIC_PATH = "/assets/data/posts.json";
   const IMAGE_BASE = "https://images.coldtreasure.com";
-  const AUTO_GALLERY_MAX = 8;
 
   let staticDebug = null;
 
@@ -82,7 +81,6 @@ export async function onRequest(context) {
   function inferImageFolder(p) {
     const slug = normStr(p?.slug);
     const dt = parseMaybeDate(p?.publishAt || p?.date);
-
     if (!slug || !dt) return "";
 
     const year = String(dt.getUTCFullYear());
@@ -98,10 +96,14 @@ export async function onRequest(context) {
     return `${folder}/cover.webp`;
   }
 
-  function inferGalleryUrls(p, maxCount = AUTO_GALLERY_MAX) {
+  function inferGalleryUrls(p, count) {
     const folder = inferImageFolder(p);
+    const n = Number(count);
+
     if (!folder) return [];
-    return Array.from({ length: maxCount }, (_, i) => `${folder}/${i + 1}.webp`);
+    if (!Number.isFinite(n) || n <= 0) return [];
+
+    return Array.from({ length: n }, (_, i) => `${folder}/${i + 1}.webp`);
   }
 
   // ---------- Notion safe readers ----------
@@ -144,6 +146,24 @@ export async function onRequest(context) {
     }
 
     return "";
+  };
+
+  const safeNumber = (prop) => {
+    if (!prop) return null;
+
+    if (prop.type === "number") {
+      return typeof prop.number === "number" ? prop.number : null;
+    }
+
+    if (prop.type === "formula" && typeof prop.formula?.number === "number") {
+      return prop.formula.number;
+    }
+
+    const text = normStr(safeText(prop));
+    if (!text) return null;
+
+    const n = Number(text);
+    return Number.isFinite(n) ? n : null;
   };
 
   const safeStatusName = (prop) => {
@@ -417,6 +437,11 @@ export async function onRequest(context) {
     const notionCover = normStr(p.cover || p.hero || p.image || p.thumb);
     const notionGallery = Array.isArray(p.gallery) ? p.gallery.filter(Boolean) : [];
 
+    const galleryCount =
+      typeof p.galleryCount === "number" && p.galleryCount >= 0
+        ? Math.floor(p.galleryCount)
+        : null;
+
     const draft = {
       id: rawId || slug || rawTitle,
       slug,
@@ -447,12 +472,13 @@ export async function onRequest(context) {
     };
 
     const inferredCover = inferCoverUrl(draft);
-    const inferredGallery = inferGalleryUrls(draft, AUTO_GALLERY_MAX);
+    const inferredGallery = inferGalleryUrls(draft, galleryCount);
 
     return {
       ...draft,
       cover: inferredCover || notionCover,
       gallery: inferredGallery.length ? inferredGallery : notionGallery,
+      galleryCount,
       cover_fallback: notionCover || "",
       gallery_fallback: notionGallery,
       image_folder: inferImageFolder(draft) || "",
@@ -530,6 +556,8 @@ export async function onRequest(context) {
 
       cover: ["cover", "封面", "首图", "hero", "thumb", "thumbnail"],
       gallery: ["gallery", "图集", "相册", "images", "Gallery"],
+      galleryCount: ["galleryCount", "GalleryCount", "图集数量", "图片数量"],
+
       keywords: ["keywords", "关键词", "tags", "标签", "Topics"],
 
       publish: ["publish", "published", "发布", "上线", "公开", "Publish"],
@@ -562,6 +590,8 @@ export async function onRequest(context) {
 
         const coverProp = pickNotionProp(props, CAND.cover);
         const galleryProp = pickNotionProp(props, CAND.gallery);
+        const galleryCountProp = pickNotionProp(props, CAND.galleryCount);
+
         const keywordsProp = pickNotionProp(props, CAND.keywords);
         const publishProp = pickNotionProp(props, CAND.publish);
         const releaseProp = pickNotionProp(props, CAND.release);
@@ -588,8 +618,9 @@ export async function onRequest(context) {
 
             cover: safeFilesOrUrl(coverProp),
             gallery: safeGallery(galleryProp),
-            keywords: safeMultiSelect(keywordsProp),
+            galleryCount: safeNumber(galleryCountProp),
 
+            keywords: safeMultiSelect(keywordsProp),
             publish: safePublishBool(publishProp),
             release_info: safeText(releaseProp),
           },
@@ -636,7 +667,6 @@ export async function onRequest(context) {
               hasStatusField,
               staticDebug,
               imageBase: IMAGE_BASE,
-              autoGalleryMax: AUTO_GALLERY_MAX,
             },
             posts: merged,
           },
