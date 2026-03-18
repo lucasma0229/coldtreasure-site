@@ -5,6 +5,7 @@ ColdTreasure app.js (CMS Core) - Full Replace
 - One detail page: /post/<slug>
 - List pages render by CT_PAGE: news / record / archive / guide / feature
 - Home latest cards (#homeNews) + home carousel init
+- Home hero CMS source: /api/homepage
 - Auto-load /assets/js/header.js
 =================================================== */
 
@@ -92,10 +93,10 @@ ColdTreasure app.js (CMS Core) - Full Replace
     const brand = Array.isArray(raw.brand)
       ? raw.brand
       : Array.isArray(raw.brands)
-      ? raw.brands
-      : raw.brand
-      ? [raw.brand]
-      : [];
+        ? raw.brands
+        : raw.brand
+          ? [raw.brand]
+          : [];
 
     const date = asText(
       raw.date || raw.publishAt || raw.release_date || raw.publishedAt || raw.publish_date
@@ -111,8 +112,22 @@ ColdTreasure app.js (CMS Core) - Full Replace
       date,
       release_date: date,
       section: normalizeSection(raw),
-      thumb: raw.thumb || raw.cover || raw.image || raw.hero || raw.coverImage || raw.cover_image || "",
-      cover: raw.cover || raw.thumb || raw.image || raw.hero || raw.coverImage || raw.cover_image || "",
+      thumb:
+        raw.thumb ||
+        raw.cover ||
+        raw.image ||
+        raw.hero ||
+        raw.coverImage ||
+        raw.cover_image ||
+        "",
+      cover:
+        raw.cover ||
+        raw.thumb ||
+        raw.image ||
+        raw.hero ||
+        raw.coverImage ||
+        raw.cover_image ||
+        "",
     };
   }
 
@@ -316,7 +331,8 @@ ColdTreasure app.js (CMS Core) - Full Replace
     }
 
     homeNews.innerHTML = latest
-      .map((p) => `
+      .map(
+        (p) => `
         <a class="news-card" href="${postUrl(p)}">
           <div class="card-media">
             <img src="${esc(pickCover(p))}" alt="${esc(p.title || "")}" loading="lazy">
@@ -329,8 +345,82 @@ ColdTreasure app.js (CMS Core) - Full Replace
             <div class="card-title">${esc(p.title || "")}</div>
           </div>
         </a>
-      `)
+      `
+      )
       .join("");
+  }
+
+  async function renderHeroFromCMS() {
+    if (CT_PAGE !== "home") return;
+
+    const root = document.querySelector(".ct-hero");
+    const stage = document.querySelector("[data-ct-hero]");
+    if (!root || !stage) return;
+
+    const prevBtn = stage.querySelector(".ct-hero__nav--prev");
+    const dotsWrap = stage.querySelector(".ct-hero__dots");
+
+    try {
+      const res = await fetch("/api/homepage", { cache: "no-store" });
+      if (!res.ok) throw new Error(`/api/homepage HTTP ${res.status}`);
+
+      const data = await res.json();
+      const hero = (data.hero || [])
+        .filter((item) => item.active && item.image)
+        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+
+      if (!hero.length) return;
+
+      stage.querySelectorAll(".ct-hero__slide").forEach((el) => el.remove());
+
+      const slidesHTML = hero
+        .map((item, idx) => {
+          const href = item.link && String(item.link).trim() ? item.link : "/news/";
+          const title = item.title ? esc(String(item.title)) : "";
+          const kicker = item.kicker ? esc(String(item.kicker)) : "FEATURED";
+          const desc = item.desc ? esc(String(item.desc)) : "";
+          const activeClass = idx === 0 ? " is-active" : "";
+
+          return `
+            <article class="ct-hero__slide${activeClass}">
+              <a class="ct-hero__media" href="${href}">
+                <img
+                  src="${esc(item.image)}"
+                  ${idx === 0 ? 'fetchpriority="high"' : ""}
+                  decoding="async"
+                  alt="${title}"
+                >
+              </a>
+
+              <div class="ct-hero__shade" aria-hidden="true"></div>
+
+              <div class="ct-hero__caption">
+                <div class="ct-hero__kicker">${kicker}</div>
+                <h2 class="ct-hero__title">${title}</h2>
+                ${desc ? `<p class="ct-hero__desc">${desc}</p>` : ``}
+              </div>
+            </article>
+          `;
+        })
+        .join("");
+
+      if (prevBtn) {
+        prevBtn.insertAdjacentHTML("beforebegin", slidesHTML);
+      } else {
+        stage.insertAdjacentHTML("afterbegin", slidesHTML);
+      }
+
+      if (dotsWrap) {
+        dotsWrap.innerHTML = hero
+          .map(
+            (_, idx) =>
+              `<button class="ct-hero__dot${idx === 0 ? " is-active" : ""}" type="button" aria-label="Slide ${idx + 1}"></button>`
+          )
+          .join("");
+      }
+    } catch (e) {
+      console.error("[ColdTreasure] renderHeroFromCMS failed:", e);
+    }
   }
 
   function initHomeCarousel() {
@@ -415,6 +505,92 @@ ColdTreasure app.js (CMS Core) - Full Replace
       return;
     }
 
+    // Current homepage hero structure: .ct-hero / [data-ct-hero]
+    const heroRoot = document.querySelector(".ct-hero");
+    const stage = document.querySelector("[data-ct-hero]");
+    if (heroRoot && stage) {
+      if (stage.dataset.inited === "1") return;
+      stage.dataset.inited = "1";
+
+      const slides = Array.from(stage.querySelectorAll(".ct-hero__slide"));
+      const dotsWrap = stage.querySelector(".ct-hero__dots");
+      const prev = stage.querySelector(".ct-hero__nav--prev");
+      const next = stage.querySelector(".ct-hero__nav--next");
+
+      const n = slides.length;
+      if (n <= 1) return;
+
+      let i = slides.findIndex((s) => s.classList.contains("is-active"));
+      if (i < 0) i = 0;
+
+      let dots = [];
+
+      if (dotsWrap) {
+        const existingDots = Array.from(dotsWrap.querySelectorAll(".ct-hero__dot"));
+        if (existingDots.length === n) {
+          dots = existingDots;
+        } else {
+          dotsWrap.innerHTML = "";
+          dots = [];
+          for (let k = 0; k < n; k++) {
+            const b = document.createElement("button");
+            b.type = "button";
+            b.className = "ct-hero__dot" + (k === i ? " is-active" : "");
+            b.setAttribute("aria-label", `Slide ${k + 1}`);
+            b.addEventListener("click", () => go(k));
+            dotsWrap.appendChild(b);
+            dots.push(b);
+          }
+        }
+      }
+
+      function render(idx) {
+        slides.forEach((s, slideIdx) => s.classList.toggle("is-active", slideIdx === idx));
+        dots.forEach((d, dotIdx) => d.classList.toggle("is-active", dotIdx === idx));
+        i = idx;
+      }
+
+      function go(idx) {
+        render((idx + n) % n);
+      }
+
+      let timer = null;
+      function stop() {
+        if (timer) clearInterval(timer);
+        timer = null;
+      }
+
+      function start() {
+        stop();
+        if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+        timer = setInterval(() => go(i + 1), 6500);
+      }
+
+      function restart() {
+        stop();
+        start();
+      }
+
+      prev &&
+        prev.addEventListener("click", () => {
+          go(i - 1);
+          restart();
+        });
+
+      next &&
+        next.addEventListener("click", () => {
+          go(i + 1);
+          restart();
+        });
+
+      heroRoot.addEventListener("mouseenter", stop);
+      heroRoot.addEventListener("mouseleave", start);
+
+      render(i);
+      start();
+      return;
+    }
+
     const legacyRoot = document.querySelector("[data-hero]");
     if (!legacyRoot) return;
     if (legacyRoot.dataset.inited === "1") return;
@@ -463,6 +639,7 @@ ColdTreasure app.js (CMS Core) - Full Replace
 
   await waitForModulesLoaded();
   await ensureHeaderJS();
+  await renderHeroFromCMS();
   initHomeCarousel();
 
   let posts = [];
