@@ -79,17 +79,28 @@ export async function onRequest(context) {
   }
 
   function inferImageFolder(p) {
-    const slug = normStr(p?.slug);
-    const dt = parseMaybeDate(p?.publishAt || p?.date);
-    if (!slug || !dt) return "";
+  const slug = normStr(p?.slug);
+  const rawDate = normStr(p?.publishAt || p?.date);
+  if (!slug || !rawDate) return "";
 
-    const year = String(dt.getUTCFullYear());
-    const month = pad2(dt.getUTCMonth() + 1);
-    const day = pad2(dt.getUTCDate());
-
+  // 直接优先取 YYYY-MM-DD，避免时区把日期算偏一天
+  const m = rawDate.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m) {
+    const [, year, month, day] = m;
     return `${IMAGE_BASE}/news/${year}/${month}/${day}/${slug}`;
   }
 
+  // 兜底：只有在拿不到纯日期时，才走 Date
+  const dt = parseMaybeDate(rawDate);
+  if (!dt) return "";
+
+  const year = String(dt.getFullYear());
+  const month = pad2(dt.getMonth() + 1);
+  const day = pad2(dt.getDate());
+
+  return `${IMAGE_BASE}/news/${year}/${month}/${day}/${slug}`;
+}
+  
   function inferCoverUrl(p) {
     const folder = inferImageFolder(p);
     if (!folder) return "";
