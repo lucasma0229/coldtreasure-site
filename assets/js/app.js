@@ -319,7 +319,7 @@ ColdTreasure app.js (CMS Core) - Full Replace
     if (!homeNews) return;
 
     const newsOnly = posts.filter((p) => normalizeSection(p) === "news");
-    const latest = sortPostsDesc(newsOnly).slice(0, 3);
+    const latest = sortPostsDesc(newsOnly).slice(0, 4);
 
     if (!latest.length) {
       homeNews.innerHTML = `
