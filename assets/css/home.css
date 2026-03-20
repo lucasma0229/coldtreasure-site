@@ -310,27 +310,36 @@ background:transparent;
 
 /* ===== Typography ===== */
 
+/* ===== Mobile Entry Typography System (FINAL) ===== */
+
+/* 英文分类（上层） */
 .entry-en{
-font-size:10px !important;
-letter-spacing:.16em !important;
-opacity:.72;
-line-height:1.1;
+  font-size:10px !important;
+  letter-spacing:.16em !important;
+  font-weight:500;
+  opacity:.70;
+  line-height:1.1;
 }
 
+/* 中文主标题（核心层） */
 .entry-cn{
-font-size:12px !important;
-letter-spacing:.08em !important;
-line-height:1.15;
+  font-size:12px !important;
+  letter-spacing:.06em !important;
+  font-weight:600;
+  opacity:.92;
+  line-height:1.15;
 }
 
-/* ✅ 关键：不再截断 Timeline notes */
+/* 英文说明（底层） */
 .entry-desc{
   display:block !important;
-  font-size:8px !important;
+  font-size:7.5px !important;
   letter-spacing:.12em !important;
-  opacity:.52;
+  font-weight:400;
+  opacity:.50;
   line-height:1.1;
 
+  /* 🔥 关键：保持单行 + 不破布局 */
   white-space:nowrap;
   overflow:hidden;
   text-overflow:ellipsis;
