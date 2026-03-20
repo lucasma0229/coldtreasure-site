@@ -325,16 +325,15 @@ line-height:1.15;
 
 /* ✅ 关键：不再截断 Timeline notes */
 .entry-desc{
-display:block !important;
-font-size:9px !important;
-letter-spacing:.14em !important;
-opacity:.52;
-line-height:1.1;
+  display:block !important;
+  font-size:8px !important;
+  letter-spacing:.12em !important;
+  opacity:.52;
+  line-height:1.1;
 
-/* 🔥 关键改动 */
-white-space:normal;
-overflow:visible;
-text-overflow:unset;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
 }
 
 }
