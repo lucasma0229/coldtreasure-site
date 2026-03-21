@@ -377,6 +377,18 @@
       const brandHtml = brand ? `<span class="pill">${escapeHtml(brand)}</span>` : "";
       const dateHtml  = date  ? `<span class="date">${escapeHtml(date)}</span>` : "";
 
+      const badges = [];
+      if (post.record) {
+        badges.push(`<span class="news-badge news-badge--record">RECORD</span>`);
+      }
+      if (post.archive) {
+        badges.push(`<span class="news-badge news-badge--archive">ARCHIVE</span>`);
+      }
+
+      const badgeHtml = badges.length
+        ? `<div class="news-badges">${badges.join("")}</div>`
+        : "";
+
       const slug = String(post.slug || "").trim();
       const href = `/post/?slug=${encodeURIComponent(slug)}`;
 
@@ -390,8 +402,13 @@
           </a>
 
           <div class="news-body">
+            ${badgeHtml} <!-- ✅ 插在最上方 -->
+            
             <div class="news-meta">${brandHtml}${dateHtml}</div>
-            <h2 class="news-title"><a href="${href}">${escapeHtml(title)}</a></h2>
+            
+            <h2 class="news-title">
+              <a href="${href}">${escapeHtml(title)}</a>
+            </h2>
             ${summary ? `<p class="news-summary">${escapeHtml(summary)}</p>` : ``}
           </div>
         </article>
