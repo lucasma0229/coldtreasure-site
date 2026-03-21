@@ -1,10 +1,10 @@
 /* ===================================================
-ColdTreasure app.js (CMS Core) - Full Replace
+ColdTreasure app.js (CMS Core) - Stable Replace
 - Primary data source: /api/posts
 - Fallback data source: /assets/data/posts.json
 - One detail page: /post/<slug>
 - List pages render by CT_PAGE: news / record / archive / guide / feature
-- Home latest cards (#homeNews) + home carousel init
+- Home latest cards (#homeNews) + stable home hero init
 - Home hero CMS source: /api/homepage
 - Auto-load /assets/js/header.js
 =================================================== */
@@ -72,7 +72,6 @@ ColdTreasure app.js (CMS Core) - Full Replace
   function parseDateKey(v) {
     const s = asText(v).trim();
     if (!s) return NaN;
-
     const normalized = /^\d{4}$/.test(s) ? `${s}-01-01` : s;
     const t = Date.parse(normalized);
     return Number.isFinite(t) ? t : NaN;
@@ -162,7 +161,6 @@ ColdTreasure app.js (CMS Core) - Full Replace
   async function fetchJsonArray(url) {
     const res = await fetch(url, { cache: "no-store" });
     if (!res.ok) throw new Error(`${url} HTTP ${res.status}`);
-
     const json = await res.json();
     if (!Array.isArray(json)) throw new Error(`${url} is not an array`);
     return json;
@@ -172,12 +170,10 @@ ColdTreasure app.js (CMS Core) - Full Replace
     try {
       const apiPosts = await fetchJsonArray("/api/posts");
       const normalized = apiPosts.map(normalizePost);
-
       if (normalized.length > 0) {
         console.log("[ColdTreasure] using /api/posts");
         return normalized;
       }
-
       console.warn("[ColdTreasure] /api/posts is empty, fallback to posts.json");
     } catch (e) {
       console.warn("[ColdTreasure] failed to load /api/posts, fallback to posts.json", e);
@@ -319,7 +315,8 @@ ColdTreasure app.js (CMS Core) - Full Replace
     if (!homeNews) return;
 
     const newsOnly = posts.filter((p) => normalizeSection(p) === "news");
-    const latest = sortPostsDesc(newsOnly).slice(0, 4);
+    const count = window.innerWidth <= 768 ? 4 : 3;
+    const latest = sortPostsDesc(newsOnly).slice(0, count);
 
     if (!latest.length) {
       homeNews.innerHTML = `
@@ -353,20 +350,17 @@ ColdTreasure app.js (CMS Core) - Full Replace
   async function renderHeroFromCMS() {
     if (CT_PAGE !== "home") return;
 
-    const root = document.querySelector(".ct-hero");
     const stage = document.querySelector("[data-ct-hero]");
-    if (!root || !stage) return;
-
-    const prevBtn = stage.querySelector(".ct-hero__nav--prev");
-    const dotsWrap = stage.querySelector(".ct-hero__dots");
+    if (!stage) return;
 
     try {
       const res = await fetch("/api/homepage", { cache: "no-store" });
       if (!res.ok) throw new Error(`/api/homepage HTTP ${res.status}`);
 
       const data = await res.json();
+
       const hero = (data.hero || [])
-        .filter((item) => item.active && item.image)
+        .filter((item) => item && item.active)
         .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
       if (!hero.length) return;
@@ -379,15 +373,17 @@ ColdTreasure app.js (CMS Core) - Full Replace
           const title = item.title ? esc(String(item.title)) : "";
           const kicker = item.kicker ? esc(String(item.kicker)) : "FEATURED";
           const desc = item.desc ? esc(String(item.desc)) : "";
+          const image = item.image ? esc(String(item.image)) : "/assets/img/cover.jpg";
           const activeClass = idx === 0 ? " is-active" : "";
 
           return `
             <article class="ct-hero__slide${activeClass}">
               <a class="ct-hero__media" href="${href}">
                 <img
-                  src="${esc(item.image)}"
-                  ${idx === 0 ? 'fetchpriority="high"' : ""}
+                  src="${image}"
+                  ${idx === 0 ? 'fetchpriority="high" loading="eager"' : 'loading="lazy"'}
                   decoding="async"
+                  onerror="this.onerror=null;this.src='/assets/img/cover.jpg';"
                   alt="${title}"
                 >
               </a>
@@ -404,20 +400,7 @@ ColdTreasure app.js (CMS Core) - Full Replace
         })
         .join("");
 
-      if (prevBtn) {
-        prevBtn.insertAdjacentHTML("beforebegin", slidesHTML);
-      } else {
-        stage.insertAdjacentHTML("afterbegin", slidesHTML);
-      }
-
-      if (dotsWrap) {
-        dotsWrap.innerHTML = hero
-          .map(
-            (_, idx) =>
-              `<button class="ct-hero__dot${idx === 0 ? " is-active" : ""}" type="button" aria-label="Slide ${idx + 1}"></button>`
-          )
-          .join("");
-      }
+      stage.insertAdjacentHTML("afterbegin", slidesHTML);
     } catch (e) {
       console.error("[ColdTreasure] renderHeroFromCMS failed:", e);
     }
@@ -426,199 +409,135 @@ ColdTreasure app.js (CMS Core) - Full Replace
   function initHomeCarousel() {
     if (CT_PAGE !== "home") return;
 
-    const root = document.querySelector("[data-ct-carousel]");
-    if (root) {
-      if (root.dataset.inited === "1") return;
-      root.dataset.inited = "1";
+    /* ---------- Optional generic carousel ---------- */
+    const genericRoot = document.querySelector("[data-ct-carousel]");
+    if (genericRoot && genericRoot.dataset.inited !== "1") {
+      genericRoot.dataset.inited = "1";
 
-      const track = root.querySelector("[data-ct-track]");
-      if (!track) return;
+      const track = genericRoot.querySelector("[data-ct-track]");
+      if (track) {
+        const slides = Array.from(track.querySelectorAll(".ct-carousel__slide"));
+        const prev = genericRoot.querySelector(".ct-carousel__nav--prev");
+        const next = genericRoot.querySelector(".ct-carousel__nav--next");
+        const dotsWrap = genericRoot.querySelector(".ct-carousel__dots");
+        const n = slides.length;
 
-      const slides = Array.from(track.querySelectorAll(".ct-carousel__slide"));
-      const prev = root.querySelector(".ct-carousel__nav--prev");
-      const next = root.querySelector(".ct-carousel__nav--next");
-      const dotsWrap = root.querySelector(".ct-carousel__dots");
+        if (n > 1) {
+          let i = 0;
+          const dots = [];
 
-      const n = slides.length;
-      if (n <= 1) return;
+          if (dotsWrap) {
+            dotsWrap.innerHTML = "";
+            for (let k = 0; k < n; k++) {
+              const b = document.createElement("button");
+              b.type = "button";
+              b.className = "ct-carousel__dot" + (k === 0 ? " is-active" : "");
+              b.setAttribute("aria-label", `Slide ${k + 1}`);
+              b.addEventListener("click", () => go(k));
+              dotsWrap.appendChild(b);
+              dots.push(b);
+            }
+          }
 
-      let i = 0;
-      const dots = [];
+          function render() {
+            track.style.transform = `translateX(${-i * 100}%)`;
+            dots.forEach((d, idx) => d.classList.toggle("is-active", idx === i));
+          }
 
-      if (dotsWrap) {
-        dotsWrap.innerHTML = "";
-        for (let k = 0; k < n; k++) {
-          const b = document.createElement("button");
-          b.type = "button";
-          b.className = "ct-carousel__dot" + (k === 0 ? " is-active" : "");
-          b.setAttribute("aria-label", `Slide ${k + 1}`);
-          b.addEventListener("click", () => go(k));
-          dotsWrap.appendChild(b);
-          dots.push(b);
+          function go(idx) {
+            i = (idx + n) % n;
+            render();
+          }
+
+          let timer = null;
+
+          function stop() {
+            if (timer) clearInterval(timer);
+            timer = null;
+          }
+
+          function start() {
+            stop();
+            if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+            timer = setInterval(() => go(i + 1), 6500);
+          }
+
+          function restart() {
+            stop();
+            start();
+          }
+
+          prev &&
+            prev.addEventListener("click", () => {
+              go(i - 1);
+              restart();
+            });
+
+          next &&
+            next.addEventListener("click", () => {
+              go(i + 1);
+              restart();
+            });
+
+          genericRoot.addEventListener("mouseenter", stop);
+          genericRoot.addEventListener("mouseleave", start);
+
+          render();
+          start();
         }
       }
-
-      function render() {
-        track.style.transform = `translateX(${-i * 100}%)`;
-        dots.forEach((d, idx) => d.classList.toggle("is-active", idx === i));
-      }
-
-      function go(idx) {
-        i = (idx + n) % n;
-        render();
-      }
-
-      let timer = null;
-      function stop() {
-        if (timer) clearInterval(timer);
-        timer = null;
-      }
-
-      function start() {
-        stop();
-        if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-        timer = setInterval(() => go(i + 1), 6500);
-      }
-
-      function restart() {
-        stop();
-        start();
-      }
-
-      prev &&
-        prev.addEventListener("click", () => {
-          go(i - 1);
-          restart();
-        });
-
-      next &&
-        next.addEventListener("click", () => {
-          go(i + 1);
-          restart();
-        });
-
-      root.addEventListener("mouseenter", stop);
-      root.addEventListener("mouseleave", start);
-
-      render();
-      start();
-      return;
     }
 
-    // Current homepage hero structure: .ct-hero / [data-ct-hero]
+    /* ---------- Home hero: only one controller ---------- */
     const heroRoot = document.querySelector(".ct-hero");
     const stage = document.querySelector("[data-ct-hero]");
-    if (heroRoot && stage) {
-      if (stage.dataset.inited === "1") return;
-      stage.dataset.inited = "1";
+    if (!heroRoot || !stage) return;
+    if (stage.dataset.inited === "1") return;
 
-      const slides = Array.from(stage.querySelectorAll(".ct-hero__slide"));
-      const dotsWrap = stage.querySelector(".ct-hero__dots");
-      const prev = stage.querySelector(".ct-hero__nav--prev");
-      const next = stage.querySelector(".ct-hero__nav--next");
+    const slides = Array.from(stage.querySelectorAll(".ct-hero__slide"));
+    const prev = stage.querySelector(".ct-hero__nav--prev");
+    const next = stage.querySelector(".ct-hero__nav--next");
+    const dotsWrap = stage.querySelector(".ct-hero__dots");
 
-      const n = slides.length;
-      if (n <= 1) return;
+    const n = slides.length;
+    if (n <= 0) return;
 
-      let i = slides.findIndex((s) => s.classList.contains("is-active"));
-      if (i < 0) i = 0;
-
-      let dots = [];
-
-      if (dotsWrap) {
-        const existingDots = Array.from(dotsWrap.querySelectorAll(".ct-hero__dot"));
-        if (existingDots.length === n) {
-          dots = existingDots;
-        } else {
-          dotsWrap.innerHTML = "";
-          dots = [];
-          for (let k = 0; k < n; k++) {
-            const b = document.createElement("button");
-            b.type = "button";
-            b.className = "ct-hero__dot" + (k === i ? " is-active" : "");
-            b.setAttribute("aria-label", `Slide ${k + 1}`);
-            b.addEventListener("click", () => go(k));
-            dotsWrap.appendChild(b);
-            dots.push(b);
-          }
-        }
-      }
-
-      function render(idx) {
-        slides.forEach((s, slideIdx) => s.classList.toggle("is-active", slideIdx === idx));
-        dots.forEach((d, dotIdx) => d.classList.toggle("is-active", dotIdx === idx));
-        i = idx;
-      }
-
-      function go(idx) {
-        render((idx + n) % n);
-      }
-
-      let timer = null;
-      function stop() {
-        if (timer) clearInterval(timer);
-        timer = null;
-      }
-
-      function start() {
-        stop();
-        if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-        timer = setInterval(() => go(i + 1), 6500);
-      }
-
-      function restart() {
-        stop();
-        start();
-      }
-
-      prev &&
-        prev.addEventListener("click", () => {
-          go(i - 1);
-          restart();
-        });
-
-      next &&
-        next.addEventListener("click", () => {
-          go(i + 1);
-          restart();
-        });
-
-      heroRoot.addEventListener("mouseenter", stop);
-      heroRoot.addEventListener("mouseleave", start);
-
-      render(i);
-      start();
-      return;
-    }
-
-    const legacyRoot = document.querySelector("[data-hero]");
-    if (!legacyRoot) return;
-    if (legacyRoot.dataset.inited === "1") return;
-    legacyRoot.dataset.inited = "1";
-
-    const slides = Array.from(legacyRoot.querySelectorAll(".hero-slide"));
-    const dots = Array.from(legacyRoot.querySelectorAll(".hero-dot"));
-    const prev = legacyRoot.querySelector(".hero-arrow.is-prev");
-    const next = legacyRoot.querySelector(".hero-arrow.is-next");
+    stage.dataset.inited = "1";
 
     let i = slides.findIndex((s) => s.classList.contains("is-active"));
     if (i < 0) i = 0;
 
-    function render(n) {
-      slides.forEach((s, idx) => s.classList.toggle("is-active", idx === n));
-      dots.forEach((d, idx) => d.classList.toggle("is-active", idx === n));
-      i = n;
+    let dots = [];
+
+    if (dotsWrap) {
+      dotsWrap.innerHTML = "";
+      dots = slides.map((_, idx) => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "ct-hero__dot" + (idx === i ? " is-active" : "");
+        b.setAttribute("aria-label", `Slide ${idx + 1}`);
+        b.addEventListener("click", () => go(idx));
+        dotsWrap.appendChild(b);
+        return b;
+      });
     }
 
-    function go(step) {
-      render((i + step + slides.length) % slides.length);
+    function render(idx) {
+      slides.forEach((s, slideIdx) => {
+        s.classList.toggle("is-active", slideIdx === idx);
+      });
+      dots.forEach((d, dotIdx) => {
+        d.classList.toggle("is-active", dotIdx === idx);
+      });
+      i = idx;
     }
 
-    prev && prev.addEventListener("click", () => go(-1));
-    next && next.addEventListener("click", () => go(1));
-    dots.forEach((d, idx) => d.addEventListener("click", () => render(idx)));
+    function go(idx) {
+      render((idx + n) % n);
+    }
 
     let timer = null;
+
     function stop() {
       if (timer) clearInterval(timer);
       timer = null;
@@ -626,12 +545,30 @@ ColdTreasure app.js (CMS Core) - Full Replace
 
     function start() {
       stop();
+      if (n <= 1) return;
       if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-      timer = setInterval(() => go(1), 6500);
+      timer = setInterval(() => go(i + 1), 6500);
     }
 
-    legacyRoot.addEventListener("mouseenter", stop);
-    legacyRoot.addEventListener("mouseleave", start);
+    function restart() {
+      stop();
+      start();
+    }
+
+    prev &&
+      prev.addEventListener("click", () => {
+        go(i - 1);
+        restart();
+      });
+
+    next &&
+      next.addEventListener("click", () => {
+        go(i + 1);
+        restart();
+      });
+
+    heroRoot.addEventListener("mouseenter", stop);
+    heroRoot.addEventListener("mouseleave", start);
 
     render(i);
     start();
@@ -663,83 +600,4 @@ ColdTreasure app.js (CMS Core) - Full Replace
 
   renderList(posts);
   renderHomeLatest(posts);
-})();
-
-/* ===================================================
-CT Hero Autoplay (safe for include injection)
-=================================================== */
-(function () {
-  if (window.CT_HERO_AUTOPLAY) return;
-  window.CT_HERO_AUTOPLAY = true;
-
-  const ROOT_SEL = ".ct-hero";
-  const SLIDE_SEL = ".ct-hero__slide";
-  const DOT_SEL = ".ct-hero__dot, .ct-hero__dots button, [data-hero-dot]";
-  const INTERVAL = 5000;
-
-  let root = null;
-  let timer = null;
-
-  function qsa(sel, ctx = document) {
-    return Array.from(ctx.querySelectorAll(sel));
-  }
-
-  function getActiveIndex(slides) {
-    const i = slides.findIndex(
-      (s) => s.classList.contains("is-active") || s.getAttribute("aria-current") === "true"
-    );
-    return i >= 0 ? i : 0;
-  }
-
-  function setActive(slides, idx) {
-    slides.forEach((s, i) => s.classList.toggle("is-active", i === idx));
-    const dots = qsa(DOT_SEL, root);
-    if (dots.length) {
-      dots.forEach((d, i) => d.classList.toggle("is-active", i === idx));
-    }
-  }
-
-  function next() {
-    if (!root || document.hidden) return;
-    const slides = qsa(SLIDE_SEL, root);
-    if (slides.length <= 1) return;
-
-    const cur = getActiveIndex(slides);
-    const nxt = (cur + 1) % slides.length;
-    setActive(slides, nxt);
-  }
-
-  function stop() {
-    if (timer) {
-      clearInterval(timer);
-      timer = null;
-    }
-  }
-
-  function start() {
-    stop();
-    timer = setInterval(next, INTERVAL);
-  }
-
-  function bind() {
-    root.addEventListener("pointerenter", stop, { passive: true });
-    root.addEventListener("pointerleave", start, { passive: true });
-    document.addEventListener("visibilitychange", () => {
-      if (document.hidden) stop();
-      else start();
-    });
-  }
-
-  function initIfReady() {
-    if (root) return true;
-    root = document.querySelector(ROOT_SEL);
-    if (!root) return false;
-    bind();
-    start();
-    return true;
-  }
-
-  (function wait() {
-    if (!initIfReady()) requestAnimationFrame(wait);
-  })();
 })();
