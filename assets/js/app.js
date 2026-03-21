@@ -518,11 +518,12 @@ ColdTreasure app.js (CMS Core) - Conservative Stable Replace
       const next = stage.querySelector(".ct-hero__nav--next");
 
       const n = slides.length;
-      if (n <= 1) return;
+      if (n <= 0) return;
 
       let i = slides.findIndex((s) => s.classList.contains("is-active"));
       if (i < 0) i = 0;
-
+      slides.forEach((s, idx) => s.classList.toggle("is-active", idx === i));
+      
       let dots = [];
 
       if (dotsWrap) {
@@ -563,6 +564,7 @@ ColdTreasure app.js (CMS Core) - Conservative Stable Replace
 
       function start() {
         stop();
+        if (n <= 1) return;
         if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
         timer = setInterval(() => go(i + 1), 6500);
       }
@@ -589,7 +591,6 @@ ColdTreasure app.js (CMS Core) - Conservative Stable Replace
 
       render(i);
       start();
-      return;
     }
 
     const legacyRoot = document.querySelector("[data-hero]");
