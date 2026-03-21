@@ -573,6 +573,9 @@ export async function onRequest(context) {
 
       publish: ["publish", "published", "发布", "上线", "公开", "Publish"],
       release: ["release_info", "发售信息", "Release", "release", "Release Info"],
+
+      record: ["Record", "record", "记录"],
+      archive: ["Archive", "archive", "归档"],
     };
 
     const hasStatusField =
@@ -607,6 +610,9 @@ export async function onRequest(context) {
         const publishProp = pickNotionProp(props, CAND.publish);
         const releaseProp = pickNotionProp(props, CAND.release);
 
+        const recordProp = pickNotionProp(props, CAND.record);
+        const archiveProp = pickNotionProp(props, CAND.archive);
+
         return normalizePost(
           {
             id: row.id,
@@ -633,6 +639,10 @@ export async function onRequest(context) {
 
             keywords: safeMultiSelect(keywordsProp),
             publish: safePublishBool(publishProp),
+
+            record: safePublishBool(recordProp),
+            archive: safePublishBool(archiveProp),
+            
             release_info: safeText(releaseProp),
           },
           "notion"
