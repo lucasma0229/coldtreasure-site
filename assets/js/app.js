@@ -1,8 +1,12 @@
 /* ===================================================
-ColdTreasure app.js
-- Stable homepage hero for mobile
-- Keep include.v3.js for module injection
-- Home latest cards: mobile 4 / desktop 3
+ColdTreasure app.js (CMS Core) - Conservative Stable Replace
+- Primary data source: /api/posts
+- Fallback data source: /assets/data/posts.json
+- One detail page: /post/<slug>
+- List pages render by CT_PAGE: news / record / archive / guide / feature
+- Home latest cards (#homeNews) + home carousel init
+- Home hero CMS source: /api/homepage
+- Auto-load /assets/js/header.js
 =================================================== */
 
 /* 1) Page identity -> body class */
@@ -22,7 +26,7 @@ ColdTreasure app.js
 
 (async function () {
   const CT_PAGE = String(window.CT_PAGE || "").trim().toLowerCase();
-  const $ = (sel, root = document) => root.querySelector(sel);
+  const $ = (sel) => document.querySelector(sel);
 
   /* ---------- utils ---------- */
   function esc(s = "") {
@@ -75,7 +79,8 @@ ColdTreasure app.js
 
   function normalizeSection(p) {
     const section = asText(p.section).trim().toLowerCase();
-    return section || "news";
+    if (section) return section;
+    return "news";
   }
 
   function normalizePost(raw) {
@@ -174,14 +179,19 @@ ColdTreasure app.js
       console.warn("[ColdTreasure] failed to load /api/posts, fallback to posts.json", e);
     }
 
-    const staticPosts = await fetchJsonArray("/assets/data/posts.json");
-    console.log("[ColdTreasure] using /assets/data/posts.json");
-    return staticPosts.map(normalizePost);
+    try {
+      const staticPosts = await fetchJsonArray("/assets/data/posts.json");
+      console.log("[ColdTreasure] using /assets/data/posts.json");
+      return staticPosts.map(normalizePost);
+    } catch (e) {
+      console.error("[ColdTreasure] failed to load fallback posts.json", e);
+      throw e;
+    }
   }
 
   async function ensureHeaderJS() {
     if (window.CT_HEADER_RUNTIME_INITED) return;
-    const url = "/assets/js/header.js?v=4";
+    const url = "/assets/js/header.js?v=8";
 
     await new Promise((resolve) => {
       const s = document.createElement("script");
@@ -193,7 +203,6 @@ ColdTreasure app.js
     });
   }
 
-  /* ---------- list templates ---------- */
   function tplNewsItem(p) {
     const href = postUrl(p);
     const title = esc(p.title || "Untitled");
@@ -334,7 +343,6 @@ ColdTreasure app.js
       .join("");
   }
 
-  /* ---------- homepage hero ---------- */
   async function renderHeroFromCMS() {
     if (CT_PAGE !== "home") return;
 
@@ -438,19 +446,18 @@ ColdTreasure app.js
   function initHomeCarousel() {
     if (CT_PAGE !== "home") return;
 
-    /* optional generic carousel */
-    const genericRoot = document.querySelector("[data-ct-carousel]");
-    if (genericRoot) {
-      if (genericRoot.dataset.inited === "1") return;
-      genericRoot.dataset.inited = "1";
+    const root = document.querySelector("[data-ct-carousel]");
+    if (root) {
+      if (root.dataset.inited === "1") return;
+      root.dataset.inited = "1";
 
-      const track = genericRoot.querySelector("[data-ct-track]");
+      const track = root.querySelector("[data-ct-track]");
       if (!track) return;
 
       const slides = Array.from(track.querySelectorAll(".ct-carousel__slide"));
-      const prev = genericRoot.querySelector(".ct-carousel__nav--prev");
-      const next = genericRoot.querySelector(".ct-carousel__nav--next");
-      const dotsWrap = genericRoot.querySelector(".ct-carousel__dots");
+      const prev = root.querySelector(".ct-carousel__nav--prev");
+      const next = root.querySelector(".ct-carousel__nav--next");
+      const dotsWrap = root.querySelector(".ct-carousel__dots");
 
       const n = slides.length;
       if (n <= 1) return;
@@ -511,66 +518,131 @@ ColdTreasure app.js
           restart();
         });
 
-      genericRoot.addEventListener("mouseenter", stop);
-      genericRoot.addEventListener("mouseleave", start);
+      root.addEventListener("mouseenter", stop);
+      root.addEventListener("mouseleave", start);
 
       render();
       start();
       return;
     }
 
-    /* homepage hero */
+    // Current homepage hero structure: .ct-hero / [data-ct-hero]
     const heroRoot = document.querySelector(".ct-hero");
     const stage = document.querySelector("[data-ct-hero]");
-    if (!heroRoot || !stage) return;
-    if (stage.dataset.inited === "1") return;
+    if (heroRoot && stage) {
+      if (stage.dataset.inited === "1") return;
+      stage.dataset.inited = "1";
 
-    const slides = Array.from(stage.querySelectorAll(".ct-hero__slide"));
-    const dotsWrap = stage.querySelector(".ct-hero__dots");
-    const prev = stage.querySelector(".ct-hero__nav--prev");
-    const next = stage.querySelector(".ct-hero__nav--next");
+      const slides = Array.from(stage.querySelectorAll(".ct-hero__slide"));
+      const dotsWrap = stage.querySelector(".ct-hero__dots");
+      const prev = stage.querySelector(".ct-hero__nav--prev");
+      const next = stage.querySelector(".ct-hero__nav--next");
 
-    const n = slides.length;
-    if (n <= 0) return;
+      const n = slides.length;
+      if (n <= 0) return;
 
-    stage.dataset.inited = "1";
+      let i = slides.findIndex((s) => s.classList.contains("is-active"));
+      if (i < 0) i = 0;
+
+      // 关键：初始化时强制兜底，只保留 1 张 active
+      slides.forEach((s, idx) => s.classList.toggle("is-active", idx === i));
+
+      let dots = [];
+
+      if (dotsWrap) {
+        const existingDots = Array.from(dotsWrap.querySelectorAll(".ct-hero__dot"));
+        if (existingDots.length === n) {
+          dots = existingDots;
+        } else {
+          dotsWrap.innerHTML = "";
+          dots = [];
+          for (let k = 0; k < n; k++) {
+            const b = document.createElement("button");
+            b.type = "button";
+            b.className = "ct-hero__dot" + (k === i ? " is-active" : "");
+            b.setAttribute("aria-label", `Slide ${k + 1}`);
+            b.addEventListener("click", () => go(k));
+            dotsWrap.appendChild(b);
+            dots.push(b);
+          }
+        }
+      }
+
+      function render(idx) {
+        slides.forEach((s, slideIdx) => s.classList.toggle("is-active", slideIdx === idx));
+        dots.forEach((d, dotIdx) => d.classList.toggle("is-active", dotIdx === idx));
+        i = idx;
+      }
+
+      function go(idx) {
+        render((idx + n) % n);
+      }
+
+      let timer = null;
+
+      function stop() {
+        if (timer) clearInterval(timer);
+        timer = null;
+      }
+
+      function start() {
+        stop();
+        if (n <= 1) return;
+        if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+        timer = setInterval(() => go(i + 1), 6500);
+      }
+
+      function restart() {
+        stop();
+        start();
+      }
+
+      prev &&
+        prev.addEventListener("click", () => {
+          go(i - 1);
+          restart();
+        });
+
+      next &&
+        next.addEventListener("click", () => {
+          go(i + 1);
+          restart();
+        });
+
+      heroRoot.addEventListener("mouseenter", stop);
+      heroRoot.addEventListener("mouseleave", start);
+
+      render(i);
+      start();
+      return;
+    }
+
+    const legacyRoot = document.querySelector("[data-hero]");
+    if (!legacyRoot) return;
+    if (legacyRoot.dataset.inited === "1") return;
+    legacyRoot.dataset.inited = "1";
+
+    const slides = Array.from(legacyRoot.querySelectorAll(".hero-slide"));
+    const dots = Array.from(legacyRoot.querySelectorAll(".hero-dot"));
+    const prev = legacyRoot.querySelector(".hero-arrow.is-prev");
+    const next = legacyRoot.querySelector(".hero-arrow.is-next");
 
     let i = slides.findIndex((s) => s.classList.contains("is-active"));
     if (i < 0) i = 0;
 
-    /* 关键：初始化时强制兜底，只保留 1 张 active */
-    slides.forEach((s, idx) => s.classList.toggle("is-active", idx === i));
-
-    let dots = [];
-
-    if (dotsWrap) {
-      const existingDots = Array.from(dotsWrap.querySelectorAll(".ct-hero__dot"));
-      if (existingDots.length === n) {
-        dots = existingDots;
-      } else {
-        dotsWrap.innerHTML = "";
-        dots = [];
-        for (let k = 0; k < n; k++) {
-          const b = document.createElement("button");
-          b.type = "button";
-          b.className = "ct-hero__dot" + (k === i ? " is-active" : "");
-          b.setAttribute("aria-label", `Slide ${k + 1}`);
-          b.addEventListener("click", () => go(k));
-          dotsWrap.appendChild(b);
-          dots.push(b);
-        }
-      }
+    function render(n) {
+      slides.forEach((s, idx) => s.classList.toggle("is-active", idx === n));
+      dots.forEach((d, idx) => d.classList.toggle("is-active", idx === n));
+      i = n;
     }
 
-    function render(idx) {
-      slides.forEach((s, slideIdx) => s.classList.toggle("is-active", slideIdx === idx));
-      dots.forEach((d, dotIdx) => d.classList.toggle("is-active", dotIdx === idx));
-      i = idx;
+    function go(step) {
+      render((i + step + slides.length) % slides.length);
     }
 
-    function go(idx) {
-      render((idx + n) % n);
-    }
+    prev && prev.addEventListener("click", () => go(-1));
+    next && next.addEventListener("click", () => go(1));
+    dots.forEach((d, idx) => d.addEventListener("click", () => render(idx)));
 
     let timer = null;
 
@@ -581,36 +653,17 @@ ColdTreasure app.js
 
     function start() {
       stop();
-      if (n <= 1) return;
       if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-      timer = setInterval(() => go(i + 1), 6500);
+      timer = setInterval(() => go(1), 6500);
     }
 
-    function restart() {
-      stop();
-      start();
-    }
-
-    prev &&
-      prev.addEventListener("click", () => {
-        go(i - 1);
-        restart();
-      });
-
-    next &&
-      next.addEventListener("click", () => {
-        go(i + 1);
-        restart();
-      });
-
-    heroRoot.addEventListener("mouseenter", stop);
-    heroRoot.addEventListener("mouseleave", start);
+    legacyRoot.addEventListener("mouseenter", stop);
+    legacyRoot.addEventListener("mouseleave", start);
 
     render(i);
     start();
   }
 
-  /* ---------- boot ---------- */
   await waitForModulesLoaded();
   await ensureHeaderJS();
   await renderHeroFromCMS();
