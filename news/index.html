@@ -199,6 +199,31 @@
       letter-spacing:.05em;
     }
 
+    .news-badges{
+      display:flex;
+      gap:6px;
+      margin-bottom:10px;
+    }
+
+    .news-badge{
+      font-size:10px;
+      letter-spacing:.12em;
+      padding:3px 6px;
+      border-radius:4px;
+      border:1px solid var(--ct-line);
+      background:#fff;
+      color:#111;
+      font-weight:600;
+    }
+
+    .news-badge--record{
+      border-color:#dcdcdc;
+    }
+
+    .news-badge--archive{
+      border-color:#111;
+    }
+    
     @media (max-width: 860px){
       main.page{ padding: 0 16px; }
       .page-head__top{ align-items:flex-start; flex-direction:column; gap:10px; }
