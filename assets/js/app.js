@@ -1,10 +1,10 @@
 /* ===================================================
-ColdTreasure app.js (CMS Core) - Stable Replace
+ColdTreasure app.js (CMS Core) - Conservative Stable Replace
 - Primary data source: /api/posts
 - Fallback data source: /assets/data/posts.json
 - One detail page: /post/<slug>
 - List pages render by CT_PAGE: news / record / archive / guide / feature
-- Home latest cards (#homeNews) + stable home hero init
+- Home latest cards (#homeNews) + home carousel init
 - Home hero CMS source: /api/homepage
 - Auto-load /assets/js/header.js
 =================================================== */
@@ -174,6 +174,7 @@ ColdTreasure app.js (CMS Core) - Stable Replace
         console.log("[ColdTreasure] using /api/posts");
         return normalized;
       }
+
       console.warn("[ColdTreasure] /api/posts is empty, fallback to posts.json");
     } catch (e) {
       console.warn("[ColdTreasure] failed to load /api/posts, fallback to posts.json", e);
@@ -191,8 +192,8 @@ ColdTreasure app.js (CMS Core) - Stable Replace
 
   async function ensureHeaderJS() {
     if (window.CT_HEADER_RUNTIME_INITED) return;
-
     const url = "/assets/js/header.js?v=4";
+
     await new Promise((resolve) => {
       const s = document.createElement("script");
       s.src = url;
@@ -350,17 +351,20 @@ ColdTreasure app.js (CMS Core) - Stable Replace
   async function renderHeroFromCMS() {
     if (CT_PAGE !== "home") return;
 
+    const root = document.querySelector(".ct-hero");
     const stage = document.querySelector("[data-ct-hero]");
-    if (!stage) return;
+    if (!root || !stage) return;
+
+    const prevBtn = stage.querySelector(".ct-hero__nav--prev");
+    const dotsWrap = stage.querySelector(".ct-hero__dots");
 
     try {
       const res = await fetch("/api/homepage", { cache: "no-store" });
       if (!res.ok) throw new Error(`/api/homepage HTTP ${res.status}`);
 
       const data = await res.json();
-
       const hero = (data.hero || [])
-        .filter((item) => item && item.active)
+        .filter((item) => item && item.active && item.image)
         .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
       if (!hero.length) return;
@@ -373,14 +377,13 @@ ColdTreasure app.js (CMS Core) - Stable Replace
           const title = item.title ? esc(String(item.title)) : "";
           const kicker = item.kicker ? esc(String(item.kicker)) : "FEATURED";
           const desc = item.desc ? esc(String(item.desc)) : "";
-          const image = item.image ? esc(String(item.image)) : "/assets/img/cover.jpg";
           const activeClass = idx === 0 ? " is-active" : "";
 
           return `
             <article class="ct-hero__slide${activeClass}">
               <a class="ct-hero__media" href="${href}">
                 <img
-                  src="${image}"
+                  src="${esc(item.image)}"
                   ${idx === 0 ? 'fetchpriority="high" loading="eager"' : 'loading="lazy"'}
                   decoding="async"
                   onerror="this.onerror=null;this.src='/assets/img/cover.jpg';"
@@ -400,7 +403,20 @@ ColdTreasure app.js (CMS Core) - Stable Replace
         })
         .join("");
 
-      stage.insertAdjacentHTML("afterbegin", slidesHTML);
+      if (prevBtn) {
+        prevBtn.insertAdjacentHTML("beforebegin", slidesHTML);
+      } else {
+        stage.insertAdjacentHTML("afterbegin", slidesHTML);
+      }
+
+      if (dotsWrap) {
+        dotsWrap.innerHTML = hero
+          .map(
+            (_, idx) =>
+              `<button class="ct-hero__dot${idx === 0 ? " is-active" : ""}" type="button" aria-label="Slide ${idx + 1}"></button>`
+          )
+          .join("");
+      }
     } catch (e) {
       console.error("[ColdTreasure] renderHeroFromCMS failed:", e);
     }
@@ -409,132 +425,199 @@ ColdTreasure app.js (CMS Core) - Stable Replace
   function initHomeCarousel() {
     if (CT_PAGE !== "home") return;
 
-    /* ---------- Optional generic carousel ---------- */
-    const genericRoot = document.querySelector("[data-ct-carousel]");
-    if (genericRoot && genericRoot.dataset.inited !== "1") {
-      genericRoot.dataset.inited = "1";
+    const root = document.querySelector("[data-ct-carousel]");
+    if (root) {
+      if (root.dataset.inited === "1") return;
+      root.dataset.inited = "1";
 
-      const track = genericRoot.querySelector("[data-ct-track]");
-      if (track) {
-        const slides = Array.from(track.querySelectorAll(".ct-carousel__slide"));
-        const prev = genericRoot.querySelector(".ct-carousel__nav--prev");
-        const next = genericRoot.querySelector(".ct-carousel__nav--next");
-        const dotsWrap = genericRoot.querySelector(".ct-carousel__dots");
-        const n = slides.length;
+      const track = root.querySelector("[data-ct-track]");
+      if (!track) return;
 
-        if (n > 1) {
-          let i = 0;
-          const dots = [];
+      const slides = Array.from(track.querySelectorAll(".ct-carousel__slide"));
+      const prev = root.querySelector(".ct-carousel__nav--prev");
+      const next = root.querySelector(".ct-carousel__nav--next");
+      const dotsWrap = root.querySelector(".ct-carousel__dots");
 
-          if (dotsWrap) {
-            dotsWrap.innerHTML = "";
-            for (let k = 0; k < n; k++) {
-              const b = document.createElement("button");
-              b.type = "button";
-              b.className = "ct-carousel__dot" + (k === 0 ? " is-active" : "");
-              b.setAttribute("aria-label", `Slide ${k + 1}`);
-              b.addEventListener("click", () => go(k));
-              dotsWrap.appendChild(b);
-              dots.push(b);
-            }
-          }
+      const n = slides.length;
+      if (n <= 1) return;
 
-          function render() {
-            track.style.transform = `translateX(${-i * 100}%)`;
-            dots.forEach((d, idx) => d.classList.toggle("is-active", idx === i));
-          }
+      let i = 0;
+      const dots = [];
 
-          function go(idx) {
-            i = (idx + n) % n;
-            render();
-          }
-
-          let timer = null;
-
-          function stop() {
-            if (timer) clearInterval(timer);
-            timer = null;
-          }
-
-          function start() {
-            stop();
-            if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-            timer = setInterval(() => go(i + 1), 6500);
-          }
-
-          function restart() {
-            stop();
-            start();
-          }
-
-          prev &&
-            prev.addEventListener("click", () => {
-              go(i - 1);
-              restart();
-            });
-
-          next &&
-            next.addEventListener("click", () => {
-              go(i + 1);
-              restart();
-            });
-
-          genericRoot.addEventListener("mouseenter", stop);
-          genericRoot.addEventListener("mouseleave", start);
-
-          render();
-          start();
+      if (dotsWrap) {
+        dotsWrap.innerHTML = "";
+        for (let k = 0; k < n; k++) {
+          const b = document.createElement("button");
+          b.type = "button";
+          b.className = "ct-carousel__dot" + (k === 0 ? " is-active" : "");
+          b.setAttribute("aria-label", `Slide ${k + 1}`);
+          b.addEventListener("click", () => go(k));
+          dotsWrap.appendChild(b);
+          dots.push(b);
         }
       }
+
+      function render() {
+        track.style.transform = `translateX(${-i * 100}%)`;
+        dots.forEach((d, idx) => d.classList.toggle("is-active", idx === i));
+      }
+
+      function go(idx) {
+        i = (idx + n) % n;
+        render();
+      }
+
+      let timer = null;
+
+      function stop() {
+        if (timer) clearInterval(timer);
+        timer = null;
+      }
+
+      function start() {
+        stop();
+        if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+        timer = setInterval(() => go(i + 1), 6500);
+      }
+
+      function restart() {
+        stop();
+        start();
+      }
+
+      prev &&
+        prev.addEventListener("click", () => {
+          go(i - 1);
+          restart();
+        });
+
+      next &&
+        next.addEventListener("click", () => {
+          go(i + 1);
+          restart();
+        });
+
+      root.addEventListener("mouseenter", stop);
+      root.addEventListener("mouseleave", start);
+
+      render();
+      start();
+      return;
     }
 
-    /* ---------- Home hero: only one controller ---------- */
+    // Current homepage hero structure: .ct-hero / [data-ct-hero]
     const heroRoot = document.querySelector(".ct-hero");
     const stage = document.querySelector("[data-ct-hero]");
-    if (!heroRoot || !stage) return;
-    if (stage.dataset.inited === "1") return;
+    if (heroRoot && stage) {
+      if (stage.dataset.inited === "1") return;
+      stage.dataset.inited = "1";
 
-    const slides = Array.from(stage.querySelectorAll(".ct-hero__slide"));
-    const prev = stage.querySelector(".ct-hero__nav--prev");
-    const next = stage.querySelector(".ct-hero__nav--next");
-    const dotsWrap = stage.querySelector(".ct-hero__dots");
+      const slides = Array.from(stage.querySelectorAll(".ct-hero__slide"));
+      const dotsWrap = stage.querySelector(".ct-hero__dots");
+      const prev = stage.querySelector(".ct-hero__nav--prev");
+      const next = stage.querySelector(".ct-hero__nav--next");
 
-    const n = slides.length;
-    if (n <= 0) return;
+      const n = slides.length;
+      if (n <= 1) return;
 
-    stage.dataset.inited = "1";
+      let i = slides.findIndex((s) => s.classList.contains("is-active"));
+      if (i < 0) i = 0;
+
+      let dots = [];
+
+      if (dotsWrap) {
+        const existingDots = Array.from(dotsWrap.querySelectorAll(".ct-hero__dot"));
+        if (existingDots.length === n) {
+          dots = existingDots;
+        } else {
+          dotsWrap.innerHTML = "";
+          dots = [];
+          for (let k = 0; k < n; k++) {
+            const b = document.createElement("button");
+            b.type = "button";
+            b.className = "ct-hero__dot" + (k === i ? " is-active" : "");
+            b.setAttribute("aria-label", `Slide ${k + 1}`);
+            b.addEventListener("click", () => go(k));
+            dotsWrap.appendChild(b);
+            dots.push(b);
+          }
+        }
+      }
+
+      function render(idx) {
+        slides.forEach((s, slideIdx) => s.classList.toggle("is-active", slideIdx === idx));
+        dots.forEach((d, dotIdx) => d.classList.toggle("is-active", dotIdx === idx));
+        i = idx;
+      }
+
+      function go(idx) {
+        render((idx + n) % n);
+      }
+
+      let timer = null;
+
+      function stop() {
+        if (timer) clearInterval(timer);
+        timer = null;
+      }
+
+      function start() {
+        stop();
+        if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+        timer = setInterval(() => go(i + 1), 6500);
+      }
+
+      function restart() {
+        stop();
+        start();
+      }
+
+      prev &&
+        prev.addEventListener("click", () => {
+          go(i - 1);
+          restart();
+        });
+
+      next &&
+        next.addEventListener("click", () => {
+          go(i + 1);
+          restart();
+        });
+
+      heroRoot.addEventListener("mouseenter", stop);
+      heroRoot.addEventListener("mouseleave", start);
+
+      render(i);
+      start();
+      return;
+    }
+
+    const legacyRoot = document.querySelector("[data-hero]");
+    if (!legacyRoot) return;
+    if (legacyRoot.dataset.inited === "1") return;
+    legacyRoot.dataset.inited = "1";
+
+    const slides = Array.from(legacyRoot.querySelectorAll(".hero-slide"));
+    const dots = Array.from(legacyRoot.querySelectorAll(".hero-dot"));
+    const prev = legacyRoot.querySelector(".hero-arrow.is-prev");
+    const next = legacyRoot.querySelector(".hero-arrow.is-next");
 
     let i = slides.findIndex((s) => s.classList.contains("is-active"));
     if (i < 0) i = 0;
 
-    let dots = [];
-
-    if (dotsWrap) {
-      dotsWrap.innerHTML = "";
-      dots = slides.map((_, idx) => {
-        const b = document.createElement("button");
-        b.type = "button";
-        b.className = "ct-hero__dot" + (idx === i ? " is-active" : "");
-        b.setAttribute("aria-label", `Slide ${idx + 1}`);
-        b.addEventListener("click", () => go(idx));
-        dotsWrap.appendChild(b);
-        return b;
-      });
+    function render(n) {
+      slides.forEach((s, idx) => s.classList.toggle("is-active", idx === n));
+      dots.forEach((d, idx) => d.classList.toggle("is-active", idx === n));
+      i = n;
     }
 
-    function render(idx) {
-      slides.forEach((s, slideIdx) => {
-        s.classList.toggle("is-active", slideIdx === idx);
-      });
-      dots.forEach((d, dotIdx) => {
-        d.classList.toggle("is-active", dotIdx === idx);
-      });
-      i = idx;
+    function go(step) {
+      render((i + step + slides.length) % slides.length);
     }
 
-    function go(idx) {
-      render((idx + n) % n);
-    }
+    prev && prev.addEventListener("click", () => go(-1));
+    next && next.addEventListener("click", () => go(1));
+    dots.forEach((d, idx) => d.addEventListener("click", () => render(idx)));
 
     let timer = null;
 
@@ -545,30 +628,12 @@ ColdTreasure app.js (CMS Core) - Stable Replace
 
     function start() {
       stop();
-      if (n <= 1) return;
       if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-      timer = setInterval(() => go(i + 1), 6500);
+      timer = setInterval(() => go(1), 6500);
     }
 
-    function restart() {
-      stop();
-      start();
-    }
-
-    prev &&
-      prev.addEventListener("click", () => {
-        go(i - 1);
-        restart();
-      });
-
-    next &&
-      next.addEventListener("click", () => {
-        go(i + 1);
-        restart();
-      });
-
-    heroRoot.addEventListener("mouseenter", stop);
-    heroRoot.addEventListener("mouseleave", start);
+    legacyRoot.addEventListener("mouseenter", stop);
+    legacyRoot.addEventListener("mouseleave", start);
 
     render(i);
     start();
@@ -584,7 +649,6 @@ ColdTreasure app.js (CMS Core) - Stable Replace
     posts = await loadPosts();
   } catch (e) {
     console.error("[ColdTreasure] failed to load all post sources:", e);
-
     const listEl = $("#list");
     const homeNews = document.getElementById("homeNews");
 
