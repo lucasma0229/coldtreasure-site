@@ -1,4 +1,7 @@
 (() => {
+  if (window.__CT_POST_PAGE_INIT__) return;
+  window.__CT_POST_PAGE_INIT__ = true;
+
   const $ = (sel, root = document) => root.querySelector(sel);
 
   const escapeHtml = (s) =>
@@ -275,17 +278,18 @@
     setJsonLd("ld-json-breadcrumb", schema);
   }
 
-  async function waitModulesLoaded() {
-    await new Promise((resolve) => {
-      let done = false;
-      const finish = () => {
-        if (done) return;
-        done = true;
-        resolve();
-      };
-      document.addEventListener("modules:loaded", finish, { once: true });
-      setTimeout(finish, 1200);
-    });
+  async function waitReady() {
+    if (document.readyState === "loading") {
+      await new Promise((resolve) => {
+        document.addEventListener("DOMContentLoaded", resolve, { once: true });
+      });
+    }
+
+    await new Promise((resolve) => requestAnimationFrame(() => resolve()));
+
+    if (!$("#app")) {
+      await new Promise((resolve) => setTimeout(resolve, 120));
+    }
   }
 
   function getKey() {
@@ -449,6 +453,21 @@
     if (sec) sec.hidden = false;
   }
 
+  function uniqueGallery(list) {
+    const seen = new Set();
+    const out = [];
+
+    for (const item of Array.isArray(list) ? list : []) {
+      const src = String(item || "").trim();
+      if (!src) continue;
+      if (seen.has(src)) continue;
+      seen.add(src);
+      out.push(src);
+    }
+
+    return out;
+  }
+
   function buildPostDom(post) {
     const tpl = $("#tpl-post");
     if (!tpl) {
@@ -494,6 +513,7 @@
       heroImg.src = cover;
       heroImg.alt = title;
       heroImg.loading = "eager";
+      heroImg.decoding = "async";
     } else if (heroImg) {
       const fig = heroImg.closest(".hero");
       if (fig) fig.hidden = true;
@@ -509,21 +529,22 @@
     const releaseLines = normalizeReleaseLines(post);
     renderRelease(releaseBodyEl, releaseLines);
 
-    const gallery = Array.isArray(post?.gallery) ? post.gallery : [];
+    const gallery = uniqueGallery(post?.gallery);
     if (gallery.length && gridEl && gallerySec) {
       gridEl.innerHTML = "";
 
-      for (const u of gallery) {
-        const src = String(u || "").trim();
-        if (!src) continue;
+      const frag = document.createDocumentFragment();
 
+      for (const src of gallery) {
         const img = document.createElement("img");
         img.src = src;
         img.alt = title;
         img.loading = "lazy";
-        gridEl.appendChild(img);
+        img.decoding = "async";
+        frag.appendChild(img);
       }
 
+      gridEl.appendChild(frag);
       gallerySec.hidden = false;
     } else if (gallerySec) {
       gallerySec.hidden = true;
@@ -599,11 +620,14 @@
     }
   }
 
-  (async function main() {
+  async function main() {
+    if (window.__CT_POST_PAGE_RENDERED__) return;
+    window.__CT_POST_PAGE_RENDERED__ = true;
+
+    await waitReady();
+
     const app = $("#app");
     if (!app) return;
-
-    await waitModulesLoaded();
 
     (function normalizePostUrlOnce() {
       try {
@@ -671,5 +695,7 @@
     } catch (e) {
       app.innerHTML = renderError(e?.message || String(e));
     }
-  })();
+  }
+
+  main();
 })();
