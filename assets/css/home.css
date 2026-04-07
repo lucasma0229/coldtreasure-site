@@ -53,6 +53,18 @@ body.page-home{
   position:absolute;
   inset:0;
   display:block;
+  opacity:1 !important;
+  filter:none !important;
+}
+
+/* ===== 关键：禁止链接 hover 导致整张图变暗 ===== */
+.ct-hero__media:hover,
+.ct-hero__media:focus,
+.ct-hero__media:active,
+.ct-hero:hover .ct-hero__media,
+.ct-hero__slide:hover .ct-hero__media{
+  opacity:1 !important;
+  filter:none !important;
 }
 
 /* ===== 图片永远不变暗 ===== */
@@ -62,28 +74,26 @@ body.page-home{
   display:block;
   object-fit:cover;
   object-position:center;
-
   filter:none !important;
   opacity:1 !important;
-
   transform:translateZ(0);
   backface-visibility:hidden;
 }
 
-/* hover 也禁止变化 */
 .ct-hero__media:hover img,
+.ct-hero__media:focus img,
+.ct-hero__media:active img,
 .ct-hero:hover .ct-hero__media img,
 .ct-hero__slide:hover .ct-hero__media img{
   filter:none !important;
   opacity:1 !important;
 }
 
-/* ===== 🔥 彻底移除所有遮罩层 ===== */
+/* ===== 彻底移除所有遮罩层 ===== */
 .ct-hero__shade{
   display:none !important;
 }
 
-/* ===== 🔥 封杀所有伪元素暗层 ===== */
 .ct-hero::before,
 .ct-hero::after,
 .ct-hero__stage::before,
@@ -98,7 +108,7 @@ body.page-home{
   opacity:0 !important;
 }
 
-/* ===== 🔥 防止 container 被压暗 ===== */
+/* ===== 防止 container 被压暗 ===== */
 .ct-hero,
 .ct-hero__stage,
 .ct-hero__slide,
@@ -194,6 +204,7 @@ body.page-home{
   border:none;
   background:rgba(255,255,255,.28);
   cursor:pointer;
+  padding:0;
 }
 
 .ct-hero__dot.is-active{
@@ -217,6 +228,7 @@ Entry strip
   grid-template-columns:repeat(5, 1fr);
   border-top:1px solid rgba(18,18,18,.10);
   border-bottom:1px solid rgba(18,18,18,.10);
+  background:#fff;
 }
 
 .entry-item{
@@ -225,10 +237,38 @@ Entry strip
   padding:18px 10px 16px;
   text-align:center;
   border-right:1px solid rgba(18,18,18,.10);
+  opacity:1 !important;
 }
 
 .entry-item:last-child{
   border-right:0;
+}
+
+/* ===== 恢复五入口字体系统 ===== */
+.entry-en{
+  font-size:11px;
+  letter-spacing:.18em;
+  opacity:.75;
+  line-height:1.15;
+  margin:0;
+  text-transform:uppercase;
+}
+
+.entry-cn{
+  margin:6px 0 0;
+  font-size:13px;
+  letter-spacing:.10em;
+  font-weight:600;
+  opacity:.92;
+  line-height:1.2;
+}
+
+.entry-desc{
+  margin:8px 0 0;
+  font-size:10px;
+  letter-spacing:.14em;
+  opacity:.55;
+  line-height:1.15;
 }
 
 /* ===================================================
@@ -237,24 +277,70 @@ Mobile
 
 @media (max-width: 720px){
 
-.ct-hero__caption{
-  left:16px;
-  right:16px;
-  bottom:16px;
-}
+  .ct-hero__caption{
+    left:16px;
+    right:16px;
+    bottom:16px;
+    max-width:none;
+  }
 
-.entry-strip--below{
-  padding:16px 0 8px;
-}
+  .ct-hero__kicker{
+    font-size:10px;
+    margin:0 0 8px;
+  }
 
-.entry-strip__inner{
-  padding:0 12px !important;
-  grid-template-columns:repeat(5, 1fr) !important;
-}
+  .ct-hero__title{
+    font-size:clamp(22px, 6vw, 30px);
+    line-height:1.08;
+    margin:0 0 6px;
+  }
 
-.entry-item{
-  padding:12px 6px 10px !important;
-  border-right:none;
-}
+  .ct-hero__desc{
+    font-size:12px;
+    line-height:1.35;
+    max-width:95%;
+  }
 
+  .entry-strip--below{
+    padding:16px 0 8px;
+  }
+
+  .entry-strip__inner{
+    padding:0 12px !important;
+    grid-template-columns:repeat(5, 1fr) !important;
+  }
+
+  .entry-item{
+    padding:12px 6px 10px !important;
+    border-right:none;
+    min-width:0;
+  }
+
+  .entry-en{
+    font-size:10px !important;
+    letter-spacing:.16em !important;
+    font-weight:500;
+    opacity:.70;
+    line-height:1.1;
+  }
+
+  .entry-cn{
+    font-size:12px !important;
+    letter-spacing:.06em !important;
+    font-weight:600;
+    opacity:.92;
+    line-height:1.15;
+  }
+
+  .entry-desc{
+    display:block !important;
+    font-size:7.5px !important;
+    letter-spacing:.12em !important;
+    font-weight:400;
+    opacity:.50;
+    line-height:1.1;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
 }
