@@ -36,17 +36,15 @@ body.page-home{
 }
 
 /* Slides */
+/* ✅ 改回更稳的显示逻辑：非 active 直接不渲染 */
 .ct-hero__slide{
   position:absolute;
   inset:0;
-  opacity:0;
-  pointer-events:none;
-  transition:opacity 320ms cubic-bezier(.2,.8,.2,1);
+  display:none;
 }
 
 .ct-hero__slide.is-active{
-  opacity:1;
-  pointer-events:auto;
+  display:block;
 }
 
 .ct-hero__media{
@@ -195,6 +193,8 @@ body.page-home{
   z-index:4;
   display:flex;
   gap:10px;
+  align-items:center;
+  justify-content:center;
 }
 
 .ct-hero__dot{
@@ -212,7 +212,7 @@ body.page-home{
 }
 
 /* ===================================================
-Entry strip
+2) Entry strip below hero
 =================================================== */
 
 .entry-strip--below{
@@ -226,6 +226,7 @@ Entry strip
   padding:0 24px;
   display:grid;
   grid-template-columns:repeat(5, 1fr);
+  gap:0;
   border-top:1px solid rgba(18,18,18,.10);
   border-bottom:1px solid rgba(18,18,18,.10);
   background:#fff;
@@ -244,7 +245,7 @@ Entry strip
   border-right:0;
 }
 
-/* ===== 恢复五入口字体系统 ===== */
+/* typography */
 .entry-en{
   font-size:11px;
   letter-spacing:.18em;
@@ -274,7 +275,6 @@ Entry strip
 /* ===================================================
 Mobile
 =================================================== */
-
 @media (max-width: 720px){
 
   .ct-hero__caption{
