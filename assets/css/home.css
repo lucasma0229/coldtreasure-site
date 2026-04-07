@@ -79,15 +79,7 @@ body.page-home{
 
 /* subtle shade for caption readability */
 .ct-hero__shade{
-  position:absolute;
-  inset:0;
-  pointer-events:none;
-  background:linear-gradient(
-    to top,
-    rgba(0,0,0,.55) 0%,
-    rgba(0,0,0,.22) 26%,
-    rgba(0,0,0,0) 58%
-  );
+  display:none;
 }
 
 /* caption: bottom-left, white */
