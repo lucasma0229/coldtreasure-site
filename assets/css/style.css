@@ -19,7 +19,7 @@ body{
   font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "PingFang SC", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
   color:var(--ink);
   background:var(--bg);
-  overflow-x:hidden; /* ✅ 防止任何横向溢出导致右滑 */
+  overflow-x:hidden;
 }
 
 img{ max-width:100%; height:auto; display:block; }
@@ -125,12 +125,9 @@ button:active{ opacity:.92; }
 
 /* =========================================================
    HOME HERO — KITH-LIKE FULL BLEED CAROUSEL
-   依赖你的 carousel.html 结构包含：
-   .carousel / .carousel-stage / .carousel-viewport / .slide / .slide-media img / .slide-text 等
 ========================================================= */
 .home-hero{ padding-top:6px; }
 
-/* ✅ 关键：让 hero 全宽但不产生横向滚动 */
 .hero-bleed{
   width:100vw;
   margin-left:calc(50% - 50vw);
@@ -141,31 +138,33 @@ button:active{ opacity:.92; }
   border:0;
   border-radius:0;
   overflow:hidden;
-  background:#000; /* 轮播图加载前不露白 */
+  background:#000;
 }
 
 .carousel-stage{ position:relative; }
 
-/* 让 viewport 变成“贴边大图” */
 .carousel-viewport{ padding:0; }
 
 .slide{ display:none; }
 .slide.is-active{ display:block; }
 
-/* 大图区域 */
 .slide-media{
   position:relative;
   display:block;
   width:100%;
   overflow:hidden;
 }
+
 .slide-media img{
   width:100%;
   height:min(74vh, 680px);
   object-fit:cover;
+  object-position:center;
+  filter:none !important;
+  opacity:1 !important;
 }
 
-/* ✅ 左下角叠字（Kith-like） */
+/* 左下角叠字 */
 .slide-text{
   position:absolute;
   left:44px;
@@ -175,9 +174,20 @@ button:active{ opacity:.92; }
   z-index:2;
 }
 
-/* 叠字保护：底部渐变承托 */
+/* ✅ 去掉旧轮播底部暗层，只保留原图 */
 .slide-media::after{
-  display:none;
+  content:none !important;
+  display:none !important;
+  background:transparent !important;
+}
+
+/* ✅ 防止 hover / 其它规则导致图像压暗 */
+.slide-media img,
+.slide:hover .slide-media img,
+.carousel:hover .slide-media img,
+.slide-media:hover img{
+  filter:none !important;
+  opacity:1 !important;
 }
 
 .slide-kicker{
@@ -253,7 +263,8 @@ button:active{ opacity:.92; }
 .carousel-dots:hover{ opacity:.88; }
 
 .dot{
-  width:8px; height:8px;
+  width:8px;
+  height:8px;
   border-radius:999px;
   border:1px solid rgba(255,255,255,.55);
   background:transparent;
@@ -262,7 +273,6 @@ button:active{ opacity:.92; }
 }
 .dot.is-active{ background:rgba(255,255,255,.82); }
 
-/* 如果旧控件还在，直接隐藏避免重复 */
 .carousel-controls{ display:none !important; }
 
 /* =========================================================
@@ -310,24 +320,24 @@ button:active{ opacity:.92; }
 
 .entry-cn{
   margin-top:7px;
-  font-size:11px; /* 小于英文 */
+  font-size:11px;
   letter-spacing:.10em;
   color:rgba(18,18,18,.70);
 }
 
 .entry-desc{
-  font-size:10px; /* 小于中文 */
+  font-size:10px;
   letter-spacing:.08em;
   color:rgba(18,18,18,.46);
   line-height:1.25;
-  text-align:center; /* ✅ 摘要居中（仅移动位置） */
+  text-align:center;
   white-space:nowrap;
   overflow:hidden;
   text-overflow:ellipsis;
 }
 
 /* =========================================================
-   News (keep your current)
+   News
 ========================================================= */
 .home-news{
   margin-top:34px;
@@ -377,12 +387,12 @@ button:active{ opacity:.92; }
 .card-media{
   overflow:hidden;
   background:rgba(0,0,0,.03);
-  aspect-ratio: 3 / 2;      /* ✅ News 封面也锁定 3:2 */
+  aspect-ratio:3 / 2;
 }
 
 .card-media img{
   width:100%;
-  height:100% !important;   /* ✅ 覆盖全局 height:auto */
+  height:100% !important;
   object-fit:cover;
   object-position:center;
   display:block;
@@ -396,11 +406,8 @@ button:active{ opacity:.92; }
 .card-title{ margin:8px 0 0; font-size:13px; line-height:1.45; }
 
 /* ===============================
-Footer — ColdTreasure (Kith-ish)
-仅作用于 <footer class="site-footer">
+Footer
 =============================== */
-
-/* 旧 footer class（保留但降权，不影响新 footer） */
 .footer{
   max-width:1240px;
   margin:64px auto 34px;
@@ -411,28 +418,18 @@ Footer — ColdTreasure (Kith-ish)
   opacity:.45;
 }
 
-/* 正式使用：<footer class="site-footer"> */
 .site-footer{
   width:100%;
   text-align:center;
-
-  /* 字体：恢复早前版本质感 */
   font-size:11px;
   font-weight:400;
   letter-spacing:0.12em;
   line-height:1.2;
-
-  /* 颜色：museum级低存在感 */
   color:#A3A3A3;
   opacity:0.45;
-
-  /* 位置：保持你刚刚设定（不动） */
   margin-top:104px !important;
   margin-bottom:0;
-
-  /* 底部呼吸 */
   padding:0 16px 1.5em;
-
   background:transparent;
   border:none;
 }
@@ -454,7 +451,6 @@ Footer — ColdTreasure (Kith-ish)
   .slide-title{ font-size:26px; }
   .slide-desc{ font-size:13px; }
 
-  /* entry 小屏变横向滑动，依然“一行逻辑” */
   .entry-strip__inner{
     display:flex;
     overflow:auto;
@@ -466,7 +462,6 @@ Footer — ColdTreasure (Kith-ish)
   }
 }
 
-/* ✅ 修复：原本这里的样式“掉在 @media 外面”，现在补回 720px 断点 */
 @media (max-width: 720px){
   .slide-media img{ height:min(56vh, 420px); }
   .slide-title{ font-size:22px; }
@@ -477,16 +472,9 @@ Footer — ColdTreasure (Kith-ish)
   .carousel-dots{ bottom:12px; }
 }
 
-/* ✅ 删除：旧 hero.hero--carousel 轮播 CSS（会误伤新 ct-carousel） */
-
-
 /* =========================================
-   POST HERO — 与 News 封面一致：强制 3:2 + 自动裁切
-   说明：
-   - 收敛到 .page-post，避免误伤其它页面
+   POST HERO
 ========================================= */
-
-/* 1) 首图容器：统一 3:2 */
 .page-post .post-hero,
 .page-post .post-cover,
 .page-post .article-hero{
@@ -499,7 +487,6 @@ Footer — ColdTreasure (Kith-ish)
   background:rgba(0,0,0,.03);
 }
 
-/* 2) 首图图片：自动裁切（覆盖你全局 img height:auto） */
 .page-post .post-hero > img,
 .page-post .post-cover > img,
 .page-post .article-hero > img,
@@ -513,7 +500,6 @@ Footer — ColdTreasure (Kith-ish)
   display:block;
 }
 
-/* 3) 兜底（收敛到 page-post，避免误伤你的首页 hero） */
 .page-post main img.post-hero-img{
   width:100%;
   height:100% !important;
