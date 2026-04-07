@@ -3,15 +3,12 @@ HOME (Rebuild)
 Hero first (16:9, full-bleed) + Entry strip below
 =================================================== */
 
-/* 0) Home base reset
-✅ 只让 Hero 黑，不让整页黑
-*/
+/* 0) Home base reset */
 body.page-home{
   margin:0;
   background:#fff;
 }
 
-/* Home main wrapper */
 .page-home-main{
   margin:0;
   padding:0;
@@ -22,7 +19,6 @@ body.page-home{
 1. CT Hero (full-bleed, 16:9)
 =================================================== */
 
-/* Full-bleed hero container */
 .ct-hero{
   width:100vw;
   margin-left:calc(50% - 50vw);
@@ -59,30 +55,60 @@ body.page-home{
   display:block;
 }
 
-/* ✅ Hero 图始终铺满，不变暗 */
+/* ===== 图片永远不变暗 ===== */
 .ct-hero__media img{
   width:100%;
   height:100%;
   display:block;
   object-fit:cover;
   object-position:center;
+
   filter:none !important;
   opacity:1 !important;
+
   transform:translateZ(0);
   backface-visibility:hidden;
 }
 
-.ct-hero__media:hover img{
+/* hover 也禁止变化 */
+.ct-hero__media:hover img,
+.ct-hero:hover .ct-hero__media img,
+.ct-hero__slide:hover .ct-hero__media img{
   filter:none !important;
   opacity:1 !important;
 }
 
-/* subtle shade for caption readability */
+/* ===== 🔥 彻底移除所有遮罩层 ===== */
 .ct-hero__shade{
-  display:none;
+  display:none !important;
 }
 
-/* caption: bottom-left, white */
+/* ===== 🔥 封杀所有伪元素暗层 ===== */
+.ct-hero::before,
+.ct-hero::after,
+.ct-hero__stage::before,
+.ct-hero__stage::after,
+.ct-hero__slide::before,
+.ct-hero__slide::after,
+.ct-hero__media::before,
+.ct-hero__media::after{
+  content:none !important;
+  display:none !important;
+  background:transparent !important;
+  opacity:0 !important;
+}
+
+/* ===== 🔥 防止 container 被压暗 ===== */
+.ct-hero,
+.ct-hero__stage,
+.ct-hero__slide,
+.ct-hero__media{
+  filter:none !important;
+  opacity:1 !important;
+  mix-blend-mode:normal !important;
+}
+
+/* caption */
 .ct-hero__caption{
   position:absolute;
   left:clamp(18px, 3vw, 44px);
@@ -159,8 +185,6 @@ body.page-home{
   z-index:4;
   display:flex;
   gap:10px;
-  align-items:center;
-  justify-content:center;
 }
 
 .ct-hero__dot{
@@ -170,7 +194,6 @@ body.page-home{
   border:none;
   background:rgba(255,255,255,.28);
   cursor:pointer;
-  padding:0;
 }
 
 .ct-hero__dot.is-active{
@@ -178,7 +201,7 @@ body.page-home{
 }
 
 /* ===================================================
-2) Entry strip below hero (Kith-like)
+Entry strip
 =================================================== */
 
 .entry-strip--below{
@@ -192,10 +215,8 @@ body.page-home{
   padding:0 24px;
   display:grid;
   grid-template-columns:repeat(5, 1fr);
-  gap:0;
   border-top:1px solid rgba(18,18,18,.10);
   border-bottom:1px solid rgba(18,18,18,.10);
-  background:#fff;
 }
 
 .entry-item{
@@ -210,142 +231,30 @@ body.page-home{
   border-right:0;
 }
 
-/* typography */
-.entry-en{
-  font-size:11px;
-  letter-spacing:.18em;
-  opacity:.75;
-  line-height:1.15;
-  margin:0;
-}
-
-.entry-cn{
-  margin:6px 0 0;
-  font-size:13px;
-  letter-spacing:.10em;
-  font-weight:600;
-  opacity:.92;
-  line-height:1.2;
-}
-
-.entry-desc{
-  margin:8px 0 0;
-  font-size:10px;
-  letter-spacing:.14em;
-  opacity:.55;
-  line-height:1.15;
-}
-
 /* ===================================================
-Mobile: 5-across → align with desktop (FLAT STYLE)
+Mobile
 =================================================== */
+
 @media (max-width: 720px){
 
-/* ===== Hero 保持不动 ===== */
 .ct-hero__caption{
-left:16px;
-right:16px;
-bottom:16px;
-max-width:none;
+  left:16px;
+  right:16px;
+  bottom:16px;
 }
 
-.ct-hero__kicker{
-font-size:10px;
-margin:0 0 8px;
-}
-
-.ct-hero__title{
-font-size:clamp(22px, 6vw, 30px);
-line-height:1.08;
-margin:0 0 6px;
-}
-
-.ct-hero__desc{
-font-size:12px;
-line-height:1.35;
-max-width:95%;
-}
-
-/* ===== Entry strip（核心改造） ===== */
 .entry-strip--below{
-padding:16px 0 8px;
+  padding:16px 0 8px;
 }
 
-/* ❌ 去卡片化 + 去阴影 */
 .entry-strip__inner{
-padding:0 12px !important;
-grid-template-columns:repeat(5, 1fr) !important;
-
-/* ✅ 改为 desktop 风格 */
-border-top:1px solid rgba(18,18,18,.10);
-border-bottom:1px solid rgba(18,18,18,.10);
-
-/* ❌ 移除这些 */
-border-radius:0;
-box-shadow:none;
-overflow:visible;
-background:#fff;
+  padding:0 12px !important;
+  grid-template-columns:repeat(5, 1fr) !important;
 }
 
-/* ❌ 去分隔线 */
 .entry-item{
-padding:12px 6px 10px !important;
-min-width:0;
-border-right:none;
+  padding:12px 6px 10px !important;
+  border-right:none;
 }
 
-/* ❌ 去点击“卡片反馈感” */
-.entry-item:active{
-transform:none;
-background:transparent;
-}
-
-/* ===== Typography ===== */
-
-/* ===== Mobile Entry Typography System (FINAL) ===== */
-
-/* 英文分类（上层） */
-.entry-en{
-  font-size:10px !important;
-  letter-spacing:.16em !important;
-  font-weight:500;
-  opacity:.70;
-  line-height:1.1;
-}
-
-/* 中文主标题（核心层） */
-.entry-cn{
-  font-size:12px !important;
-  letter-spacing:.06em !important;
-  font-weight:600;
-  opacity:.92;
-  line-height:1.15;
-}
-
-/* 英文说明（底层） */
-.entry-desc{
-  display:block !important;
-  font-size:7.5px !important;
-  letter-spacing:.12em !important;
-  font-weight:400;
-  opacity:.50;
-  line-height:1.1;
-
-  /* 🔥 关键：保持单行 + 不破布局 */
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
-}
-
-}
-
-/* ===================================================
-HOME fixes
-=================================================== */
-
-/* 1) Cancel any hover-dim on hero images */
-.ct-hero:hover .ct-hero__media img,
-.ct-hero__slide:hover .ct-hero__media img{
-  filter:none !important;
-  opacity:1 !important;
 }
