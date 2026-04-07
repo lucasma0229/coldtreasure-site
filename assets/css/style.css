@@ -177,12 +177,7 @@ button:active{ opacity:.92; }
 
 /* 叠字保护：底部渐变承托 */
 .slide-media::after{
-  content:"";
-  position:absolute;
-  left:0; right:0; bottom:0;
-  height:44%;
-  background:linear-gradient(to top, rgba(0,0,0,.62), rgba(0,0,0,0));
-  pointer-events:none;
+  display:none;
 }
 
 .slide-kicker{
