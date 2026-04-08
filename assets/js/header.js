@@ -211,58 +211,10 @@
     }
   }
 
-  function initNavState() {
-    const topbar = document.querySelector("[data-topbar]");
-    if (!topbar) return;
-
-    const path = (location.pathname || "/").toLowerCase();
-
-    document.querySelectorAll(".nav a").forEach((a) => {
-      const href = (a.getAttribute("href") || "").toLowerCase();
-      const isNews = href === "/news/" && (path.startsWith("/news") || path.startsWith("/post"));
-      const isSection = href !== "/news/" && href !== "/" && path.startsWith(href);
-      if (isNews || isSection) a.classList.add("is-active");
-    });
-
-    const isHome =
-      (String(window.CT_PAGE || "").toLowerCase() === "home") ||
-      document.body.classList.contains("page-home") ||
-      path === "/" ||
-      path === "/index.html";
-
-    function syncNavH() {
-      const h = Math.round(topbar.getBoundingClientRect().height || 72);
-      document.documentElement.style.setProperty("--navH", h + "px");
-    }
-
-    function applyState() {
-      syncNavH();
-
-      const y = window.scrollY || document.documentElement.scrollTop || 0;
-
-      if (!isHome) {
-        document.documentElement.classList.remove("ct-nav--overlay");
-        document.documentElement.classList.add("ct-nav--solid");
-        return;
-      }
-
-      if (y <= 8) {
-        document.documentElement.classList.add("ct-nav--overlay");
-        document.documentElement.classList.remove("ct-nav--solid");
-      } else {
-        document.documentElement.classList.remove("ct-nav--overlay");
-        document.documentElement.classList.add("ct-nav--solid");
-      }
-    }
-
-    requestAnimationFrame(applyState);
-    window.addEventListener("scroll", applyState, { passive: true });
-    window.addEventListener("resize", applyState);
-  }
-
   function closeOverlay() {
     const overlay = document.getElementById("ctSearchOverlay");
     const trigger = document.getElementById("ctSearchTrigger");
+
     if (!overlay) return;
 
     document.body.classList.remove("ct-search-open");
@@ -290,14 +242,19 @@
     updateMoreNewsLink(inputEl, moreEl);
 
     requestAnimationFrame(() => {
-      window.setTimeout(() => {
+      setTimeout(() => {
+        const scrollY = window.scrollY;
+
         try {
           inputEl.focus({ preventScroll: true });
         } catch (e) {
           inputEl.focus();
         }
+
+        window.scrollTo(0, scrollY);
         inputEl.select();
-      }, 80);
+
+      }, 120);
     });
   }
 
@@ -311,25 +268,17 @@
 
     if (!trigger || !triggerForm || !overlay || !overlayInput || !listEl) return;
 
-    try {
-      const q = new URL(location.href).searchParams.get("q") || "";
-      if (q) {
-        trigger.value = q;
-        overlayInput.value = q;
-        updateMoreNewsLink(overlayInput, moreEl);
-      }
-    } catch (e) {}
-
     function handleOpen(e) {
       if (e) e.preventDefault();
       openOverlay(trigger.value || "");
     }
 
+    // ✅ 只保留 click，不再用 focus
     trigger.addEventListener("click", handleOpen);
 
     trigger.addEventListener("keydown", (e) => {
       if (e.key === "Tab") return;
-      if (e.key === "Enter" || e.key === " " || e.key === "Spacebar") {
+      if (e.key === "Enter" || e.key === " ") {
         e.preventDefault();
         openOverlay(trigger.value || "");
       }
@@ -365,7 +314,6 @@
   }
 
   function boot() {
-    initNavState();
     initSearchOverlay();
   }
 
