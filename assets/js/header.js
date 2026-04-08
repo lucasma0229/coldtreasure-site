@@ -262,9 +262,13 @@
 
   function closeOverlay() {
     const overlay = document.getElementById("ctSearchOverlay");
+    const trigger = document.getElementById("ctSearchTrigger");
     if (!overlay) return;
+
     document.body.classList.remove("ct-search-open");
     overlay.setAttribute("aria-hidden", "true");
+
+    if (trigger) trigger.blur();
   }
 
   async function openOverlay(initialValue = "") {
@@ -286,8 +290,14 @@
     updateMoreNewsLink(inputEl, moreEl);
 
     requestAnimationFrame(() => {
-      inputEl.focus();
-      inputEl.select();
+      window.setTimeout(() => {
+        try {
+          inputEl.focus({ preventScroll: true });
+        } catch (e) {
+          inputEl.focus();
+        }
+        inputEl.select();
+      }, 80);
     });
   }
 
@@ -303,21 +313,26 @@
 
     try {
       const q = new URL(location.href).searchParams.get("q") || "";
-      if (q) trigger.value = q;
+      if (q) {
+        trigger.value = q;
+        overlayInput.value = q;
+        updateMoreNewsLink(overlayInput, moreEl);
+      }
     } catch (e) {}
 
     function handleOpen(e) {
-      e.preventDefault();
+      if (e) e.preventDefault();
       openOverlay(trigger.value || "");
     }
 
-    trigger.addEventListener("focus", handleOpen);
     trigger.addEventListener("click", handleOpen);
 
     trigger.addEventListener("keydown", (e) => {
       if (e.key === "Tab") return;
-      e.preventDefault();
-      openOverlay(trigger.value || "");
+      if (e.key === "Enter" || e.key === " " || e.key === "Spacebar") {
+        e.preventDefault();
+        openOverlay(trigger.value || "");
+      }
     });
 
     triggerForm.addEventListener("submit", handleOpen);
