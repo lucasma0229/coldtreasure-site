@@ -369,9 +369,8 @@ ColdTreasure app.js (CMS Core) - Conservative Stable Replace
       const slidesHTML = hero
         .map((item, idx) => {
           const href = item.link && String(item.link).trim() ? item.link : "/news/";
-          const title = item.title ? esc(String(item.title)) : "";
-          const kicker = item.kicker ? esc(String(item.kicker)) : "FEATURED";
-          const desc = item.desc ? esc(String(item.desc)) : "";
+          const titleMain = item.title_main ? esc(String(item.title_main)) : "";
+          const titleSub = item.title_sub ? esc(String(item.title_sub)) : "";
           const activeClass = idx === 0 ? " is-active" : "";
 
           return `
