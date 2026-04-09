@@ -120,36 +120,33 @@ body.page-home{
 .ct-hero__caption{
   position:absolute;
   left:clamp(18px, 3vw, 44px);
-  bottom:clamp(18px, 3vw, 44px);
+  bottom:clamp(20px, 3vw, 46px);
   max-width:min(720px, calc(100% - 80px));
   color:#fff;
   z-index:2;
+  display:flex;
+  flex-direction:column;
+  gap:6px;
 }
 
-.ct-hero__kicker{
-  font-size:12px;
-  letter-spacing:.18em;
-  text-transform:uppercase;
-  opacity:.92;
-  margin:0 0 10px;
-  text-shadow:0 10px 26px rgba(0,0,0,.35);
-}
-
-.ct-hero__title{
-  margin:0 0 8px;
-  font-size:clamp(30px, 3.2vw, 52px);
-  line-height:1.05;
+.ct-hero__title-main{
+  margin:0;
+  font-size:clamp(16px, 1.6vw, 18px);
+  line-height:1.22;
   letter-spacing:-.01em;
   font-weight:600;
   text-shadow:0 12px 28px rgba(0,0,0,.38);
 }
 
-.ct-hero__desc{
+.ct-hero__title-sub{
   margin:0;
-  font-size:clamp(13px, 1.25vw, 16px);
-  line-height:1.35;
-  opacity:.9;
-  text-shadow:0 12px 28px rgba(0,0,0,.36);
+  font-size:12px;
+  line-height:1.2;
+  letter-spacing:.18em;
+  font-weight:500;
+  opacity:.92;
+  text-transform:uppercase;
+  text-shadow:0 10px 26px rgba(0,0,0,.35);
 }
 
 /* arrows */
