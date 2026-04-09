@@ -388,9 +388,8 @@ ColdTreasure app.js (CMS Core) - Conservative Stable Replace
               <div class="ct-hero__shade" aria-hidden="true"></div>
 
               <div class="ct-hero__caption">
-                <div class="ct-hero__kicker">${kicker}</div>
-                <h2 class="ct-hero__title">${title}</h2>
-                ${desc ? `<p class="ct-hero__desc">${desc}</p>` : ``}
+                ${titleMain ? `<h2 class="ct-hero__title-main">${titleMain}</h2>` : ``}
+                ${titleSub ? `<div class="ct-hero__title-sub">${titleSub}</div>` : ``}
               </div>
             </article>
           `;
