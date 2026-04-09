@@ -381,7 +381,7 @@ ColdTreasure app.js (CMS Core) - Conservative Stable Replace
                   ${idx === 0 ? 'fetchpriority="high" loading="eager"' : 'loading="lazy"'}
                   decoding="async"
                   onerror="this.onerror=null;this.src='/assets/img/cover.jpg';"
-                  alt="${title}"
+                  alt="${titleMain || ''}"
                 >
               </a>
 
