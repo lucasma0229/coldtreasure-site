@@ -470,7 +470,7 @@ export async function onRequest(context) {
       summary: normStr(p.summary),
       excerpt: normStr(p.excerpt) || pickExcerpt({ ...p, content: content_text, content_blocks }, 160),
 
-      record: !!p.record,
+      record: !!p.record || !!p.archive,
       archive: !!p.archive,
 
       release_info: rel.release_info,
