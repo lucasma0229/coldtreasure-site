@@ -1,0 +1,18 @@
+# Evidence-only configuration shape. DO NOT DEPLOY.
+name = "coldtreasure-slug-checker"
+main = "../src/worker.js"
+compatibility_date = "2026-09-15"
+
+[triggers]
+crons = ["* * * * *"]
+
+[[d1_databases]]
+binding = "SLUG_DB"
+database_name = "coldtreasure-slug-registry"
+database_id = "fb6eee55-4ad6-468c-b156-17800d98fdbb"
+
+[vars]
+NOTION_DATA_SOURCE_ID = "30312074-5792-80b0-9b4f-000b29ca7231"
+
+# NOTION_KEY is an encrypted Worker Secret and is intentionally absent.
+
