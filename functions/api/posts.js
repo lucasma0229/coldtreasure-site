@@ -4,7 +4,8 @@ export async function onRequest(context) {
   const DATABASE_ID = context.env.NOTION_DATABASE_ID;
 
   const url = new URL(context.request.url);
-  const all = url.searchParams.get("all") === "1";
+  const all = false;
+  if (url.searchParams.get("all") === "1" || url.searchParams.get("debug") === "1") return new Response(JSON.stringify({error:"PRIVATE_PREVIEW_REQUIRED"}), {status:403,headers:{"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store"}});
   const debug = url.searchParams.get("debug") === "1";
 
   const version = "posts-api-cms-flow-auto-image-gallerycount-2026-03-17-01";
@@ -501,6 +502,7 @@ export async function onRequest(context) {
 
   function isPublishedFlow(p, hasStatusField) {
     if (!p) return false;
+    if (p.source === "notion" && !hasStatusField) return false;
 
     if (hasStatusField) {
       const st = normStr(p.status).toLowerCase();
@@ -711,3 +713,5 @@ export async function onRequest(context) {
     });
   }
 }
+
+
