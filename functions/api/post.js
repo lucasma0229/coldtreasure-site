@@ -4,7 +4,8 @@ export async function onRequest(context) {
   const slug = (url.searchParams.get("slug") || "").trim();
   const id = (url.searchParams.get("id") || "").trim();
   const key = (url.searchParams.get("key") || "").trim();
-  const all = url.searchParams.get("all") === "1";
+  const all = false;
+  if (url.searchParams.get("all") === "1" || url.searchParams.get("debug") === "1") return new Response(JSON.stringify({error:"PRIVATE_PREVIEW_REQUIRED"}), {status:403,headers:{"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store"}});
 
   const k = slug || id || key;
   if (!k) {
@@ -43,3 +44,5 @@ export async function onRequest(context) {
     headers: { "Content-Type": "application/json; charset=utf-8" },
   });
 }
+
+
